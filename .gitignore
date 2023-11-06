@@ -128,3 +128,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+*.json
+*.pyc
+openai_api_key
+api_key
