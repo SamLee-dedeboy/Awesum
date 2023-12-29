@@ -1,0 +1,28 @@
+\section{Related Works}
+\subsection{Summarization Metrics and Meta Evaluation}
+\paragraph{Computational Metrics}
+\paragraph{Reference-free Metrics}
+\paragraph{LLM evaluator Metrics}
+
+Outline
+1. Existing problems with using automatic summarization metrics to guide prompt optimization/evaluate prompts:
+    - LLM produces human-level summaries that quality differences are too nuanced for automatic metrics to capture [5]
+    - Correlation with human judgment is questionable [6]
+    - A trade-off between abstractive and faithfulness must be made for automatic metrics [10]
+    - automatic metrics tend to correlate well with humans at the system level but have poor correlations at the instance level [2, 3]
+    - No single metric can outperform (correlation) across datasets -> This suggests different datasets need to use different metrics [2]
+    - Metrics can not reliably quantify improvements if the difference is too small -- much success is attributed to ranking `easy' cases [1, 2, 6]
+
+2. Problems with LLM evaluators: outperforms automatic metrics, but do not exhibit consistent correlation with human judgment [5]
+3. Problems with reference-free metrics: capturing spurious correlation (highly correlated with spurious metrics like text length, word overlap, and perplexity) [8]
+4. LLM evaluators and reference-free metrics have higher computation time
+5. New problem in summarization task when LLM is used: Robustness
+
+Notes:
+    1. LLM benchmarks are neither informative nor actionable for application developers
+    2. evaluation of a new metric: system-level vs. instance level: which one would visual metric succeed at?
+    3. reference-based metrics are not able to capture factuality (faithfulness) errors [7]
+    4. Meaningful -> Grammatical/Readable/Formal -> Faithful -> Capturing gist
+
+
+\subsection{Latent Space Visualization}
