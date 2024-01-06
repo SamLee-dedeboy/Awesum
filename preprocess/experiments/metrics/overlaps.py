@@ -25,7 +25,7 @@ def rogue_score(full_text, summary, rouge_types=['rougeL'], use_stemmer=True):
         return scores
 
 # METEOR
-def compute_meteor(reference, candidate):
+def meteor_score(reference, candidate):
 
     reference =  nltk.word_tokenize(reference.lower())
     candidate =  nltk.word_tokenize(candidate.lower())
@@ -35,7 +35,7 @@ def compute_meteor(reference, candidate):
     return score
 
 # TRANSLATION ERROR RATE
-def compute_ter(reference, candidate):
+def ter_score(reference, candidate):
 
     ref_tokens = nltk.word_tokenize(reference.lower())
     cand_tokens = nltk.word_tokenize(candidate.lower())

@@ -14,28 +14,32 @@ def cosine_distance_writer_better(writer_score, llm_score, epsilon=0):
     else:
         return False
 
-def linear_regression_distance(full_embeddings: np.ndarray, summ_embeddings: np.ndarray):
-    # embedding_pairs = []
-    # for article_id in full_embeddings_dict.keys():
-    #     embedding_pairs.append((article_id, full_embeddings_dict[article_id], summary_embeddings_dict[article_id]))
-    # ids = [embedding_pair[0] for embedding_pair in embedding_pairs]
-    # X = np.array([embedding_pair[1] for embedding_pair in embedding_pairs])
-    # Y = np.array([embedding_pair[2] for embedding_pair in embedding_pairs])
-    X = full_embeddings
-    Y = summ_embeddings
-    W = np.linalg.inv(X.T @ X) @ X.T @ Y
-    Y_pred = X @ W
-    residuals = Y - Y_pred
-    covariance_matrix = np.cov(residuals, rowvar=False)
-    mahalanobis_distances = np.sqrt(np.sum(residuals @ np.linalg.inv(covariance_matrix) * residuals, axis=1))
-    return mahalanobis_distances
-    # return X, Y, W, Y_pred, residuals
+def simple_linear_regression(X: np.array, Y: np.array): # x and y are scalars
+    # Calculate the slope (m) and y-intercept (b) using the least squares method
+    X_mean = np.mean(X)
+    y_mean = np.mean(Y)
+    m = np.sum((X - X_mean) * (Y - y_mean)) / np.sum((X - X_mean)**2)
+    b = y_mean - m * X_mean
+    # Make predictions using the calculated slope and y-intercept
+    y_pred = m * X + b
+    mse_by_sample = (Y - y_pred)**2 / len(Y)
+    return m, b, y_pred, mse_by_sample
+
+def linear_regression_distances(X: np.ndarray, Y:np.ndarray): # x and y are vectors of shape (n, d)
+    # fit each dimension using linear regression
+    d = X.shape[1]
+    mse_matrix = np.zeros(X.shape)
+    for i in range(d):
+        m, b, y_pred, mse_by_sample = simple_linear_regression(X[:, i], Y[:, i])
+        mse_matrix[:, i] = mse_by_sample
+    total_mse_by_sample = np.sum(mse_matrix, axis=1)
+    return total_mse_by_sample
 
 def linear_regression_writer_better(writer_score, llm_score, epsilon=0):
     # print(epsilon, abs(writer_score - llm_score))
     if abs(writer_score - llm_score) < epsilon:
         return 'Equally Good' 
-    elif writer_score < llm_score:
+    elif writer_score < llm_score: # small is good
         return True
     else:
         return False
