@@ -23,6 +23,7 @@ def simple_linear_regression(X: np.array, Y: np.array): # x and y are scalars
     # Make predictions using the calculated slope and y-intercept
     y_pred = m * X + b
     mse_by_sample = (Y - y_pred)**2 / len(Y)
+    print("mse by sample: ", np.mean(mse_by_sample))
     return m, b, y_pred, mse_by_sample
 
 def linear_regression_distances(X: np.ndarray, Y:np.ndarray): # x and y are vectors of shape (n, d)
