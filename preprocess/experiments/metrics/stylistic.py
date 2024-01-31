@@ -1,44 +1,60 @@
 from lexical_diversity import lex_div as ld
-from readability import Readability
+from .py_readability_metrics.readability import Readability
 import textstat
 from textblob import TextBlob
-import nltk
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk import pos_tag
 from collections import Counter
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import numpy as np
+
 
 class ReadabilityEvaluator:
     def __init__(self, text):
         self.text = text
-        self.scorer = Readability(text)
-
+        # self.scorer = Readability(text)
+    
     def flesch_kincaid(self):
-        fk = self.scorer.flesch_kincaid()
-        return (fk.score, fk.grade_level)
+        # fk = self.scorer.flesch_kincaid()
+        # return (fk.score, fk.grade_level)
+        return textstat.flesch_kincaid_grade(self.text)
     def flesch(self):
-        f = self.scorer.flesch()
-        return (f.score, f.ease, f.grade_levels)
+        # f = self.scorer.flesch()
+        # return (f.score, f.ease, f.grade_levels)
+        return textstat.flesch_reading_ease(self.text)
+
     def dale_chall(self):
-        dc = self.scorer.dale_chall()
-        return (dc.score, dc.grade_levels)
+        # dc = self.scorer.dale_chall()
+        # return (dc.score, dc.grade_levels)
+        return textstat.dale_chall_readability_score(self.text)
+
     def automated_readability_index(self):
-        ari = self.scorer.ari()
-        return (ari.score, ari.grade_levels, ari.ages)
+        # ari = self.scorer.ari()
+        # return (ari.score, ari.grade_levels, ari.ages)
+        return textstat.automated_readability_index(self.text)
+
     def coleman_liau(self):
-        cl = self.scorer.coleman_liau()
-        return (cl.score, cl.grade_level)
+        # cl = self.scorer.coleman_liau()
+        # return (cl.score, cl.grade_level)
+        return textstat.coleman_liau_index(self.text)
+
     def gunning_fog(self):
-        gf = self.scorer.gunning_fog()
-        return (gf.score, gf.grade_level)
-    def spache(self):
-        s = self.scorer.spache()
-        return (s.score, s.grade_level)
+        # gf = self.scorer.gunning_fog()
+        # return (gf.score, gf.grade_level)
+        return textstat.gunning_fog(self.text)
+
+    # def spache(self):
+        # s = self.scorer.spache()
+        # return (s.score, s.grade_level)
     def linsear_write(self):
-        lw = self.scorer.linsear_write()
-        return (lw.score, lw.grade_level)
+        # lw = self.scorer.linsear_write()
+        # return (lw.score, lw.grade_level)
+        return textstat.linsear_write_formula(self.text)
+
     def smog(self):
-        smog = self.scorer.smog()
-        return (smog.score, smog.grade_level)
+        # smog = self.scorer.smog()
+        # return (smog.score, smog.grade_level)
+        return textstat.smog_index(self.text)
 
     def lix_score(self):
         text = self.text
@@ -52,6 +68,7 @@ class ReadabilityEvaluator:
     def mcalpine_eflaw(self):
         text = self.text
         return textstat.mcalpine_eflaw(text)
+
     def reading_time(self):
         text = self.text
         return textstat.reading_time(text)
@@ -105,3 +122,12 @@ class FormalityEvaluator:
     def mtld_ma_wrap(self):
         return ld.mtld_ma_wrap(self.flm_tokens)
     
+class SentimentEvaluator:
+    def __init__(self, text):
+        analyzer = SentimentIntensityAnalyzer()
+        sentences = sent_tokenize(text)
+        self.sst_by_sentence = [analyzer.polarity_scores(sentence)['compound'] for sentence in sentences]
+        self.sst = np.mean(self.sst_by_sentence)
+
+    def sentiment(self):
+        return self.sst
