@@ -1,4 +1,10 @@
-export const cluster_colors = [
+export const cluster_colors = (cluster_label) => {
+    if(cluster_label === "-1") return "white"
+    else {
+        return cluster_colors_list[parseInt(cluster_label) % cluster_colors_list.length]
+    }
+} 
+const cluster_colors_list = [
     "#8dd3c7",
     "#ffffb3",
     "#bebada",
@@ -26,6 +32,7 @@ export const cluster_colors = [
     "#2ca02c",
     "#3b9ab2",
   ];
+
 export const metric_colors = Array(100).fill("#8dd3c7");
 // export  const metric_colors = [
 //     "#8dd3c7",

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { tick } from "svelte";
   import * as d3 from "d3";
-  import type { tClusterStatistics } from "lib/types";
-  import { metric_colors, metrics } from "lib/constants";
+  import type { tStatBarData } from "lib/types";
+  import { cluster_colors, metrics } from "lib/constants";
 
   export let data: any[];
   export let highlight_cluster_label: string | undefined;
@@ -30,10 +30,10 @@
         .attr("cx", (d) => xScale(d.value))
         .attr("cy", svgSize.height / 2)
         .attr("r", svgSize.height / 10)
-        .attr("fill", metric_colors[index])
-        // .attr("stroke", "gray")
-        // .attr("stroke-width", 1)
-        .attr("opacity", 0.2);
+        .attr("fill", "gray")
+        .attr("stroke", "black")
+        .attr("stroke-width", 0)
+        .attr("opacity", 0.05);
 
       svg
         .append("line")
@@ -46,7 +46,7 @@
     });
   }
 
-  function init(svgId, statistics: tClusterStatistics) {
+  function init(svgId, statistics: tStatBarData) {
     const svg = d3.select(`#${svgId}`);
     svg.selectAll("*").remove();
     const svgSize = {
@@ -71,16 +71,24 @@
 
   function update_highlight_cluster(cluster_label: string | undefined) {
     const points = d3.selectAll("svg.metrics-svg").selectAll("circle");
-    const target_points = points
-      .filter((d) => d.cluster === cluster_label)
-      .data();
-    console.log(target_points);
+    // const target_points = points
+    //   .filter((d) => d.cluster === cluster_label)
+    //   .data();
+    // console.log(target_points);
     if (cluster_label === undefined) {
-      points.classed("dismissed", false).classed("highlight", false);
+      points
+        .classed("dismissed", false)
+        .classed("highlight", false)
+        .attr("fill", "gray");
     } else {
       points
         .classed("dismissed", true)
-        .classed("highlight", (d) => d.cluster === cluster_label);
+        .classed("highlight", false)
+        .filter((d) => d.cluster === cluster_label)
+        .classed("highlight", true)
+        .attr("fill", (d) => cluster_colors(d.cluster))
+        .attr("stroke-width", 1)
+        .raise();
     }
   }
 </script>
@@ -115,7 +123,7 @@
 
 <style>
   .metrics-svg :global(.dismissed) {
-    opacity: 0;
+    /* opacity: 0.05; */
   }
   .metrics-svg :global(.highlight) {
     opacity: 1;

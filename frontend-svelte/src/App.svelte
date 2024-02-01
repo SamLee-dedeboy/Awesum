@@ -155,48 +155,54 @@
             </select>
           </div>
           <!-- input for min_samples -->
-          <div class="flex justify-start items-center gap-x-1">
+          <div class="flex flex-col gap-x-1 flex-wrap">
             {#if cluster_params.name === "optics"}
-              <label
-                for="min_samples"
-                class="text-sm font-medium text-gray-900 dark:text-white w-fit ml-1"
-                >Min Samples</label
-              >
-              <input
-                type="number"
-                id="min_samples"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-[5rem] p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="10"
-                bind:value={cluster_params.params.min_samples}
-                required
-              />
+              <div class="flex items-center justify-start gap-x-1">
+                <label
+                  for="min_samples"
+                  class="text-sm font-medium text-gray-900 dark:text-white w-fit ml-1"
+                  >Min Samples</label
+                >
+                <input
+                  type="number"
+                  id="min_samples"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-[5rem] p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  placeholder="10"
+                  bind:value={cluster_params.params.min_samples}
+                  required
+                />
+              </div>
             {:else}
-              <label
-                for="k"
-                class="text-sm font-medium text-gray-900 dark:text-white w-fit ml-1"
-                >k</label
-              >
-              <input
-                type="number"
-                id="k"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-[5rem] p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="10"
-                bind:value={cluster_params.params.n_clusters}
-                required
-              />
-              <label
-                for="random_state"
-                class="text-sm font-medium text-gray-900 dark:text-white w-fit ml-1"
-                >random state</label
-              >
-              <input
-                type="number"
-                id="random_state"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-[5rem] p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="42"
-                bind:value={cluster_params.params.random_state}
-                required
-              />
+              <div class="flex items-center justify-start gap-x-1">
+                <label
+                  for="k"
+                  class="text-sm font-medium text-gray-900 dark:text-white w-fit ml-1"
+                  >k</label
+                >
+                <input
+                  type="number"
+                  id="k"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-[5rem] p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  placeholder="10"
+                  bind:value={cluster_params.params.n_clusters}
+                  required
+                />
+              </div>
+              <div class="flex items-center justify-start gap-x-1">
+                <label
+                  for="random_state"
+                  class="text-sm font-medium text-gray-900 dark:text-white w-fit ml-1"
+                  >random state</label
+                >
+                <input
+                  type="number"
+                  id="random_state"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-[5rem] p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  placeholder="42"
+                  bind:value={cluster_params.params.random_state}
+                  required
+                />
+              </div>
             {/if}
           </div>
           <button class="w-fit" on:click={generateCluster}>re-cluster</button>

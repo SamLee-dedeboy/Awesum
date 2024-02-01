@@ -34,14 +34,12 @@
       .attr("cx", (d: any) => xScale(d.coordinates[0]))
       .attr("cy", (d: any) => yScale(d.coordinates[1]))
       .attr("r", (d: any) => (d.features[0] === 22 ? 5 : 2))
-      .attr("fill", (d) =>
-        d.cluster === "-1" ? "white" : cluster_colors[d.cluster]
-      )
+      .attr("fill", (d) => cluster_colors(d.cluster))
       .attr("stroke", "black")
-      .attr("stroke-width", 1);
+      .attr("stroke-width", 0.5);
   }
 
-  function update_highlight_cluster(cluster_label) {
+  function update_highlight_cluster(cluster_label: string | undefined) {
     const g = d3.select("#cluster-svg").select("g.node-group");
     if (cluster_label === undefined) {
       g.selectAll("circle")

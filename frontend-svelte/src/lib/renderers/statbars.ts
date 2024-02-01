@@ -5,14 +5,17 @@ export class Statbars {
     svgId: string
     svgSize: any
     innerSize: any
-    constructor(svgId, svgSize, innerSize) {
+    barColor: string | undefined
+    constructor(svgId, svgSize, innerSize, barColor: string|undefined=undefined) {
         this.svgId = svgId;
         this.svgSize = svgSize;
         this.innerSize = innerSize;
+        this.barColor = barColor
     }
-    update(stats: tStatBarData[], global_means: number[], global_mins: number[], global_maxes: number[], sameScale: boolean=false) {
+    update(stats: tStatBarData[], global_means: number[], global_mins: number[], global_maxes: number[], sameScale: boolean=false, colors: string[]=[] ) {
       let xScales;
       const g = d3.select(this.svgId).select("g.inner");
+      // scales
       if (sameScale) {
         console.assert(global_means.length === 1 && global_mins.length === 1 && global_maxes.length === 1)
         const half_width = Math.max(Math.abs(global_maxes[0] - global_means[0]), Math.abs(global_means[0] - global_mins[0]));
@@ -30,11 +33,11 @@ export class Statbars {
             .range([0, this.innerSize.width]);
         });
       }
-        // scales
-        const yScale = d3.scaleBand(
-          [...Array(stats.length).keys()],
-          [0, this.innerSize.height]
-        ); 
+      const yScale = d3.scaleBand(
+        [...Array(stats.length).keys()],
+        [0, this.innerSize.height]
+      ); 
+      console.log(sameScale, this.barColor)
       g.selectAll("rect")
         .data(stats)
         .join("rect")
@@ -52,9 +55,17 @@ export class Statbars {
           }
         )
         .attr("height", yScale.bandwidth())
-        .attr("fill", (_, i) =>  sameScale ? cluster_colors[i] : metric_colors[i]);
-      // .attr("stroke", "black")
-      // .attr("stroke-width", 1);
+        .attr("fill", (_, i) =>  sameScale ? colors[i] : this.barColor)
+        .attr("stroke", "black")
+        .attr("stroke-width", (_, i) => {
+          if(sameScale) {
+            return colors[i] === "white"? 0.2 : 0
+          } else {
+            return this.barColor && this.barColor === "white"? 0.5 : 0
+          }
+        });
+
+
       g.selectAll("line.mean")
         .data(stats)
         .join("line")

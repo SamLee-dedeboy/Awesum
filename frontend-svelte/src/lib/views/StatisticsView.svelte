@@ -3,7 +3,7 @@
   import * as d3 from "d3";
   import ClusterStat from "lib/components/ClusterStat.svelte";
   import { Statbars } from "lib/renderers/statbars";
-  import { metrics } from "lib/constants";
+  import { cluster_colors, metrics } from "lib/constants";
   import type {
     tStatBarData,
     tStatistics,
@@ -73,7 +73,11 @@
       optimizations[selected_cluster.cluster_label].length > 0 &&
       stat_data
     )
-      update_detail(optimizations[selected_cluster.cluster_label], stat_data);
+      update_detail(
+        selected_cluster.cluster_label,
+        optimizations[selected_cluster.cluster_label],
+        stat_data
+      );
   }
 
   //
@@ -86,7 +90,8 @@
       const statbars = new Statbars(
         `#stat-cluster-${index}`,
         svgSize,
-        innerSize
+        innerSize,
+        cluster_colors(cluster_label)
       );
       statbars.update(
         data.cluster_statistics[cluster_label],
@@ -114,20 +119,34 @@
         [data.global_means[index]],
         [data.global_mins[index]],
         [data.global_maxes[index]],
-        true
+        true,
+        Object.keys(data.metric_statistics[metric]).map((cluster_label) =>
+          cluster_colors(cluster_label)
+        )
       );
       statbar_instances.push(statbars);
     });
   }
 
   async function update_detail(
+    cluster_label: string,
     optimization_snippets: tClusterOptimization[],
     data: tStatistics
   ) {
     console.log("update_detail");
     await tick();
     optimization_snippets.forEach((optimization_snippet, index) => {
-      const statbars = detail_statbars[index];
+      if (index >= detail_statbars[cluster_label].length) {
+        detail_statbars[cluster_label].push(
+          new Statbars(
+            `#stat-detail-${cluster_label}-${index}`,
+            svgSize,
+            innerSize,
+            cluster_colors(cluster_label)
+          )
+        );
+      }
+      const statbars = detail_statbars[cluster_label][index];
       statbars.update(
         optimization_snippet.statistics,
         data.global_means,
@@ -140,11 +159,16 @@
   function initDetailStatbars(cluster_statistics: {
     [key: string]: tStatBarData[];
   }) {
-    let detail_statbars: Statbars[] = [];
-    Object.keys(cluster_statistics).forEach((_, index) => {
-      detail_statbars.push(
-        new Statbars(`#stat-detail-${index}`, svgSize, innerSize)
-      );
+    let detail_statbars: { [key: string]: Statbars[] } = {};
+    Object.keys(cluster_statistics).forEach((cluster_label, index) => {
+      detail_statbars[cluster_label] = [
+        new Statbars(
+          `#stat-detail-${cluster_label}-0`,
+          svgSize,
+          innerSize,
+          cluster_colors(cluster_label)
+        ),
+      ];
     });
     return detail_statbars;
   }
@@ -160,7 +184,6 @@
 
   async function handleClusterClicked(
     cluster_label: string,
-    index: number,
     prompt_version: number
   ) {
     console.assert(stat_data !== undefined && data !== undefined);
@@ -180,7 +203,7 @@
     console.log(optimizations[selected_cluster.cluster_label]);
     await tick();
     clickedClusterStat = stat_data.cluster_statistics[cluster_label];
-    detail_statbars[index].update(
+    detail_statbars[selected_cluster.cluster_label][0].update(
       clickedClusterStat,
       stat_data.global_means,
       stat_data.global_mins,
@@ -230,7 +253,7 @@
             tabindex={index}
             class="cluster-stat-container w-[85px] h-[78px] border border-1 border-gray-100 relative hoverable gap-x-0.5 gap-y-0.5"
             on:keyup={() => {}}
-            on:click={() => handleClusterClicked(cluster_label, index, 0)}
+            on:click={() => handleClusterClicked(cluster_label, 0)}
             on:mouseover={() => handleClusterHovered(cluster_label)}
             on:focus={() => handleClusterHovered(cluster_label)}
             on:mouseout={() => {
@@ -274,7 +297,7 @@
           <div
             role="button"
             tabindex={index}
-            class="metric-stat-container w-[300px] h-[300px] border border-1 border-gray-100 relative hoverable gap-x-0.5 gap-y-0.5"
+            class="metric-stat-container w-[250px] h-[250px] border border-1 border-gray-100 relative hoverable gap-x-0.5 gap-y-0.5"
           >
             <p
               class="text-sm absolute ml-0.5 top-[-0.1rem] pointer-events-none"
@@ -326,7 +349,7 @@
               {/each}
             </div>
             <svg
-              id={`stat-detail-${index}`}
+              id={`stat-detail-${selected_cluster.cluster_label}-${index}`}
               class="min-w-[48%] aspect-square pointer-events-none border border-gray-200"
               viewBox={`0 0 ${svgSize.width} ${svgSize.height}`}
             >
