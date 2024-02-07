@@ -37,7 +37,6 @@ export class Statbars {
         [...Array(stats.length).keys()],
         [0, this.innerSize.height]
       ); 
-      console.log(sameScale, this.barColor)
       g.selectAll("rect")
         .data(stats)
         .join("rect")

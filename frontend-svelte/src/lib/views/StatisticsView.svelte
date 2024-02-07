@@ -43,7 +43,7 @@
   let hoveredClusterStat: tStatBarData[] | undefined;
   let clickedClusterStat: tStatBarData[] | undefined;
   let statbar_instances: Statbars[] = [];
-  let detail_statbars: Statbars[] = [];
+  let detail_statbars: { [key: string]: Statbars[] };
   let mode: tMode = tMode.All_Cluster;
 
   //
@@ -179,7 +179,6 @@
   function handleClusterHovered(cluster_label) {
     hoveredClusterStat = stat_data?.cluster_statistics[cluster_label];
     hovered_cluster_label = cluster_label;
-    console.log({ hoveredClusterStat });
   }
 
   async function handleClusterClicked(
@@ -197,7 +196,7 @@
       prompt_version: prompt_version,
       stats: stat_data.cluster_statistics[cluster_label],
       cluster_nodes: cluster_nodes,
-      summaries: cluster_nodes.map((datum) => datum.summary),
+      // summaries: cluster_nodes.map((datum) => datum.summary),
     };
 
     console.log(optimizations[selected_cluster.cluster_label]);
@@ -214,11 +213,14 @@
   function handleOptimizationClicked(prompt_version: number) {
     console.assert(selected_cluster !== undefined);
     if (!selected_cluster) return;
+    const optimization_snippet =
+      optimizations[selected_cluster.cluster_label][prompt_version];
+    console.log(optimization_snippet);
     selected_cluster.prompt_version = prompt_version;
-    selected_cluster.stats =
-      optimizations[selected_cluster.cluster_label][prompt_version].statistics;
-    selected_cluster.summaries =
-      optimizations[selected_cluster.cluster_label][prompt_version].summaries;
+    selected_cluster.stats = optimization_snippet.statistics;
+    selected_cluster.cluster_nodes = optimization_snippet.cluster_nodes;
+    // selected_cluster.summaries =
+    //   optimizations[selected_cluster.cluster_label][prompt_version].summaries;
     selected_cluster = selected_cluster;
   }
 </script>
@@ -361,6 +363,9 @@
             <div class="grow text-left text-sm">
               <p class="border-b border-black w-fit">Prompt #{index}</p>
               <p class="text-sm">{optimization_snippet.prompts[0].content}</p>
+              {#if optimization_snippet.prompts.length >= 4}
+                <p class="text-sm">{optimization_snippet.prompts[3].content}</p>
+              {/if}
             </div>
           </div>
         {/each}

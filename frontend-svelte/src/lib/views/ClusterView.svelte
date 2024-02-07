@@ -37,6 +37,7 @@
       .attr("fill", (d) => cluster_colors(d.cluster))
       .attr("stroke", "black")
       .attr("stroke-width", 0.5);
+    // .attr("opacity", (d) => (d.cluster === "-1" ? 0 : 1));
   }
 
   function update_highlight_cluster(cluster_label: string | undefined) {

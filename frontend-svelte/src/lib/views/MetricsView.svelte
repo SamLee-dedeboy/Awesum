@@ -3,6 +3,8 @@
   import * as d3 from "d3";
   import type { tStatBarData } from "lib/types";
   import { cluster_colors, metrics } from "lib/constants";
+  import { createPopover, melt } from "@melt-ui/svelte";
+  import { fade } from "svelte/transition";
 
   export let data: any[];
   export let highlight_cluster_label: string | undefined;
@@ -91,6 +93,20 @@
         .raise();
     }
   }
+
+  // setting up melt ui popover
+  const {
+    elements: { trigger, content, arrow, close },
+    states: { open },
+  } = createPopover({
+    forceVisible: true,
+    positioning: {
+      placement: "left",
+      gutter: 0,
+    },
+    arrowSize: 8,
+    disableFocusTrap: true,
+  });
 </script>
 
 <div
@@ -100,11 +116,27 @@
     <div
       class="w-full h-fit flex flex-1 items-center justify-center px-1 divide-x divide-gray-500"
     >
-      <div class="w-[7rem] text-left px-2">{metric}</div>
+      <div
+        use:melt={$trigger}
+        class="w-[7rem] text-left px-2 cursor-pointer hover:bg-gray-200 rounded"
+      >
+        {metric}
+      </div>
       <svg id={`metrics-svg-${index}`} class="metrics-svg grow h-[2rem]"></svg>
     </div>
   {/each}
 </div>
+{#if $open}
+  <div use:melt={$content} class="shadow-sm">
+    <div class="border border-black !bg-amber-50" use:melt={$arrow} />
+    <div
+      class="flex flex-col py-2 px-4 w-[20rem] h-fit rounded border border-gray-500 bg-amber-50"
+    >
+      <p class="flex flex-wrap break-normal">Readability is about</p>
+      <!-- <button class="close" use:melt={$close}> X </button> -->
+    </div>
+  </div>
+{/if}
 
 <!-- <div class="flex flex-col h-full overflow-auto">
   <div class="flex">

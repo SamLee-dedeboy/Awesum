@@ -137,3 +137,4 @@ preprocess/data/benchmark_llm_summarization
 .DS_Store
 *.csv
 *bin
+writing/pilot_study/*

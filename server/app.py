@@ -3,11 +3,9 @@ from flask import Flask, request
 from flask_cors import CORS
 import json
 # from DataUtils import DocumentController
-from AnalysisUtils import dr, clusters, features, helper
+from AnalysisUtils import dr, clusters, features, helper, gpt
 from metrics.stylistic import StyleEvaluator
 import numpy as np
-import concurrent
-from tqdm import tqdm
 import copy
 
 def save_json(data, filepath=r'new_data.json'):
@@ -16,7 +14,7 @@ def save_json(data, filepath=r'new_data.json'):
 app = Flask(__name__)
 CORS(app)
 openai_api_key = open("api_key").read()
-client=OpenAI(api_key=openai_api_key)
+openai_client=OpenAI(api_key=openai_api_key)
 # document_controller = DocumentController(r'../data/result/chunk_embeddings/1103/all_chunks.json', openai_api_key)
 evaluator = features.StyleEvaluator()
 metrics = ["readability", "formality", "sentiment", "faithfulness", "length"]
@@ -47,6 +45,7 @@ def get_data():
     coordinates = json.load(open('data/tmp/df_summaries_tsne.json'))
     optic_labels = json.load(open('data/tmp/df_summaries_optic_labels.json'))
     for i, datum in enumerate(dataset):
+        datum['id'] = i
         datum['coordinates'] = coordinates[i]
         datum['cluster'] = str(optic_labels[i])
     cluster_labels = list(map(lambda l: str(l), set(optic_labels)))
@@ -115,21 +114,20 @@ def get_cluster():
 
 @app.route("/executePromptAll/", methods=['POST'])
 def execute_prompt_all():
-    prompt_template = request.json['prompt']
+    instruction = request.json['instruction']
+    examples = request.json['examples']
+    data_template = request.json['data_template']
+    prompt_template = gpt.combine_templates(instruction, examples, data_template)
     data = request.json['data']
     metrics = request.json['metrics']
     prompts = []
     for datum in data:
         prompt = copy.deepcopy(prompt_template)
-        summary = datum['summary']
-        text = datum['text']
         for message in prompt:
-            # replace ${summary} with datum.summary
-            message['content'] = message['content'].replace("${summary}", summary)
-            message['content'] = message['content'].replace("${text}", text)
+            message['content'] = gpt.replace_data(message['content'], datum)
         prompts.append(prompt)
     save_json(prompts, 'data/debug/prompts.json')
-    summaries = multithread_prompts(prompts)
+    summaries = gpt.multithread_prompts(openai_client, prompts)
     save_json(summaries, 'data/debug/summaries.json')
     cluster_nodes = []
     for index, new_summary in enumerate(summaries):
@@ -145,38 +143,11 @@ def execute_prompt_all():
         statistics.append(features.collect_local_stats(column))
 
     return json.dumps({
+        "messages": prompt_template,
         "cluster_nodes": cluster_nodes,
         "statistics": statistics
     })
 
-
-def request_chatgpt_gpt4(messages, format=None):
-    model = 'gpt-3.5-turbo-1106'
-    # model="gpt-4-1106-preview"
-    if format == "json":
-        response = client.chat.completions.create(
-            # model="gpt-4-1106-preview",
-            model = model,
-            messages=messages,
-            response_format={ "type": "json_object" }
-        )
-    else:
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-        )
-    return response.choices[0].message.content
-
-def multithread_prompts(prompts):
-    l = len(prompts)
-    # results = np.zeros(l)
-    with tqdm(total=l) as pbar:
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(prompts))
-        futures = [executor.submit(request_chatgpt_gpt4, prompt) for prompt in prompts]
-        for _ in concurrent.futures.as_completed(futures):
-            pbar.update(1)
-    concurrent.futures.wait(futures)
-    return [future.result() for future in futures]
 
 # ====================== deprecated ===============================
 # def get_ravasz():

@@ -5,12 +5,14 @@
   import MetricsView from "lib/views/MetricsView.svelte";
   import SummaryView from "lib/views/SummaryView.svelte";
   import { onMount } from "svelte";
-  import { metrics } from "lib/constants";
+  import { metrics, cluster_colors } from "lib/constants";
   import type {
     tClusterOptimization,
     tSelectedClusterData,
     tStatBarData,
     tMessage,
+    tDataset,
+    tExampleData,
   } from "lib/types";
   let cluster_params = {
     name: "optics",
@@ -23,8 +25,9 @@
       random_state: 42,
     },
   };
+  let prompt_view;
   let loading = true;
-  let dataset: any = null;
+  let dataset: tDataset | undefined = undefined;
   let selected_metrics: string[] = metrics;
   let selected_cluster: tSelectedClusterData | undefined = undefined;
   let hovered_cluster_label: string | undefined = undefined;
@@ -35,17 +38,20 @@
       .then((response) => response.json())
       .then((res) => {
         dataset = res;
-        console.log(dataset);
-        loading = false;
-        initClusterOptimizations(
-          dataset.cluster_labels,
-          dataset.dataset,
-          dataset.statistics
-        );
+        if (dataset) {
+          loading = false;
+          initClusterOptimizations(
+            dataset.cluster_labels,
+            dataset.dataset,
+            dataset.statistics
+          );
+        }
       });
   });
 
   function generateCluster() {
+    console.assert(dataset !== undefined);
+    if (!dataset) return;
     const parameters = {
       method: cluster_params.name,
       parameters: cluster_params.params,
@@ -61,6 +67,8 @@
     })
       .then((response) => response.json())
       .then((data) => {
+        console.assert(dataset !== undefined);
+        if (!dataset) return;
         console.log("Success:", data);
         dataset.cluster_labels = data.cluster_labels;
         dataset.dataset = data.dataset;
@@ -78,7 +86,7 @@
       });
   }
 
-  function setNewSummaries({
+  function setNewOptimization({
     cluster_nodes,
     statistics,
     messages,
@@ -89,10 +97,12 @@
   }) {
     console.assert(selected_cluster !== undefined);
     if (!selected_cluster) return;
+    console.log({ cluster_nodes, statistics, messages });
     cluster_optimizations[selected_cluster.cluster_label] = [
       ...cluster_optimizations[selected_cluster.cluster_label],
       {
-        summaries: cluster_nodes.map((node) => node.summary),
+        // summaries: cluster_nodes.map((node) => node.summary),
+        cluster_nodes: cluster_nodes,
         features: cluster_nodes.map((node) => node.features),
         prompts: messages,
         statistics: statistics,
@@ -112,7 +122,8 @@
     cluster_labels.forEach((cluster_label) => {
       cluster_optimizations[cluster_label] = [
         {
-          summaries: [],
+          // summaries: [],
+          cluster_nodes: [],
           features: [],
           prompts: initial_prompt,
           statistics: statistics.cluster_statistics[cluster_label],
@@ -121,15 +132,25 @@
     });
     dataset.forEach((datum) => {
       const cluster_label = datum.cluster;
-      cluster_optimizations[cluster_label][0].summaries.push(datum.summary);
+      // cluster_optimizations[cluster_label][0].summaries.push(datum.summary);
+      cluster_optimizations[cluster_label][0].cluster_nodes.push(datum);
       cluster_optimizations[cluster_label][0].features.push(datum.features);
     });
     cluster_optimizations = cluster_optimizations;
   }
+
+  function handleAddExample(e) {
+    const example: tExampleData = {
+      id: e.detail.id,
+      text: e.detail.text,
+      summary: e.detail.summary,
+    };
+    prompt_view.add_example(example);
+  }
 </script>
 
 <div class="h-screen w-screen p-1 flex gap-x-1">
-  {#if loading}
+  {#if dataset === undefined}
     <div class="basis-1/2 h-1/2">Loading...</div>
   {:else}
     <div id="left" class="flex flex-col w-[75%] h-full shrink-0">
@@ -233,21 +254,44 @@
         ></MetricsView>
       </div>
     </div>
-    <div id="right" class="grow flex flex-col">
-      <div class="h-[30%]">
+    <div
+      id="right"
+      class="grow flex flex-col divide-y bg-gray-50 outline outline-1 outline-gray-100"
+    >
+      <div class="h-fit">
+        <div
+          class="sticky top-0 bg-[#89d0ff] border-b border-gray-100 text-center text-xl text-gray font-bold w-full"
+        >
+          Prompt Editor
+        </div>
         <PromptView
+          bind:this={prompt_view}
           data={selected_cluster?.cluster_nodes}
           {selected_metrics}
-          on:promptDone={(e) => setNewSummaries(e.detail)}
+          on:promptDone={(e) => setNewOptimization(e.detail)}
         ></PromptView>
       </div>
-      <div class="h-[70%] shrink-0">
-        <SummaryView
-          title={selected_cluster
-            ? `Cluster #${selected_cluster.cluster_label}, Prompt #${selected_cluster.prompt_version} Summaries`
-            : "Summary"}
-          data={selected_cluster?.summaries || []}
-        ></SummaryView>
+      <div class="grow relative py-1">
+        <div
+          class="absolute overflow-y-auto top-0 bottom-0 w-full outline outline-1 outline-gray-100"
+        >
+          <div
+            class="sticky top-0 text-xl border-b py-1 border-gray-100 text-center font-bold w-full"
+            style={`background-color: ${
+              selected_cluster
+                ? cluster_colors(selected_cluster.cluster_label)
+                : "#89d0ff"
+            }`}
+          >
+            {selected_cluster
+              ? `Cluster #${selected_cluster.cluster_label}, Prompt #${selected_cluster.prompt_version} Summaries`
+              : "Summary"}
+          </div>
+          <SummaryView
+            data={selected_cluster?.cluster_nodes || []}
+            on:add_example={handleAddExample}
+          ></SummaryView>
+        </div>
       </div>
     </div>
   {/if}
