@@ -1,0 +1,2 @@
+// export const metrics = ["flesch_kincard", "dale_chall", "gunning_fog", "mtld", "formality", "hdd", "sentiment"]
+export const metrics = ["readability", "formality", "sentiment", "faithfulness", "length"]

@@ -1,105 +1,260 @@
 <script lang="ts">
+  import PromptView from "lib/views/PromptView.svelte";
+  import ClusterView from "lib/views/ClusterView.svelte";
+  import StatisticsView from "lib/views/StatisticsView.svelte";
+  import MetricsView from "lib/views/MetricsView.svelte";
+  import SummaryView from "lib/views/SummaryView.svelte";
   import { onMount } from "svelte";
-  import SimGraph from "./lib/SimGraph.svelte";
-
-  const server_address = "http://localhost:5000"
-
-  let full_chunk_graph: any;
-  let summary_chunk_graph: any;
-  let link_threshold: number = 0.92;
-  let full_simgraph;
-  let summary_simgraph;
-  let clicked_nodes: any[] = []
-
+  import { metrics } from "lib/constants";
+  import type {
+    tClusterOptimization,
+    tSelectedClusterData,
+    tStatBarData,
+    tMessage,
+  } from "lib/types";
+  let cluster_params = {
+    name: "optics",
+    params: {
+      // for optics
+      min_samples: 10,
+      metric: "cosine",
+      // for kmeans
+      n_clusters: 10,
+      random_state: 42,
+    },
+  };
+  let loading = true;
+  let dataset: any = null;
+  let selected_metrics: string[] = metrics;
+  let selected_cluster: tSelectedClusterData | undefined = undefined;
+  let hovered_cluster_label: string | undefined = undefined;
+  let cluster_optimizations: { [key: string]: tClusterOptimization[] } = {};
+  const server_address = "http://localhost:5000";
   onMount(() => {
-      fetchData()
-  })
+    fetch(server_address + "/data/")
+      .then((response) => response.json())
+      .then((res) => {
+        dataset = res;
+        console.log(dataset);
+        loading = false;
+        initClusterOptimizations(
+          dataset.cluster_labels,
+          dataset.dataset,
+          dataset.statistics
+        );
+      });
+  });
 
-  function fetchData() {
-    const full_level = 4
-    const summary_level = 4
-    fetch(`${server_address}/data/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ full_level, summary_level })
+  function generateCluster() {
+    const parameters = {
+      method: cluster_params.name,
+      parameters: cluster_params.params,
+      dataset: dataset.dataset,
+      metrics: selected_metrics,
+    };
+    fetch(server_address + "/data/cluster/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ...parameters }),
     })
-    .then(res => res.json())
-    .then(res => {
-        console.log({res})
-        full_chunk_graph = link_to_graph(res.full.links, res.full.nodes, res.full.clusters)
-        summary_chunk_graph = link_to_graph(res.summary.links, res.summary.nodes, res.summary.clusters)
-    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Success:", data);
+        dataset.cluster_labels = data.cluster_labels;
+        dataset.dataset = data.dataset;
+        dataset.statistics = data.statistics;
+        dataset.metric_data = data.metric_data;
+        dataset = dataset;
+        // Object.keys(data).forEach((key) => {
+        //   dataset[key] = data[key];
+        // });
+        initClusterOptimizations(
+          dataset.cluster_labels,
+          dataset.dataset,
+          dataset.statistics
+        );
+      });
   }
-  function link_to_graph(links, nodes, clusters) {
-        let weights = {}
-        let degree_dict = {}
-        let graph_links: any = []
-        // filter links and build weights
-        links = links.filter(link => link[2] > link_threshold)
-        links.forEach(link => {
-            const source = link[0]
-            const target = link[1]
-            degree_dict[source] = degree_dict[source] ? degree_dict[source] + 1 : 1
-            degree_dict[target] = degree_dict[target] ? degree_dict[target] + 1 : 1
-            if(!weights[source]) weights[source] = {}
-            weights[source][target] = link[2]
-            graph_links.push({ source, target })
-        })
 
-        // group nodes by topic
-        let groups = clusters
+  function setNewSummaries({
+    cluster_nodes,
+    statistics,
+    messages,
+  }: {
+    cluster_nodes: any[];
+    statistics: tStatBarData[];
+    messages: any[];
+  }) {
+    console.assert(selected_cluster !== undefined);
+    if (!selected_cluster) return;
+    cluster_optimizations[selected_cluster.cluster_label] = [
+      ...cluster_optimizations[selected_cluster.cluster_label],
+      {
+        summaries: cluster_nodes.map((node) => node.summary),
+        features: cluster_nodes.map((node) => node.features),
+        prompts: messages,
+        statistics: statistics,
+      },
+    ];
+  }
 
-
-        // Object.keys(nodes).forEach((node_id: string) => {
-        //     // const participant_id = node.split('_')[0]
-        //     const topic = nodes[node_id].topic
-        //     const degree = degree_dict[node_id] || 0
-        //     const coordinate = chunk_coordinates[node_id]
-        //     nodes[node_id] = { id: node_id, topic, degree, coordinate }
-        //     console.log(nodes[node_id])
-        //     if(!groups[topic]) groups[topic] = []
-        //     groups[topic].push(nodes[node_id])
-        // })
-
-
-        const graph = {
-            groups: groups,
-            // topics: Array.from(topics),
-            nodes: Object.keys(nodes).map((node: string) => nodes[node]),
-            links: graph_links,
-            weights: weights,
-        }
-        console.log(graph.nodes.length, graph.links.length)
-        return graph
-    }
-
-    function handleNodeClicked(e) {
-      clicked_nodes.push(e.detail)
-      full_simgraph.highlight_nodes(clicked_nodes)
-      summary_simgraph.highlight_nodes(clicked_nodes)
-    }
-
-    function handleClusterClicked(e) {
-      console.log({e})
-      // clicked_nodes = clicked_nodes.concat(e.detail)
-      clicked_nodes = e.detail
-      full_simgraph.highlight_nodes(clicked_nodes)
-      summary_simgraph.highlight_nodes(clicked_nodes)
-    }
-
-
+  function initClusterOptimizations(cluster_labels, dataset, statistics) {
+    const initial_prompt: tMessage[] = [
+      {
+        role: "system",
+        content:
+          "You are a news article summarization system. Please summarize the following article into one paragraph.",
+      },
+    ];
+    cluster_optimizations = {};
+    cluster_labels.forEach((cluster_label) => {
+      cluster_optimizations[cluster_label] = [
+        {
+          summaries: [],
+          features: [],
+          prompts: initial_prompt,
+          statistics: statistics.cluster_statistics[cluster_label],
+        },
+      ];
+    });
+    dataset.forEach((datum) => {
+      const cluster_label = datum.cluster;
+      cluster_optimizations[cluster_label][0].summaries.push(datum.summary);
+      cluster_optimizations[cluster_label][0].features.push(datum.features);
+    });
+    cluster_optimizations = cluster_optimizations;
+  }
 </script>
-<main class='h-[100vh] w-[100vw] flex justify-around'>
-  <div class="flex flex-col justify-center items-center basis-[40%] h-full overflow-hidden">
-    <div class='w-full h-full'>
-        <SimGraph bind:this={full_simgraph} svgId='full_svg' graph={full_chunk_graph} on:node_clicked={handleNodeClicked} on:cluster_clicked={handleClusterClicked} ></SimGraph>   
+
+<div class="h-screen w-screen p-1 flex gap-x-1">
+  {#if loading}
+    <div class="basis-1/2 h-1/2">Loading...</div>
+  {:else}
+    <div id="left" class="flex flex-col w-[75%] h-full shrink-0">
+      <div class="flex w-full h-[70%] flex-none">
+        <div class="w-[15%] p-1 flex flex-col gap-y-1">
+          <!-- input for cluster method -->
+          <div class="flex justify-start items-center gap-x-1">
+            <label
+              for="cluster_method"
+              class="block text-sm font-medium text-gray-900 dark:text-white"
+              >Cluster Method</label
+            >
+            <select
+              id="cluster_method"
+              class="grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              on:input={(e) => {
+                cluster_params.name = e.target?.value;
+                cluster_params = cluster_params;
+              }}
+            >
+              <option value="optics" selected>OPTICS</option>
+              <option value="kmeans">K-Means</option>
+            </select>
+          </div>
+          <!-- input for min_samples -->
+          <div class="flex flex-col gap-x-1 flex-wrap">
+            {#if cluster_params.name === "optics"}
+              <div class="flex items-center justify-start gap-x-1">
+                <label
+                  for="min_samples"
+                  class="text-sm font-medium text-gray-900 dark:text-white w-fit ml-1"
+                  >Min Samples</label
+                >
+                <input
+                  type="number"
+                  id="min_samples"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-[5rem] p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  placeholder="10"
+                  bind:value={cluster_params.params.min_samples}
+                  required
+                />
+              </div>
+            {:else}
+              <div class="flex items-center justify-start gap-x-1">
+                <label
+                  for="k"
+                  class="text-sm font-medium text-gray-900 dark:text-white w-fit ml-1"
+                  >k</label
+                >
+                <input
+                  type="number"
+                  id="k"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-[5rem] p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  placeholder="10"
+                  bind:value={cluster_params.params.n_clusters}
+                  required
+                />
+              </div>
+              <div class="flex items-center justify-start gap-x-1">
+                <label
+                  for="random_state"
+                  class="text-sm font-medium text-gray-900 dark:text-white w-fit ml-1"
+                  >random state</label
+                >
+                <input
+                  type="number"
+                  id="random_state"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-[5rem] p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  placeholder="42"
+                  bind:value={cluster_params.params.random_state}
+                  required
+                />
+              </div>
+            {/if}
+          </div>
+          <button class="w-fit" on:click={generateCluster}>re-cluster</button>
+        </div>
+        <div class="h-full aspect-square">
+          <ClusterView
+            cluster_labels={dataset.cluster_labels}
+            data={dataset.dataset}
+            highlight_cluster_label={hovered_cluster_label}
+          ></ClusterView>
+        </div>
+        <div class="flex-1">
+          <StatisticsView
+            stat_data={dataset.statistics}
+            data={dataset.dataset}
+            bind:selected_cluster
+            bind:hovered_cluster_label
+            optimizations={cluster_optimizations}
+          ></StatisticsView>
+        </div>
+      </div>
+      <div
+        class="w-full grow max-h-[30%] overflow-y-auto border-t border-black"
+      >
+        <MetricsView
+          data={dataset.metric_data}
+          highlight_cluster_label={hovered_cluster_label}
+        ></MetricsView>
+      </div>
     </div>
-  </div>
-  <div class="flex flex-col justify-center items-center basis-[40%] h-full overflow-hidden">
-    <div class='w-full h-full'>
-        <SimGraph bind:this={summary_simgraph} svgId='summary_svg' graph={summary_chunk_graph} on:node_clicked={handleNodeClicked} on:cluster_clicked={handleClusterClicked}></SimGraph>   
+    <div id="right" class="grow flex flex-col">
+      <div class="h-[30%]">
+        <PromptView
+          data={selected_cluster?.cluster_nodes}
+          {selected_metrics}
+          on:promptDone={(e) => setNewSummaries(e.detail)}
+        ></PromptView>
+      </div>
+      <div class="h-[70%] shrink-0">
+        <SummaryView
+          title={selected_cluster
+            ? `Cluster #${selected_cluster.cluster_label}, Prompt #${selected_cluster.prompt_version} Summaries`
+            : "Summary"}
+          data={selected_cluster?.summaries || []}
+        ></SummaryView>
+      </div>
     </div>
-  </div>
-</main>
+  {/if}
+</div>
+
+<style>
+  div {
+    /* outline: 1px solid black; */
+  }
+</style>

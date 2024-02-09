@@ -136,3 +136,4 @@ api_key
 preprocess/data/benchmark_llm_summarization
 .DS_Store
 *.csv
+*bin
