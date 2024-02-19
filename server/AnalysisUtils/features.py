@@ -34,10 +34,10 @@ def collect_statistics(dataset, metrics):
         } for m in metrics
     }
     # cluster statistics
-    global_means = np.zeros(len(dataset[0]['features']))
-    global_mins = np.empty(len(dataset[0]['features']))
+    global_means = np.zeros(len(metrics))
+    global_mins = np.empty(len(metrics))
     global_mins.fill(np.inf)
-    global_maxes = np.zeros(len(dataset[0]['features']))
+    global_maxes = np.zeros(len(metrics))
     for cluster, cluster_nodes in groupby(dataset, lambda x: str(x['cluster'])):
         cluster_nodes = list(cluster_nodes)
         feature_matrix = np.array(list(map(lambda x: [x['features'][m] for m in metrics], cluster_nodes)))

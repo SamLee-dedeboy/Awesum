@@ -3,7 +3,8 @@
   import * as d3 from "d3";
   import ClusterStat from "lib/components/ClusterStat.svelte";
   import { Statbars } from "lib/renderers/statbars";
-  import { cluster_colors, metrics } from "lib/constants";
+  import { cluster_colors } from "lib/constants";
+  import { selected_metrics } from "lib/store";
   import type {
     tStatBarData,
     tStatistics,
@@ -105,11 +106,13 @@
 
   async function update_all_metric(data: tStatistics) {
     await tick();
-    metrics.forEach((metric, index) => {
+    $selected_metrics.forEach((metric, index) => {
       const statbars = new Statbars(
         `#stat-metric-${index}`,
         svgSize,
-        innerSize
+        innerSize,
+        undefined,
+        handleMetricRangeSelected
       );
 
       statbars.update(
@@ -223,6 +226,10 @@
     //   optimizations[selected_cluster.cluster_label][prompt_version].summaries;
     selected_cluster = selected_cluster;
   }
+
+  function handleMetricRangeSelected(d) {
+    console.log("handleMetricRangeSelected", d);
+  }
 </script>
 
 <div class="flex flex-col overflow-y-auto max-h-full">
@@ -295,20 +302,16 @@
       </div>
     {:else if mode === tMode.All_Metric}
       <div class="flex flex-wrap">
-        {#each metrics as metric, index}
+        {#each $selected_metrics as metric, index}
           <div
-            role="button"
-            tabindex={index}
-            class="metric-stat-container w-[250px] h-[250px] border border-1 border-gray-100 relative hoverable gap-x-0.5 gap-y-0.5"
+            class="metric-stat-container w-[250px] h-[250px] border border-1 border-gray-100 relative gap-x-0.5 gap-y-0.5"
           >
-            <p
-              class="text-sm absolute ml-0.5 top-[-0.1rem] pointer-events-none"
-            >
+            <p class="text-sm absolute ml-0.5 top-[-0.1rem]">
               {metric}
             </p>
             <svg
               id={`stat-metric-${index}`}
-              class="w-full h-full pointer-events-none"
+              class="w-full h-full"
               viewBox={`0 0 ${svgSize.width} ${svgSize.height}`}
             >
               <g
@@ -344,7 +347,7 @@
             class="w-full flex gap-x-1 px-1"
           >
             <div class="flex flex-col justify-between">
-              {#each metrics as metric}
+              {#each $selected_metrics as metric}
                 <div class="flex-1 text-xs flex items-center justify-end">
                   {metric}
                 </div>
@@ -403,5 +406,9 @@
   }
   :global(.clicked) {
     border: black solid 1px;
+  }
+  :global(.rect-hovered) {
+    stroke: black;
+    stroke-width: 1px;
   }
 </style>

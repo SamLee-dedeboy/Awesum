@@ -8,12 +8,11 @@
   } from "lib/types";
   import { createEventDispatcher } from "svelte";
   import { metrics } from "lib/constants";
-  import { Loader } from "lucide-svelte";
+  import { selected_metrics } from "lib/store";
 
   const server_address = "http://localhost:5000";
   const dispatch = createEventDispatcher();
   export let data: tNode[] = [];
-  export let selected_metrics: string[];
 
   let executing_prompt = false;
   let prompts_by_metric = initPrompts(metrics);
@@ -92,7 +91,7 @@
         examples: examples,
         data_template: data_template,
         data: data,
-        metrics: selected_metrics,
+        metrics: $selected_metrics,
       }),
     })
       .then((response) => response.json())
@@ -241,16 +240,33 @@
     </div>
   </div>
   <div class="flex gap-x-1 py-1">
-    <button
-      class="w-[4rem] px-3 bg-green-100 flex items-center justify-center"
-      on:click={() => start_all(prompts_by_metric[target_metric])}
-    >
-      {#if executing_prompt}
-        <Loader class="w-4 h-4 animate-[spin_2s_linear_infinite]" />
-      {:else}
-        Apply
-      {/if}
-    </button>
+    <div class="flex w-fit items-center justify-start gap-x-1">
+      <button
+        class="w-[4rem] h-[2.5rem] text-sm bg-green-50 flex items-center justify-center gap-x-1 !shadow-[0px_0px_1px_1px_#87ee93] text-slate-500"
+        on:click={() => start_all(prompts_by_metric[target_metric])}
+      >
+        {#if executing_prompt}
+          <img
+            src="load2.svg"
+            class="w-4 h-4 animate-[spin_2s_linear_infinite]"
+            alt="*"
+          />
+        {:else}
+          <!-- <img
+            src="clipboard_checked.svg"
+            alt="*"
+            class="aspect-square text-gray-500"
+          /> -->
+          Apply
+        {/if}
+      </button>
+      <span class="text-gray-500">
+        to
+        <span class="underline">
+          {data.length}
+        </span> articles
+      </span>
+    </div>
     <div
       class="flex flex-col justify-start items-start ml-auto right-0 text-gray-500 px-1 bg-yellow-50 outline outline-1 outline-gray-200"
     >

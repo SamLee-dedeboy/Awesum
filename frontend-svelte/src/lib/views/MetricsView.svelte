@@ -5,18 +5,20 @@
   import { cluster_colors, metrics } from "lib/constants";
   import { createPopover, melt } from "@melt-ui/svelte";
   import { fade } from "svelte/transition";
+  import { selected_metrics } from "lib/store";
 
   export let data: any[];
   export let highlight_cluster_label: string | undefined;
 
   $: if (data) update(data);
+  $: removed_metrics = metrics.filter((m) => !$selected_metrics.includes(m));
 
   $: update_highlight_cluster(highlight_cluster_label);
 
   async function update(data) {
     await tick();
     console.log(data);
-    metrics.forEach((metric, index) => {
+    $selected_metrics.forEach((metric, index) => {
       const svgId = `metrics-svg-${index}`;
       const points = data[metric].data;
       const statistics = data[metric].statistics;
@@ -94,6 +96,10 @@
     }
   }
 
+  function removeMetric(metric) {
+    selected_metrics.set($selected_metrics.filter((m) => m !== metric));
+  }
+
   // setting up melt ui popover
   const {
     elements: { trigger, content, arrow, close },
@@ -107,24 +113,60 @@
     arrowSize: 8,
     disableFocusTrap: true,
   });
+  const {
+    elements: {
+      trigger: add_trigger,
+      content: add_content,
+      arrow: add_arrow,
+      close: add_close,
+    },
+    states: { open: add_open },
+  } = createPopover({
+    forceVisible: true,
+    positioning: {
+      placement: "left",
+      gutter: 0,
+    },
+    arrowSize: 6,
+    disableFocusTrap: true,
+  });
 </script>
 
-<div
-  class="flex flex-col items-center justify-center divide-dashed divide-gray-400"
->
-  {#each metrics as metric, index}
+<div class="flex flex-col items-center justify-center">
+  {#each $selected_metrics as metric, index}
     <div
-      class="w-full h-fit flex flex-1 items-center justify-center px-1 divide-x divide-gray-500"
+      class="metric-title w-full h-full flex flex-1 items-center justify-center px-1"
     >
       <div
+        role="button"
+        tabindex={index}
+        class="h-[1.2rem] aspect-square hover:bg-gray-300 rounded-full hide-button"
+        on:keyup={() => {}}
+        on:click={() => removeMetric(metric)}
+      >
+        <img src="close.svg" alt="*" />
+      </div>
+      <div
         use:melt={$trigger}
-        class="w-[7rem] text-left px-2 cursor-pointer hover:bg-gray-200 rounded"
+        class="w-[7rem] h-full flex text-left px-2 cursor-pointer hover:bg-gray-200 border-r border-gray-500"
       >
         {metric}
       </div>
       <svg id={`metrics-svg-${index}`} class="metrics-svg grow h-[2rem]"></svg>
     </div>
   {/each}
+  <div
+    use:melt={$add_trigger}
+    class="w-fit h-full flex flex-1 items-center justify-start px-1 hover:bg-gray-300 mr-auto"
+    style={removed_metrics.length === 0
+      ? "opacity: 0.5; cursor-not-allowed; pointer-events: none;"
+      : ""}
+  >
+    <div class="h-[1.2rem] aspect-square rounded-full">
+      <img src="plus_circle.svg" alt="*" />
+    </div>
+    <div class="w-[7rem] h-full flex justify-start px-2">add more</div>
+  </div>
 </div>
 {#if $open}
   <div use:melt={$content} class="shadow-sm">
@@ -134,6 +176,32 @@
     >
       <p class="flex flex-wrap break-normal">Readability is about</p>
       <!-- <button class="close" use:melt={$close}> X </button> -->
+    </div>
+  </div>
+{/if}
+{#if $add_open}
+  <div
+    use:melt={$add_content}
+    class="shadow-sm rounded bg-gray-100 border border-gray-300 text-sm"
+  >
+    <div class="border border-black !bg-amber-50" use:melt={$add_arrow} />
+    <div class="flex flex-col divide-y">
+      {#each removed_metrics as metric, index}
+        <div
+          class="flex flex-col px-2 w-[7rem] h-fit cursor-pointer hover:bg-gray-300"
+        >
+          <div
+            role="button"
+            tabindex={index}
+            class="flex flex-wrap break-normal cursor-pointer"
+            on:keyup={() => {}}
+            on:click={() =>
+              selected_metrics.set([...$selected_metrics, metric])}
+          >
+            {metric}
+          </div>
+        </div>
+      {/each}
     </div>
   </div>
 {/if}
@@ -158,6 +226,12 @@
     /* opacity: 0.05; */
   }
   .metrics-svg :global(.highlight) {
+    opacity: 1;
+  }
+  .hide-button {
+    opacity: 0;
+  }
+  .metric-title:hover .hide-button {
     opacity: 1;
   }
 </style>

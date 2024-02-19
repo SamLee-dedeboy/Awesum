@@ -6,11 +6,13 @@ export class Statbars {
     svgSize: any
     innerSize: any
     barColor: string | undefined
-    constructor(svgId, svgSize, innerSize, barColor: string|undefined=undefined) {
+    barClick: any | undefined
+    constructor(svgId, svgSize, innerSize, barColor: string|undefined=undefined, barClick: any=undefined) {
         this.svgId = svgId;
         this.svgSize = svgSize;
         this.innerSize = innerSize;
         this.barColor = barColor
+        this.barClick = barClick
     }
     update(stats: tStatBarData[], global_means: number[], global_mins: number[], global_maxes: number[], sameScale: boolean=false, colors: string[]=[] ) {
       let xScales;
@@ -37,7 +39,7 @@ export class Statbars {
         [...Array(stats.length).keys()],
         [0, this.innerSize.height]
       ); 
-      g.selectAll("rect")
+      const rects = g.selectAll("rect")
         .data(stats)
         .join("rect")
         .attr("x", (d: tStatBarData, i) => {
@@ -63,6 +65,16 @@ export class Statbars {
             return this.barColor && this.barColor === "white"? 0.5 : 0
           }
         });
+      if(this.barClick !== undefined) {
+        rects.attr("cursor", "pointer")
+          .on("mouseover", function() {
+            d3.select(this).classed("rect-hovered", true).raise()
+          })
+          .on("mouseout", function() {
+            d3.select(this).classed("rect-hovered", false)
+          })
+        .on("click", (_, d) => this.barClick(d));
+      }
 
 
       g.selectAll("line.mean")

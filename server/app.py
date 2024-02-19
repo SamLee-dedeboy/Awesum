@@ -1,5 +1,5 @@
 from openai import OpenAI
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
 # from DataUtils import DocumentController
@@ -18,6 +18,7 @@ openai_client=OpenAI(api_key=openai_api_key)
 # document_controller = DocumentController(r'../data/result/chunk_embeddings/1103/all_chunks.json', openai_api_key)
 evaluator = features.StyleEvaluator()
 metrics = ["readability", "formality", "sentiment", "faithfulness", "length"]
+correlations = json.load(open('data/tmp/pearson_r.json'))
 # dataset = json.load(open('data/tmp/df_summaries_features.json'))
 # dataset = features.add_all_features(evaluator, dataset)
 # save_json(dataset, "data/tmp/df_summaries_features.json")
@@ -50,30 +51,36 @@ def get_data():
         datum['cluster'] = str(optic_labels[i])
     cluster_labels = list(map(lambda l: str(l), set(optic_labels)))
     statistics, metric_data = features.collect_statistics(dataset, metrics)
-    return {
+    return json.dumps({
         "metric_data": metric_data, 
         "dataset": dataset, 
         "cluster_labels": cluster_labels, 
+        "statistics": statistics,
+        "correlations": correlations
+    }) 
+
+@app.route("/data/metrics/", methods=['GET', 'POST'])
+def adjust_metrics():
+    metrics = request.json['metrics']
+    dataset = request.json['dataset']
+    method = request.json['method']
+    kwargs = request.json['parameters']
+    target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
+    # rerun coordinates and clusters
+    coordinates = dr.scatter_plot(target_features, method='tsne')
+    coordinates = coordinates.tolist()
+    cluster_labels = run_cluster(method, target_features, kwargs)
+    for i, datum in enumerate(dataset):
+        datum['coordinates'] = coordinates[i]
+        datum['cluster'] = str(cluster_labels[i])
+    cluster_label_set = list(map(lambda l: str(l), set(cluster_labels)))
+    statistics, metric_data = features.collect_statistics(dataset, metrics)
+    return {
+        "metric_data": metric_data, 
+        "dataset": dataset, 
+        "cluster_labels": cluster_label_set, 
         "statistics": statistics
     } 
-# @app.route("/data/metrics/", methods=['GET', 'POST'])
-# def adjust_metrics():
-#     metrics = request.json['metrics']
-#     dataset = request.json['dataset']
-#     target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-#     # rerun coordinates and clusters
-#     coordinates = dr.scatter_plot(features, method='tsne')
-#     coordinates = coordinates.tolist()
-#     optic_labels = clusters.optics(features)
-#     optic_labels = optic_labels.tolist()
-#     for i, datum in enumerate(dataset):
-#         datum['coordinates'] = coordinates[i]
-#         datum['cluster'] = str(optic_labels[i])
-#     cluster_labels = list(map(lambda l: str(l), set(optic_labels)))
-#     return {
-#         "dataset": dataset, 
-#         "cluster_labels": cluster_labels, 
-#     } 
 
 
 @app.route("/data/cluster/", methods=["POST"])
@@ -84,22 +91,28 @@ def get_cluster():
     metrics = request.json['metrics']
     print(metrics)
     target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-    if method == "optics":
-        cluster_labels = clusters.optics(target_features, **kwargs)
-    elif method == "kmeans":
-        cluster_labels = clusters.k_means(target_features, **kwargs)   
-    cluster_labels = cluster_labels.tolist()
+    cluster_labels = run_cluster(method, target_features, kwargs)
     # save_json(cluster_labels, 'data/tmp/df_summaries_cluster_labels.json')
     for i, datum in enumerate(dataset):
         datum['cluster'] = str(cluster_labels[i])
-    cluster_labels = list(map(lambda l: str(l), set(cluster_labels)))
+    cluster_label_set = list(map(lambda l: str(l), set(cluster_labels)))
     statistics, metric_data = features.collect_statistics(dataset, metrics)
-    return {
+    # del statistics['global_means']
+    # del statistics['global_mins']
+    # del statistics['global_maxes']
+    return { 
         "metric_data": metric_data, 
         "dataset": dataset, 
-        "cluster_labels": cluster_labels, 
+        "cluster_labels": cluster_label_set, 
         "statistics": statistics
-    } 
+    }
+
+def run_cluster(method, target_features, kwargs):
+    if method == "optics":
+        return clusters.optics(target_features, **kwargs).tolist()
+    elif method == "kmeans":
+        return clusters.k_means(target_features, **kwargs).tolist()
+    
 
 # @app.route("/executePrompt/", methods=['POST'])
 # def execute_prompt():

@@ -3,6 +3,7 @@ export type tDataset = {
     metric_data: any;
     cluster_labels: string[];
     statistics: any;
+    correlations: any[];
   };
 
 export type tNode = {

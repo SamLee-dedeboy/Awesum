@@ -4,8 +4,8 @@
   import { cluster_colors } from "lib/constants";
 
   export let data: any;
-  export let cluster_labels: any[];
   export let highlight_cluster_label: string | undefined;
+  export let show_noise: boolean = false;
 
   const width = 500;
   const height = 500;
@@ -19,16 +19,29 @@
   });
 
   $: if (data) {
-    console.log(cluster_labels);
     update(data);
   }
   $: update_highlight_cluster(highlight_cluster_label);
+  $: if (show_noise) {
+    d3.select("#cluster-svg")
+      .select("g.node-group")
+      .selectAll("circle")
+      .transition()
+      // .ease(d3.easeCircleOut)
+      .duration(500)
+      .attr("opacity", 1);
+  } else {
+    d3.select("#cluster-svg")
+      .select("g.node-group")
+      .selectAll("circle")
+      .attr("opacity", (d) => (d.cluster === "-1" ? 0 : 1));
+  }
 
   async function update(data) {
     await tick();
-    console.log(data);
     const g = d3.select("#cluster-svg").select("g.node-group");
-    g.selectAll("circle")
+    const points = g
+      .selectAll("circle")
       .data(data)
       .join("circle")
       .attr("cx", (d: any) => xScale(d.coordinates[0]))
@@ -36,8 +49,11 @@
       .attr("r", (d: any) => (d.features[0] === 22 ? 5 : 2))
       .attr("fill", (d) => cluster_colors(d.cluster))
       .attr("stroke", "black")
-      .attr("stroke-width", 0.5);
-    // .attr("opacity", (d) => (d.cluster === "-1" ? 0 : 1));
+      .attr("stroke-width", 0.5)
+      .attr("opacity", (d) => (d.cluster === "-1" ? 0 : 1));
+    if (show_noise) {
+      points.attr("opacity", 1);
+    }
   }
 
   function update_highlight_cluster(cluster_label: string | undefined) {
