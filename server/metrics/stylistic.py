@@ -6,6 +6,9 @@ from collections import Counter
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import numpy as np
 from summac.model_guardrails import NERInaccuracyPenalty
+import nltk
+import spacy
+from Naturalness_helper import NaturalnessHelper
 
 class StyleEvaluator:
     def __init__(self):
@@ -239,4 +242,37 @@ class FaithfulnessEvaluator:
     def summac(self):
         return 0
         # return summac_score(self.original_text, self.summary)
+
+class NaturalnessEvaluator:
+    def __init__(self,ranges): # Ranges for each feature for min-max scaling
+        self.ranges = ranges
+        self.nlp = spacy.load("en_core_web_sm")
+        self.nh = NaturalnessHelper()
+        self.weights = {
+            'Average Dependency tree heights': 0.2826426317853948,
+            'average_sentence_lengths': 0.2522139996530825,
+            'avg_left_subtree_height': 0.23287886122532872,
+            'avg_right_subtree_height': 0.2458490930520618,
+        }
+
+    def default(self,text):
+        naturalness = self.calculate_naturalness(text)
+        return naturalness
+
+    def calculate_naturalness(self,text):
+        avg_sentence_length = self.nh.avg_sentence_length(text)
+        avg_dep_tree_ht = self.nh.calculate_average_tree_height([text])
+        avg_left_subtree_height, avg_right_subtree_height = self.nh.calculate_subtree_features(text)
+        features = np.array([avg_dep_tree_ht,avg_sentence_length,avg_left_subtree_height,avg_right_subtree_height])
+        zipped_features = list(zip(features,self.ranges))
+        scaled_features = []
+        for feature,tup in zipped_features:
+            scaled_features.append(self.min_max_scaling(feature,tup))
+        inverses = [1.0-feature for feature in scaled_features]
+        naturalness_score = np.mean(np.dot(inverses, list(self.weights.values())))
+        return naturalness_score
+
+    def min_max_scaling(self,feature,range):
+        scaled_feature = (feature-range[0])/(range[1]-range[0])
+        return scaled_feature
     
