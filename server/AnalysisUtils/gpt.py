@@ -3,7 +3,7 @@ from tqdm import tqdm
 import copy
 
 def request_chatgpt_gpt4(client, messages, format=None):
-    model = 'gpt-3.5-turbo-1106'
+    model = 'gpt-3.5-turbo-0125'
     # model="gpt-4-1106-preview"
     if format == "json":
         response = client.chat.completions.create(
@@ -61,3 +61,25 @@ def replace_data(message:str, data):
     replaced = replaced.replace("${text}", data['text'])
     return replaced
 
+def formulate_metric_prompt(question, feature_definitions):
+    messages = [
+        {
+            "role": "system",
+            "content": """You are an evaluation aspect recommendation given. 
+            You are given a list of features and their definitions: {feature_definitions}
+            The user will ask you to recommend the features that best fit their needs.""".format(feature_definitions=feature_definitions)
+        },
+        {
+            "role": "user",
+            "content": "What are the best features for being academic and professional?"
+        },
+        {
+            "role": "assistant",
+            "content": "The best features for being academic and professional are: Formality, Readability and Length."
+        },
+        {
+            "role": "user",
+            "content": question
+        }
+    ]
+    return messages

@@ -1,17 +1,15 @@
 <script lang="ts">
   import { tick } from "svelte";
   import * as d3 from "d3";
-  import type { tStatBarData } from "lib/types";
-  import { cluster_colors, metrics } from "lib/constants";
-  import { createPopover, melt } from "@melt-ui/svelte";
-  import { fade } from "svelte/transition";
+  import type { tStatBarData, tMetricStep } from "lib/types";
+  import { cluster_colors, metric_categories, metrics } from "lib/constants";
   import { selected_metrics } from "lib/store";
+  import { Expand } from "lucide-svelte";
 
   export let data: any[];
   export let highlight_cluster_label: string | undefined;
 
   $: if (data) update(data);
-  $: removed_metrics = metrics.filter((m) => !$selected_metrics.includes(m));
 
   $: update_highlight_cluster(highlight_cluster_label);
 
@@ -22,8 +20,8 @@
       const svgId = `metrics-svg-${index}`;
       const points = data[metric].data;
       const statistics = data[metric].statistics;
-      console.log(statistics);
-      const { svgSize, xScale } = init(svgId, statistics);
+      const ranges = metric_categories[metric];
+      const { svgSize, xScale } = init(svgId, statistics, ranges);
       // add nodes
       const svg = d3.select(`#${svgId}`);
       const node_group = svg.select("g.node-group");
@@ -42,15 +40,15 @@
       svg
         .append("line")
         .attr("x1", xScale(statistics.mean))
-        .attr("y1", 0)
+        .attr("y1", 0.3 * svgSize.height)
         .attr("x2", xScale(statistics.mean))
-        .attr("y2", svgSize.height)
+        .attr("y2", 0.7 * svgSize.height)
         .attr("stroke", "black")
         .attr("stroke-width", 1);
     });
   }
 
-  function init(svgId, statistics: tStatBarData) {
+  function init(svgId, statistics: tStatBarData, ranges: tMetricStep[]) {
     const svg = d3.select(`#${svgId}`);
     svg.selectAll("*").remove();
     const svgSize = {
@@ -60,15 +58,52 @@
     };
     svg.attr("viewBox", `0 0 ${svgSize.width} ${svgSize.height}`);
 
+    const xMax =
+      ranges[ranges.length - 1].end === -1
+        ? statistics.max
+        : ranges[ranges.length - 1].end;
     const xScale = d3
       .scaleLinear()
-      .domain([statistics.min, statistics.max])
+      .domain([ranges[0].start, xMax])
       .range([svgSize.padding_x, svgSize.width - svgSize.padding_x]);
     const xAxis = d3.axisBottom(xScale);
     svg
       .append("g")
       .attr("transform", `translate(0, ${svgSize.height})`)
       .call(xAxis);
+    const details = svg.append("g").attr("class", "step-divider-group");
+    details
+      .selectAll("line.divider")
+      .data(ranges.slice(1))
+      .join("line")
+      .attr("class", "divider")
+      .attr("x1", (d) => xScale(d.start))
+      .attr("y1", 0)
+      .attr("x2", (d) => xScale(d.start))
+      .attr("y2", svgSize.height)
+      .attr("stroke", "red")
+      .attr("stroke-width", 1)
+      .attr("stroke-dasharray", "3")
+      .classed("hide", true);
+    details
+      .selectAll("text.divider-label")
+      .data(ranges)
+      .join("text")
+      .attr("class", "divider-label")
+      .attr(
+        "x",
+        (d) => (xScale(d.start) + xScale(d.end === -1 ? xMax : d.end)) / 2
+      )
+      .attr("y", 10)
+      .attr(
+        "font-family",
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace"
+      )
+      .attr("text-anchor", "middle")
+      .attr("alignment-baseline", "hanging")
+      .text((d) => d.label)
+      .attr("font-size", "0.65rem")
+      .classed("hide", true);
     svg.append("g").attr("class", "node-group");
     return { svgSize, xScale };
   }
@@ -96,130 +131,42 @@
     }
   }
 
-  function removeMetric(metric) {
-    selected_metrics.set($selected_metrics.filter((m) => m !== metric));
+  function showDetail(metric) {
+    const svg = d3.select(`#metrics-svg-${$selected_metrics.indexOf(metric)}`);
+    svg.selectAll("line.divider").classed("hide", false);
+    svg.selectAll("text.divider-label").classed("hide", false);
   }
 
-  // setting up melt ui popover
-  const {
-    elements: { trigger, content, arrow, close },
-    states: { open },
-  } = createPopover({
-    forceVisible: true,
-    positioning: {
-      placement: "left",
-      gutter: 0,
-    },
-    arrowSize: 8,
-    disableFocusTrap: true,
-  });
-  const {
-    elements: {
-      trigger: add_trigger,
-      content: add_content,
-      arrow: add_arrow,
-      close: add_close,
-    },
-    states: { open: add_open },
-  } = createPopover({
-    forceVisible: true,
-    positioning: {
-      placement: "left",
-      gutter: 0,
-    },
-    arrowSize: 6,
-    disableFocusTrap: true,
-  });
+  function hideDetail() {
+    d3.selectAll("line.divider").classed("hide", true);
+    d3.selectAll("text.divider-label").classed("hide", true);
+  }
+
+  function expand(metric) {
+    const svg = d3.select(`#metrics-svg-${$selected_metrics.indexOf(metric)}`);
+  }
 </script>
 
 <div class="flex flex-col items-center justify-center">
   {#each $selected_metrics as metric, index}
     <div
+      role="button"
+      tabindex={index}
       class="metric-title w-full h-full flex flex-1 items-center justify-center px-1"
+      on:mouseover={() => showDetail(metric)}
+      on:focus={() => showDetail(metric)}
+      on:mouseout={() => hideDetail()}
+      on:blur={() => hideDetail()}
+      on:click={() => expand(metric)}
+      on:keyup={() => {}}
     >
-      <div
-        role="button"
-        tabindex={index}
-        class="h-[1.2rem] aspect-square hover:bg-gray-300 rounded-full hide-button"
-        on:keyup={() => {}}
-        on:click={() => removeMetric(metric)}
-      >
-        <img src="close.svg" alt="*" />
-      </div>
-      <div
-        use:melt={$trigger}
-        class="w-[7rem] h-full flex text-left px-2 cursor-pointer hover:bg-gray-200 border-r border-gray-500"
-      >
+      <div class="w-[7rem] h-full flex text-left px-2 border-r border-gray-500">
         {metric}
       </div>
       <svg id={`metrics-svg-${index}`} class="metrics-svg grow h-[2rem]"></svg>
     </div>
   {/each}
-  <div
-    use:melt={$add_trigger}
-    class="w-fit h-full flex flex-1 items-center justify-start px-1 hover:bg-gray-300 mr-auto"
-    style={removed_metrics.length === 0
-      ? "opacity: 0.5; cursor-not-allowed; pointer-events: none;"
-      : ""}
-  >
-    <div class="h-[1.2rem] aspect-square rounded-full">
-      <img src="plus_circle.svg" alt="*" />
-    </div>
-    <div class="w-[7rem] h-full flex justify-start px-2">add more</div>
-  </div>
 </div>
-{#if $open}
-  <div use:melt={$content} class="shadow-sm">
-    <div class="border border-black !bg-amber-50" use:melt={$arrow} />
-    <div
-      class="flex flex-col py-2 px-4 w-[20rem] h-fit rounded border border-gray-500 bg-amber-50"
-    >
-      <p class="flex flex-wrap break-normal">Readability is about</p>
-      <!-- <button class="close" use:melt={$close}> X </button> -->
-    </div>
-  </div>
-{/if}
-{#if $add_open}
-  <div
-    use:melt={$add_content}
-    class="shadow-sm rounded bg-gray-100 border border-gray-300 text-sm"
-  >
-    <div class="border border-black !bg-amber-50" use:melt={$add_arrow} />
-    <div class="flex flex-col divide-y">
-      {#each removed_metrics as metric, index}
-        <div
-          class="flex flex-col px-2 w-[7rem] h-fit cursor-pointer hover:bg-gray-300"
-        >
-          <div
-            role="button"
-            tabindex={index}
-            class="flex flex-wrap break-normal cursor-pointer"
-            on:keyup={() => {}}
-            on:click={() =>
-              selected_metrics.set([...$selected_metrics, metric])}
-          >
-            {metric}
-          </div>
-        </div>
-      {/each}
-    </div>
-  </div>
-{/if}
-
-<!-- <div class="flex flex-col h-full overflow-auto">
-  <div class="flex">
-    {#each Object.keys(data[0]) as key}
-      <div class="flex-1 items-center justify-center">{key}</div>
-    {/each}
-  </div>
-  {#each data as datum}
-    <div class="flex">
-      {#each Object.keys(datum) as key}
-        <div class="flex-1 items-center justify-center">{datum[key]}</div>
-      {/each}
-    </div>
-  {/each}
-</div> -->
 
 <style>
   .metrics-svg :global(.dismissed) {
@@ -228,10 +175,7 @@
   .metrics-svg :global(.highlight) {
     opacity: 1;
   }
-  .hide-button {
+  .metrics-svg :global(.hide) {
     opacity: 0;
-  }
-  .metric-title:hover .hide-button {
-    opacity: 1;
   }
 </style>

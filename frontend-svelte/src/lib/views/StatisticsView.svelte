@@ -4,7 +4,7 @@
   import ClusterStat from "lib/components/ClusterStat.svelte";
   import { Statbars } from "lib/renderers/statbars";
   import { cluster_colors } from "lib/constants";
-  import { selected_metrics } from "lib/store";
+  import { target_range, cluster_mode, selected_metrics } from "lib/store";
   import type {
     tStatBarData,
     tStatistics,
@@ -43,7 +43,8 @@
   //
   let hoveredClusterStat: tStatBarData[] | undefined;
   let clickedClusterStat: tStatBarData[] | undefined;
-  let statbar_instances: Statbars[] = [];
+  let cluster_statbar_instances: Statbars[] = [];
+  let metric_statbar_instances: Statbars[] = [];
   let detail_statbars: { [key: string]: Statbars[] };
   let mode: tMode = tMode.All_Cluster;
 
@@ -67,19 +68,27 @@
       }
     }
   }
-
-  $: {
-    if (
-      selected_cluster &&
-      optimizations[selected_cluster.cluster_label].length > 0 &&
-      stat_data
-    )
-      update_detail(
-        selected_cluster.cluster_label,
-        optimizations[selected_cluster.cluster_label],
-        stat_data
-      );
+  $: if ($target_range && stat_data) {
+    const metric_index = $target_range[2];
+    metric_statbar_instances[metric_index].update_selected_range(
+      [$target_range[0], $target_range[1]],
+      stat_data.global_means[metric_index]
+    );
   }
+
+  // this will disable detail showing when click cluster
+  // $: {
+  //   if (
+  //     selected_cluster &&
+  //     optimizations[selected_cluster.cluster_label].length > 0 &&
+  //     stat_data
+  //   )
+  //     update_detail(
+  //       selected_cluster.cluster_label,
+  //       optimizations[selected_cluster.cluster_label],
+  //       stat_data
+  //     );
+  // }
 
   //
   // functions
@@ -92,6 +101,7 @@
         `#stat-cluster-${index}`,
         svgSize,
         innerSize,
+        null,
         cluster_colors(cluster_label)
       );
       statbars.update(
@@ -100,7 +110,7 @@
         data.global_mins,
         data.global_maxes
       );
-      statbar_instances.push(statbars);
+      cluster_statbar_instances.push(statbars);
     });
   }
 
@@ -111,23 +121,35 @@
         `#stat-metric-${index}`,
         svgSize,
         innerSize,
+        index,
         undefined,
+        handleMetricRangeMouseover,
+        handleMetricRangeMouseout,
         handleMetricRangeSelected
       );
 
+      const stats = Object.keys(data.metric_statistics[metric])
+        .map((cluster_label) => [
+          data.metric_statistics[metric][cluster_label],
+          cluster_label,
+        ])
+        .filter((stat_w_label) => stat_w_label[1] !== "-1");
+      const sorted_stats_w_label = stats.sort((a, b) => a[0].mean - b[0].mean);
+      const sorted_stats = sorted_stats_w_label.map((stat) => stat[0]);
+      const sorted_cluster_labels = sorted_stats_w_label.map((stat) => stat[1]);
+      const sorted_cluster_colors = sorted_cluster_labels.map((cluster_label) =>
+        cluster_colors(cluster_label)
+      );
       statbars.update(
-        Object.keys(data.metric_statistics[metric]).map(
-          (cluster_label) => data.metric_statistics[metric][cluster_label]
-        ),
+        sorted_stats,
         [data.global_means[index]],
         [data.global_mins[index]],
         [data.global_maxes[index]],
         true,
-        Object.keys(data.metric_statistics[metric]).map((cluster_label) =>
-          cluster_colors(cluster_label)
-        )
+        sorted_cluster_colors,
+        sorted_cluster_labels
       );
-      statbar_instances.push(statbars);
+      metric_statbar_instances.push(statbars);
     });
   }
 
@@ -145,6 +167,7 @@
             `#stat-detail-${cluster_label}-${index}`,
             svgSize,
             innerSize,
+            null,
             cluster_colors(cluster_label)
           )
         );
@@ -169,6 +192,7 @@
           `#stat-detail-${cluster_label}-0`,
           svgSize,
           innerSize,
+          null,
           cluster_colors(cluster_label)
         ),
       ];
@@ -182,6 +206,11 @@
   function handleClusterHovered(cluster_label) {
     hoveredClusterStat = stat_data?.cluster_statistics[cluster_label];
     hovered_cluster_label = cluster_label;
+  }
+
+  function handleClusterMouseout() {
+    hoveredClusterStat = undefined;
+    hovered_cluster_label = undefined;
   }
 
   async function handleClusterClicked(
@@ -227,8 +256,33 @@
     selected_cluster = selected_cluster;
   }
 
-  function handleMetricRangeSelected(d) {
-    console.log("handleMetricRangeSelected", d);
+  function handleMetricRangeSelected(
+    d: tStatBarData,
+    metric_index: number,
+    cluster_label: string
+  ) {
+    console.log("handleMetricRangeSelected", d, metric_index, cluster_label);
+    target_range.set([d.min, d.max, metric_index]);
+    cluster_mode.set("metric");
+    if (!stat_data || !data) return;
+    const cluster_nodes = data.filter(
+      (datum) => "" + datum.cluster === "" + cluster_label
+    );
+    selected_cluster = {
+      cluster_label: cluster_label,
+      prompt_version: 0,
+      stats: stat_data.cluster_statistics[cluster_label],
+      cluster_nodes: cluster_nodes,
+      // summaries: cluster_nodes.map((datum) => datum.summary),
+    };
+  }
+
+  function handleMetricRangeMouseover(cluster_label: string) {
+    handleClusterHovered(cluster_label);
+  }
+
+  function handleMetricRangeMouseout(cluster_label: string) {
+    handleClusterMouseout();
   }
 </script>
 
@@ -260,18 +314,16 @@
           <div
             role="button"
             tabindex={index}
-            class="cluster-stat-container w-[85px] h-[78px] border border-1 border-gray-100 relative hoverable gap-x-0.5 gap-y-0.5"
+            class="cluster-stat-container w-[120px] h-[78px] border border-1 border-gray-100 relative hoverable gap-x-0.5 gap-y-0.5"
             on:keyup={() => {}}
             on:click={() => handleClusterClicked(cluster_label, 0)}
             on:mouseover={() => handleClusterHovered(cluster_label)}
             on:focus={() => handleClusterHovered(cluster_label)}
             on:mouseout={() => {
-              hoveredClusterStat = undefined;
-              hovered_cluster_label = undefined;
+              handleClusterMouseout();
             }}
             on:blur={() => {
-              hoveredClusterStat = undefined;
-              hovered_cluster_label = undefined;
+              handleClusterMouseout();
             }}
           >
             <p
@@ -292,19 +344,19 @@
           </div>
         {/each}
       </div>
-      <div
+      <!-- <div
         class="sticky bottom-1 w-full bg-white border border-1 border-black pl-1"
       >
         <ClusterStat
           cluster_stat={hoveredClusterStat}
           global_means={stat_data?.global_means}
         ></ClusterStat>
-      </div>
+      </div> -->
     {:else if mode === tMode.All_Metric}
       <div class="flex flex-wrap">
         {#each $selected_metrics as metric, index}
           <div
-            class="metric-stat-container w-[250px] h-[250px] border border-1 border-gray-100 relative gap-x-0.5 gap-y-0.5"
+            class="metric-stat-container w-[300px] h-[250px] border border-1 border-gray-100 relative gap-x-0.5 gap-y-0.5"
           >
             <p class="text-sm absolute ml-0.5 top-[-0.1rem]">
               {metric}
@@ -372,25 +424,11 @@
             </div>
           </div>
         {/each}
-        <!-- <ClusterStat
-          cluster_stat={clickedClusterStat}
-          global_means={data?.global_means}
-        ></ClusterStat> -->
       </div>
     {/if}
   {/if}
 </div>
 
-<!-- <div class="grid auto-cols-min auto-rows-auto gap-x-1">
-  {#each columns as col}
-    <div class="row-start-1 row-end-1 col-span-1 text-sm">{col}</div>
-  {/each}
-  {#if data}
-    {#each Object.keys(data) as cluster_label}
-      <p class="row-span-1 col-start-1 col-end-1">{cluster_label}</p>
-    {/each}
-  {/if}
-</div> -->
 <style lang="postcss">
   .tab-start {
     @apply rounded-tl;

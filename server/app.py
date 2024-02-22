@@ -19,14 +19,17 @@ openai_client=OpenAI(api_key=openai_api_key)
 evaluator = features.StyleEvaluator()
 metrics = ["readability", "formality", "sentiment", "faithfulness", "length"]
 correlations = json.load(open('data/tmp/pearson_r.json'))
+feature_descriptions = json.load(open('data/tmp/feature_descriptions.json'))
+
 # dataset = json.load(open('data/tmp/df_summaries_features.json'))
 # dataset = features.add_all_features(evaluator, dataset)
 # save_json(dataset, "data/tmp/df_summaries_features.json")
 # # coordinates
 # target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-# coordinates = dr.scatter_plot(target_features)
+# method = 'kernel_pca'
+# coordinates = dr.scatter_plot(target_features, method=method)
 # coordinates = coordinates.tolist()
-# save_json(coordinates, 'data/tmp/df_summaries_tsne.json')
+# save_json(coordinates, 'data/tmp/df_summaries_{}.json'.format(method))
 
 # # optic labels
 # optic_labels = clusters.optics(target_features)
@@ -43,7 +46,8 @@ def get_data():
     dataset = json.load(open('data/tmp/df_summaries_features.json'))
     # default coordinates and clusters
     print("loading coordinates and clusters...")
-    coordinates = json.load(open('data/tmp/df_summaries_tsne.json'))
+    # coordinates = json.load(open('data/tmp/df_summaries_tsne.json'))
+    coordinates = json.load(open('data/tmp/df_summaries_kernel_pca.json'))
     optic_labels = json.load(open('data/tmp/df_summaries_optic_labels.json'))
     for i, datum in enumerate(dataset):
         datum['id'] = i
@@ -56,7 +60,10 @@ def get_data():
         "dataset": dataset, 
         "cluster_labels": cluster_labels, 
         "statistics": statistics,
-        "correlations": correlations
+        "metric_metadata": {
+            "correlations": correlations,
+            "descriptions": feature_descriptions
+        }
     }) 
 
 @app.route("/data/metrics/", methods=['GET', 'POST'])
@@ -161,6 +168,18 @@ def execute_prompt_all():
         "statistics": statistics
     })
 
+@app.route("/query_metric/", methods=['POST'])
+def query_metric():
+    question = request.json['question']
+    feature_pool = request.json['feature_pool']
+    feature_definitions = ""
+    for feature in feature_pool:
+        feature_definitions += feature + ": " + feature_descriptions[feature] + "\n"
+    prompt = gpt.formulate_metric_prompt(question, feature_definitions)
+    response = gpt.request_chatgpt_gpt4(openai_client, prompt)
+    return {
+        "response": response
+    }
 
 # ====================== deprecated ===============================
 # def get_ravasz():

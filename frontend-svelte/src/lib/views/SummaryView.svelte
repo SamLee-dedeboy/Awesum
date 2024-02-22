@@ -16,6 +16,7 @@
     <div class="flex flex-col divide-black gap-y-4 px-1 py-0.5">
       {#each data as datum}
         <SummaryCard
+          statistics={datum.features}
           summary={datum.summary}
           on:click={() => dispatch("add_example", datum)}
         ></SummaryCard>

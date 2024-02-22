@@ -5,6 +5,9 @@
   .area-none {
     grid-area: none;
   }
+  .view-header {
+    @apply bg-[#89d0ff] border-b border-gray-100 text-center text-xl font-bold w-full flex items-center justify-center gap-x-1 px-1
+   }
 }
 :root {
   /* font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; */
@@ -79,3 +82,4 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+

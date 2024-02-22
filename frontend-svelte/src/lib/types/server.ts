@@ -3,14 +3,17 @@ export type tDataset = {
     metric_data: any;
     cluster_labels: string[];
     statistics: any;
-    correlations: any[];
+    metric_metadata: {
+      correlations: any[],
+      descriptions: any
+    }
   };
 
 export type tNode = {
     id: string,
     cluster: string
     coordinates: [number, number]
-    features: number[]
+    features: {[key: string]: number}
     summary: string
     text: string
 }

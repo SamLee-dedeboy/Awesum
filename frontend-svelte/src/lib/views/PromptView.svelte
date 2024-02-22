@@ -191,7 +191,7 @@
     {/each}
   </div>
   <div id="prompt-table" class="flex flex-col max-w-full gap-y-1">
-    <div class="prompt-section flex flex-col">
+    <div class="prompt-section grow flex flex-col">
       <div class="prompt-section-header">
         <span class="p-1 rounded !outline-none"> Instruction </span>
       </div>
@@ -205,7 +205,7 @@
         {prompts_by_metric[target_metric].instruction}
       </div>
     </div>
-    <div class="flex gap-x-4">
+    <div class="flex grow gap-x-4">
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header relative">
           <span class="p-1 rounded !outline-none"> Examples </span>
