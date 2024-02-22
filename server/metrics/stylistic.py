@@ -8,26 +8,37 @@ import numpy as np
 from summac.model_guardrails import NERInaccuracyPenalty
 import nltk
 import spacy
-from Naturalness_helper import NaturalnessHelper
+import naturalness 
+import json
+import pandas as pd
 
 class StyleEvaluator:
-    def __init__(self):
+    def __init__(self, naturalness_range_path):
         self.sentiment_scorer = SentimentEvaluator()
         self.faithfulness_scorer = FaithfulnessEvaluator()
+        self.naturalness_scorer = NaturalnessEvaluator(self.load_naturalness_ranges(naturalness_range_path))
 
     def default(self, original_text, summary):
         readability_score = ReadabilityEvaluator(summary).default()
         formality_score = FormalityEvaluator(summary).default()
         sentiment_score = self.sentiment_scorer.default(summary) 
         faithfulness_score = self.faithfulness_scorer.default(original_text, summary)
+        naturalness_score = self.naturalness_scorer.default(summary)
         length_score = len(summary)
         return {
             "readability": readability_score,
             "formality": formality_score,
             "sentiment": sentiment_score,
             "faithfulness": faithfulness_score,
+            # "naturalness": naturalness_score,
             "length": length_score,
         }
+
+    def load_naturalness_ranges(self, path=r'final_metrics_naturalness.json'):
+        data_nat = json.load(open(path))
+        df = pd.DataFrame(data_nat)
+        ranges = naturalness.get_ranges(df)
+        return ranges
 
 class ReadabilityEvaluator:
     def __init__(self, text):
@@ -247,7 +258,7 @@ class NaturalnessEvaluator:
     def __init__(self,ranges): # Ranges for each feature for min-max scaling
         self.ranges = ranges
         self.nlp = spacy.load("en_core_web_sm")
-        self.nh = NaturalnessHelper()
+        self.nh = naturalness.NaturalnessHelper()
         self.weights = {
             'Average Dependency tree heights': 0.2826426317853948,
             'average_sentence_lengths': 0.2522139996530825,
