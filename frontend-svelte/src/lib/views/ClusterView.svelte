@@ -24,14 +24,23 @@
     init();
   });
 
-  $: if (data) {
-    if (!show_noise) data = data.filter((d) => d.cluster !== "-1");
-    if ($cluster_mode === "metric") {
-      update_by_metric(data, $target_range);
-      // update_hex_by_metric(data, "readability", null);
-    } else {
-      update_by_cluster(data);
+  $: update_node_position(data);
+  function update_node_position(data) {
+    if (data) {
+      if (!show_noise) data = data.filter((d) => d.cluster !== "-1");
+      update(data);
+      if ($cluster_mode === "metric") {
+        update_by_metric($target_range);
+      } else {
+        update_by_cluster();
+      }
     }
+  }
+
+  $: if ($cluster_mode === "metric") {
+    update_by_metric($target_range);
+  } else {
+    update_by_cluster();
   }
 
   $: update_highlight_cluster(highlight_cluster_label);
@@ -50,7 +59,7 @@
       .attr("opacity", (d) => (d.cluster === "-1" ? 0 : 1));
   }
 
-  async function update_by_cluster(data: tNode[]) {
+  async function update(data: tNode[]) {
     await tick();
     const g = d3.select("#cluster-svg").select("g.node-group");
     const points = g
@@ -60,7 +69,6 @@
       .attr("cx", (d: any) => (d.x = xScale(d.coordinates[0])))
       .attr("cy", (d: any) => (d.y = yScale(d.coordinates[1])))
       .attr("r", (d: any) => node_radius)
-      .attr("fill", (d) => cluster_colors(d.cluster))
       .attr("stroke", "gray")
       .attr("stroke-width", 0.5)
       .attr("opacity", (d) => (d.cluster === "-1" ? 0 : 1));
@@ -70,7 +78,19 @@
     force_collision_centroid(data, node_radius + 0.7);
   }
 
-  async function update_by_metric(data, target_range) {
+  async function update_by_cluster() {
+    await tick();
+    const g = d3.select("#cluster-svg").select("g.node-group");
+    const points = g
+      .selectAll("circle")
+      .attr("fill", (d) => cluster_colors(d.cluster));
+    // if (show_noise) {
+    //   points.attr("opacity", 1);
+    // }
+    // force_collision_centroid(data, node_radius + 0.7);
+  }
+
+  async function update_by_metric(target_range) {
     await tick();
     const target_metric_index = target_range[2];
     const target_metric = metrics[target_metric_index];
@@ -121,12 +141,6 @@
     const g = d3.select("#cluster-svg").select("g.node-group");
     const points = g
       .selectAll("circle")
-      .data(data)
-      .join("circle")
-      .attr("cx", (d: any) => (d.x = xScale(d.coordinates[0])))
-      .attr("cy", (d: any) => (d.y = yScale(d.coordinates[1])))
-      .attr("r", (d: any) => node_radius)
-      // .attr("fill", (d) => cluster_colors(d.cluster))
       .attr("fill", (d) => {
         const value = d.features[target_metric];
         const distance = in_range(value, target_range)
@@ -135,13 +149,11 @@
         // console.log(value, distance);
         return colorScale(distance);
       })
-      .attr("stroke", "white")
-      .attr("stroke-width", 0.5)
-      .attr("opacity", (d) => (d.cluster === "-1" ? 0 : 1));
-    if (show_noise) {
-      points.attr("opacity", 1);
-    }
-    force_collision_centroid(data);
+      .attr("stroke", "white");
+    // if (show_noise) {
+    //   points.attr("opacity", 1);
+    // }
+    // force_collision_centroid(data);
   }
 
   async function update_hex_by_metric(data, target_metric, target_range) {
@@ -328,9 +340,11 @@
     outline: 1px solid #f0f0f0;
   }
   #cluster-svg :global(.dismissed) {
-    opacity: 0.2;
+    /* opacity: 0.2; */
+    /* stroke-width: 1; */
   }
   #cluster-svg :global(.highlight) {
-    opacity: 1;
+    stroke: #363535;
+    stroke-width: 1.5;
   }
 </style>
