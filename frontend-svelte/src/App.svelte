@@ -172,7 +172,7 @@
   {:else}
     <div id="left" class="flex flex-col w-[75%] h-full shrink-0">
       <div class="flex w-full h-[50%] gap-x-1">
-        <div class="min-w-[25%] p-1 flex flex-col">
+        <div class="min-w-[25%] max-w-[25%] p-1 flex flex-col">
           <MetricSelectionView metric_metadata={dataset.metric_metadata}
           ></MetricSelectionView>
         </div>
