@@ -15,21 +15,27 @@
   export let data: tNode[] = [];
 
   let executing_prompt = false;
-  let prompts_by_metric = initPrompts(metrics);
-  let target_metric: string = metrics[0];
+  // let prompts_by_metric = initPrompts(metrics);
+  let prompt_template: tPrompt = {
+    persona: "You are a writing assistant.",
+    context: "You will be given a news article to summarize.",
+    constraints: "Please make sure the summary is __.",
+    examples: [],
+    data_template: "Article: ${text}",
+  };
 
-  function initPrompts(metrics) {
-    let prompts: { [key: string]: tPrompt } = {};
-    metrics.forEach((metric) => {
-      prompts[metric] = {
-        instruction:
-          "You are a writing assistant. You will be given a news article to summarize. Please make sure the summary is",
-        examples: [],
-        data_template: "Article: ${text}",
-      };
-    });
-    return prompts;
-  }
+  // function initPrompts(metrics) {
+  //   let prompts: { [key: string]: tPrompt } = {};
+  //   metrics.forEach((metric) => {
+  //     prompts[metric] = {
+  //       instruction:
+  //         "You are a writing assistant. You will be given a news article to summarize. Please make sure the summary is",
+  //       examples: [],
+  //       data_template: "Article: ${text}",
+  //     };
+  //   });
+  //   return prompts;
+  // }
 
   // let instruction: string =
   //   "You are a writing assistant. You will be given a news article to summarize. Please make sure the summary is readable.";
@@ -75,9 +81,16 @@
   //   execute_sequential();
   // }
 
-  function start_all({ instruction, examples, data_template }: tPrompt) {
+  function start_all({
+    persona,
+    context,
+    constraints,
+    examples,
+    data_template,
+  }: tPrompt) {
     // const messages = combine_messages(instruction, examples, user_input_data);
     // console.log("running prompt on all data...", messages, { data });
+    const instruction = persona + ". " + context + ". " + constraints;
     const url = new URL(server_address + "/executePromptAll/");
     executing_prompt = true;
     fetch(url, {
@@ -155,27 +168,14 @@
   //   }
   // }
 
-  export function add_example(
-    example: tExampleData,
-    add_to_metric = undefined
-  ) {
-    if (!add_to_metric) {
-      prompts_by_metric[target_metric].examples = [
-        ...prompts_by_metric[target_metric].examples,
-        example,
-      ];
-    } else {
-      prompts_by_metric[add_to_metric].examples = [
-        ...prompts_by_metric[add_to_metric].examples,
-        example,
-      ];
-    }
+  export function add_example(example: tExampleData) {
+    prompt_template.examples = [...prompt_template.examples, example];
   }
 </script>
 
 <div class="flex flex-col px-2 overflow-y-auto h-full">
   <div class="flex justify-between border-b border-gray-200">
-    {#each Object.keys(prompts_by_metric) as metric}
+    <!-- {#each Object.keys(prompts_by_metric) as metric}
       <div
         role="button"
         tabindex="0"
@@ -188,21 +188,46 @@
       >
         {metric}
       </div>
-    {/each}
+    {/each} -->
   </div>
   <div id="prompt-table" class="flex flex-col max-w-full gap-y-1">
-    <div class="prompt-section grow flex flex-col">
-      <div class="prompt-section-header">
-        <span class="p-1 rounded !outline-none"> Instruction </span>
+    <div class="grow flex gap-x-1">
+      <div class="prompt-section flex flex-col flex-1">
+        <div class="prompt-section-header">
+          <span class="p-1 rounded !outline-none"> Persona </span>
+        </div>
+        <div
+          class="prompt-section-content editable"
+          contenteditable
+          on:input={(e) => (prompt_template.persona = e.target?.textContent)}
+        >
+          {prompt_template.persona}
+        </div>
       </div>
-      <div
-        class="prompt-section-content editable"
-        contenteditable
-        on:input={(e) =>
-          (prompts_by_metric[target_metric].instruction =
-            e.target?.textContent)}
-      >
-        {prompts_by_metric[target_metric].instruction}
+      <div class="prompt-section flex flex-col flex-1">
+        <div class="prompt-section-header">
+          <span class="p-1 rounded !outline-none"> Context </span>
+        </div>
+        <div
+          class="prompt-section-content editable"
+          contenteditable
+          on:input={(e) => (prompt_template.context = e.target?.textContent)}
+        >
+          {prompt_template.context}
+        </div>
+      </div>
+      <div class="prompt-section flex flex-col flex-1">
+        <div class="prompt-section-header">
+          <span class="p-1 rounded !outline-none"> Constraints </span>
+        </div>
+        <div
+          class="prompt-section-content editable"
+          contenteditable
+          on:input={(e) =>
+            (prompt_template.constraints = e.target?.textContent)}
+        >
+          {prompt_template.constraints}
+        </div>
       </div>
     </div>
     <div class="flex grow gap-x-4">
@@ -214,7 +239,7 @@
           class="prompt-section-content flex flex-col overflow-y-auto max-h-[10rem]"
           on:input={(e) => e.target?.textContent}
         >
-          {#each prompts_by_metric[target_metric].examples as example}
+          {#each prompt_template.examples as example}
             <div
               class="flex w-full gap-x-2 text-sm justify-between items-center px-1"
             >
@@ -231,10 +256,9 @@
           class="prompt-section-content editable"
           contenteditable
           on:input={(e) =>
-            (prompts_by_metric[target_metric].data_template =
-              e.target?.textContent)}
+            (prompt_template.data_template = e.target?.textContent)}
         >
-          {prompts_by_metric[target_metric].data_template}
+          {prompt_template.data_template}
         </div>
       </div>
     </div>
@@ -243,7 +267,7 @@
     <div class="flex w-fit items-center justify-start gap-x-1">
       <button
         class="w-[4rem] h-[2.5rem] text-sm bg-green-50 flex items-center justify-center gap-x-1 !shadow-[0px_0px_1px_1px_#87ee93] text-slate-500"
-        on:click={() => start_all(prompts_by_metric[target_metric])}
+        on:click={() => start_all(prompt_template)}
       >
         {#if executing_prompt}
           <img
@@ -281,7 +305,7 @@
 
 <style lang="postcss">
   .prompt-section {
-    @apply shrink-0 flex items-center justify-center rounded  border-gray-200;
+    @apply shrink-0 flex  justify-center rounded  border-gray-200;
     box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.1);
   }
   .prompt-section-header {

@@ -16,7 +16,10 @@ export type tExampleMessage = {
 }
 
 export type tPrompt = {
-    instruction: string;
+    persona: string;
+    context: string;
+    constraints: string;
+    // instruction: string;
     examples: tExampleData[];
     data_template: string;
 }
