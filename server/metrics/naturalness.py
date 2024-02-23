@@ -1,10 +1,6 @@
 import nltk
 import numpy as np
-import matplotlib.pyplot as plt
-import stanza
-from transformers import pipeline
 import spacy
-from collections import Counter   
 
 class NaturalnessHelper:
     def __init__(self): 
