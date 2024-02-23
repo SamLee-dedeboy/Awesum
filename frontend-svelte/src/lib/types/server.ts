@@ -16,4 +16,5 @@ export type tNode = {
     features: {[key: string]: number}
     summary: string
     text: string
+    test_case?: boolean
 }

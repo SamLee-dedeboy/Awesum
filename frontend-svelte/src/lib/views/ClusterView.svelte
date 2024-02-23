@@ -5,11 +5,13 @@
   import type { tStatistics, tNode } from "lib/types";
   import * as d3_hexbin from "d3-hexbin";
   import ClusterModeRadio from "lib/components/ClusterModeRadio.svelte";
+  import Switch from "lib/components/Switch.svelte";
 
   import { target_range, cluster_mode } from "lib/store";
   export let data: tNode[];
   export let highlight_cluster_label: string | undefined;
   export let show_noise: boolean = false;
+  export let show_test_set: boolean = false;
   export let statistics: tStatistics;
 
   const width = 500;
@@ -24,11 +26,12 @@
     init();
   });
 
-  $: update_node_position(data);
-  function update_node_position(data) {
+  $: update_nodes(data);
+  function update_nodes(data) {
     if (data) {
       if (!show_noise) data = data.filter((d) => d.cluster !== "-1");
-      update(data);
+      const centroids = generate_centroids(data);
+      update(data, centroids);
       if ($cluster_mode === "metric") {
         update_by_metric($target_range);
       } else {
@@ -58,8 +61,21 @@
       .selectAll("circle")
       .attr("opacity", (d) => (d.cluster === "-1" ? 0 : 1));
   }
+  $: if (show_test_set) {
+    console.log("show test set");
+    d3.select("#cluster-svg")
+      .select("g.node-group")
+      .selectAll("circle")
+      .filter((d) => d.test_case)
+      .classed("test-case", true);
+  } else {
+    d3.select("#cluster-svg")
+      .select("g.node-group")
+      .selectAll("circle")
+      .classed("test-case", false);
+  }
 
-  async function update(data: tNode[]) {
+  async function update(data: tNode[], centroids: any) {
     await tick();
     const g = d3.select("#cluster-svg").select("g.node-group");
     const points = g
@@ -75,7 +91,7 @@
     if (show_noise) {
       points.attr("opacity", 1);
     }
-    force_collision_centroid(data, node_radius + 0.7);
+    force_collision_centroid(data, node_radius + 0.7, centroids);
   }
 
   async function update_by_cluster() {
@@ -223,21 +239,11 @@
       .attr("stroke-width", "0.1");
   }
 
-  function force_collision_centroid(data: tNode[], radius = node_radius) {
-    let cluster_nodes = {};
-    data.forEach((datum) => {
-      if (cluster_nodes[datum.cluster] === undefined) {
-        cluster_nodes[datum.cluster] = [];
-      }
-      cluster_nodes[datum.cluster].push(datum);
-    });
-    let centroids = {};
-    Object.keys(cluster_nodes).forEach((cluster_label) => {
-      const nodes = cluster_nodes[cluster_label];
-      const x = d3.mean(nodes.map((d) => d.coordinates[0]));
-      const y = d3.mean(nodes.map((d) => d.coordinates[1]));
-      centroids[cluster_label] = [x, y];
-    });
+  function force_collision_centroid(
+    data: tNode[],
+    radius = node_radius,
+    centroids: any
+  ) {
     console.log("force collision", data);
     const collisionForce = d3
       .forceSimulation(data)
@@ -320,10 +326,56 @@
   function distance_to_range(value, range) {
     return Math.min(Math.abs(value - range[0]), Math.abs(value - range[1]));
   }
+  function generate_centroids(data: tNode[]) {
+    let cluster_nodes = {};
+    data.forEach((datum) => {
+      if (cluster_nodes[datum.cluster] === undefined) {
+        cluster_nodes[datum.cluster] = [];
+      }
+      cluster_nodes[datum.cluster].push(datum);
+    });
+    let centroids = {};
+    Object.keys(cluster_nodes).forEach((cluster_label) => {
+      const nodes = cluster_nodes[cluster_label];
+      const mean_x = d3.mean(nodes.map((d) => d.coordinates[0]));
+      const mean_y = d3.mean(nodes.map((d) => d.coordinates[1]));
+      const { x, y, nearest } = find_nearest(mean_x, mean_y, nodes);
+      centroids[cluster_label] = [x, y];
+      nearest.test_case = true;
+    });
+    return centroids;
+  }
+
+  function find_nearest(
+    x: number,
+    y: number,
+    nodes: tNode[]
+  ): { x: number; y: number; nearest: tNode } {
+    let min_distance = Infinity;
+    let nearest: tNode = nodes[0];
+    nodes.forEach((node) => {
+      const distance = Math.sqrt(
+        (node.coordinates[0] - x) ** 2 + (node.coordinates[1] - y) ** 2
+      );
+      if (distance < min_distance) {
+        min_distance = distance;
+        nearest = node;
+      }
+    });
+    return {
+      x: nearest.coordinates[0],
+      y: nearest.coordinates[1],
+      nearest: nearest,
+    };
+  }
 </script>
 
 <div class="container w-full h-full relative">
   <svg id="cluster-svg" class="w-full h-full"> </svg>
+  <div class="absolute top-0 left-0 flex flex-col">
+    <Switch label="Show Noise" bind:checked={show_noise}></Switch>
+    <Switch label="Show Test set" bind:checked={show_test_set}></Switch>
+  </div>
   <div class="absolute top-0 right-0">
     <ClusterModeRadio id="cluster-mode" bind:cluster_mode={$cluster_mode}
     ></ClusterModeRadio>
@@ -335,16 +387,23 @@
   </div>
 </div>
 
-<style>
+<style lang="postcss">
   .container {
     outline: 1px solid #f0f0f0;
   }
-  #cluster-svg :global(.dismissed) {
-    /* opacity: 0.2; */
-    /* stroke-width: 1; */
-  }
-  #cluster-svg :global(.highlight) {
-    stroke: #363535;
-    stroke-width: 1.5;
+  #cluster-svg {
+    & .dismissed {
+      /* opacity: 0.2; */
+      /* stroke-width: 1; */
+    }
+    & .highlight {
+      stroke: #363535;
+      stroke-width: 1.5;
+    }
+
+    & .test-case {
+      stroke: #363535;
+      stroke-width: 1.5;
+    }
   }
 </style>
