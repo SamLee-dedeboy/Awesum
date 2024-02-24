@@ -164,10 +164,9 @@ export const categorize_metric = ( metric: string, value: number ): string => {
     return "error"
 }
 export const feature_descriptions = {
-    "readability": `
-    <span class="highlight"> Readability</span> metrics aim to quantify the readability of a piece of writing by considering various linguistic features, such as <span> sentence length, word length, syllable count or semantic difficulty</span>.`,
-    "formality": `some description`,
-    "sentiment": `some description`,
-    "faithfulness": `some description`,
-    "length": `some description`,
+    "readability": `<span class="highlight">Readability</span> metrics aim to quantify the readability of a piece of writing by considering various linguistic features, such as <span> sentence length, word length, syllable count or semantic difficulty</span>.`,
+    "formality": `<span class="highlight">Formality</span> measures how formal a piece of writing is. It is based on the frequencies of different word classes in the corpus. <span> Nouns, adjectives, articles and prepositions </span> are more frequent in formal styles; <span>pronouns, adverbs, verbs and interjections </span> are more frequent in informal styles.`,
+    "sentiment": `<span class="highlight">Sentiment</span> aims to determine the attitude of a writer with respect to the overall contextual polarity.`,
+    "faithfulness": `<span class="highlight">Faithfulness</span> measures how broad and accurate are the generated summary using the <span>name entity overlap</span> between the summary and the article. Common named entities include <span>persons, organizations, locations, or dates</span>.`,
+    "length": `<span class="highlight"> Length</span> measures the <span>number of words</span> in the summary.`,
 }

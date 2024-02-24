@@ -23,3 +23,9 @@ export type tPrompt = {
     examples: tExampleData[];
     data_template: string;
 }
+
+export type tMetricRecommendationResponse = {
+    feature_name: string
+    level: string
+    explanation: string;
+}

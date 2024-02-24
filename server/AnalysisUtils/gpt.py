@@ -65,21 +65,40 @@ def formulate_metric_prompt(question, feature_definitions):
     messages = [
         {
             "role": "system",
-            "content": """You are an evaluation aspect recommendation given. 
-            You are given a list of features and their definitions: {feature_definitions}
-            The user will ask you to recommend the features that best fit their needs.""".format(feature_definitions=feature_definitions)
+            "content": """You are an evaluation feature recommendation assistant. 
+            You are given a list of features and their definitions.
+            Feature definitions: {feature_definitions}
+            The user will ask you to recommend the features that best fit their needs.
+            First, tell the user which features they should use.
+            Then, tell them what level of the feature they should aim for and briefly explain why.
+            Reply with the following JSON format:
+            {{ "features": [
+                {{ "feature"name": string, "level": string, "explanation": string}},
+                {{ "feature"name": string, "level": string, "explanation": string}},
+                ...
+            ]}}
+            """.format(feature_definitions=feature_definitions)
         },
-        {
-            "role": "user",
-            "content": "What are the best features for being academic and professional?"
-        },
-        {
-            "role": "assistant",
-            "content": "The best features for being academic and professional are: Formality, Readability and Length."
-        },
+        # {
+        #     "role": "user",
+        #     "content": "What are the best features for being academic and professional?"
+        # },
+        # {
+        #     "role": "assistant",
+        #     "content": "The best features for being academic and professional are: Formality, Readability and Length."
+        # },
         {
             "role": "user",
             "content": question
         }
     ]
     return messages
+
+def formulate_feature_definitions_prompt(feature_pool, feature_descriptions):
+    definition_prompt = ""
+    for feature in feature_pool:
+        definitions = feature_descriptions[feature]
+        definition_prompt += "{feature}: {description}\n".format(feature=feature, description=definitions["description"])
+        for feature_range in definitions["ranges"]:
+            definition_prompt += "Between {min} and {max}, the {feature} is at level {level}, which means {explanation}\n".format(min=feature_range[0], max=feature_range[1], feature=feature, level=feature_range[2], explanation=feature_range[3])
+    return definition_prompt

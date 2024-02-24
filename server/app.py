@@ -172,13 +172,12 @@ def execute_prompt_all():
 def query_metric():
     question = request.json['question']
     feature_pool = request.json['feature_pool']
-    feature_definitions = ""
-    for feature in feature_pool:
-        feature_definitions += feature + ": " + feature_descriptions[feature] + "\n"
-    prompt = gpt.formulate_metric_prompt(question, feature_definitions)
-    response = gpt.request_chatgpt_gpt4(openai_client, prompt)
+    feature_definition_prompt = gpt.formulate_feature_definitions_prompt(feature_pool, feature_descriptions)
+    prompt = gpt.formulate_metric_prompt(question, feature_definition_prompt)
+    response = gpt.request_chatgpt_gpt4(openai_client, prompt, format='json')
+    features = json.loads(response)
     return {
-        "response": response
+        "response": features
     }
 
 # ====================== deprecated ===============================

@@ -3,6 +3,7 @@
   import { selected_metrics } from "lib/store";
   import { createPopover, createTooltip, melt } from "@melt-ui/svelte";
   import { cluster_colors, metrics, feature_descriptions } from "lib/constants";
+  import { fade } from "svelte/transition";
   // import { CorrelationGraph } from "lib/renderers/correlation_graph";
   import { CorrelationMatrix } from "lib/renderers/correlation_matrix";
   import MetricRecommendation from "lib/components/MetricRecommendation.svelte";
@@ -148,8 +149,12 @@
   </div>
 </div>
 {#if $open && hovered_metric}
-  <div use:melt={$content} class="shadow-sm">
-    <div class="border border-black !bg-amber-50" use:melt={$arrow} />
+  <div
+    use:melt={$content}
+    class="shadow-sm"
+    transition:fade={{ duration: 100 }}
+  >
+    <!-- <div class="border border-black !bg-amber-50" use:melt={$arrow} /> -->
     <div
       class="flex flex-col py-2 px-2 w-[20rem] h-fit rounded border border-gray-500 bg-amber-50 relative"
     >
