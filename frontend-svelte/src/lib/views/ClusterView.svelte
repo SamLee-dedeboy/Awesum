@@ -7,7 +7,7 @@
   import ClusterModeRadio from "lib/components/ClusterModeRadio.svelte";
   import Switch from "lib/components/Switch.svelte";
 
-  import { target_range, cluster_mode } from "lib/store";
+  import { target_range, cluster_mode, test_set } from "lib/store";
   export let data: tNode[];
   export let highlight_cluster_label: string | undefined;
   export let show_noise: boolean = false;
@@ -29,7 +29,7 @@
   $: update_nodes(data);
   function update_nodes(data) {
     if (data) {
-      if (!show_noise) data = data.filter((d) => d.cluster !== "-1");
+      data = data.filter((d) => d.cluster !== "-1");
       const centroids = generate_centroids(data);
       update(data, centroids);
       if ($cluster_mode === "metric") {
@@ -47,20 +47,32 @@
   }
 
   $: update_highlight_cluster(highlight_cluster_label);
-  $: if (show_noise) {
-    d3.select("#cluster-svg")
-      .select("g.node-group")
-      .selectAll("circle")
-      .transition()
-      // .ease(d3.easeCircleOut)
-      .duration(500)
-      .attr("opacity", 1);
-  } else {
-    d3.select("#cluster-svg")
-      .select("g.node-group")
-      .selectAll("circle")
-      .attr("opacity", (d) => (d.cluster === "-1" ? 0 : 1));
+
+  $: update_noise(show_noise, data);
+  function update_noise(show_noise, data) {
+    console.log("update noise", show_noise);
+    if (show_noise) {
+      d3.select("#cluster-svg")
+        .select("g.noise-group")
+        .selectAll("circle.noise")
+        .data(data.filter((d) => d.cluster === "-1"))
+        .join("circle")
+        .attr("class", "noise")
+        .attr("cx", (d: any) => (d.x = xScale(d.coordinates[0])))
+        .attr("cy", (d: any) => (d.y = yScale(d.coordinates[1])))
+        .attr("r", node_radius / 1.5)
+        .attr("fill", "white")
+        .attr("stroke", "#939393")
+        .attr("stroke-width", 0.5)
+        .attr("opacity", 0.8);
+    } else {
+      d3.select("#cluster-svg")
+        .select("g.noise-group")
+        .selectAll("circle.noise")
+        .attr("opacity", 0);
+    }
   }
+
   $: if (show_test_set) {
     console.log("show test set");
     d3.select("#cluster-svg")
@@ -78,19 +90,14 @@
   async function update(data: tNode[], centroids: any) {
     await tick();
     const g = d3.select("#cluster-svg").select("g.node-group");
-    const points = g
-      .selectAll("circle")
+    g.selectAll("circle")
       .data(data)
       .join("circle")
       .attr("cx", (d: any) => (d.x = xScale(d.coordinates[0])))
       .attr("cy", (d: any) => (d.y = yScale(d.coordinates[1])))
       .attr("r", (d: any) => node_radius)
       .attr("stroke", "gray")
-      .attr("stroke-width", 0.5)
-      .attr("opacity", (d) => (d.cluster === "-1" ? 0 : 1));
-    if (show_noise) {
-      points.attr("opacity", 1);
-    }
+      .attr("stroke-width", 0.5);
     force_collision_centroid(data, node_radius + 0.7, centroids);
   }
 
@@ -172,73 +179,6 @@
     // force_collision_centroid(data);
   }
 
-  async function update_hex_by_metric(data, target_metric, target_range) {
-    await tick();
-    const target_metric_index = 0;
-    const offset = 5;
-    target_range = [
-      statistics.global_means[target_metric_index] + 50 - offset,
-      statistics.global_means[target_metric_index] + 50 + offset,
-    ];
-    console.log({ target_range });
-    const colorScale = d3
-      .scalePow()
-      // .domain([
-      //   statistics.global_mins[target_metric_index],
-      //   statistics.global_maxes[target_metric_index],
-      // ])
-      .domain([
-        0,
-        Math.max(
-          Math.abs(
-            statistics.global_maxes[target_metric_index] - target_range[1]
-          ),
-          Math.abs(
-            statistics.global_mins[target_metric_index] - target_range[0]
-          )
-        ),
-      ])
-      .range(["black", "transparent"])
-      .exponent(1);
-    const data_for_hex = data.map((d) => [
-      xScale(d.coordinates[0]),
-      yScale(d.coordinates[1]),
-      d.features[target_metric],
-    ]);
-    const hexbin = d3_hexbin
-      .hexbin()
-      .radius(7)
-      .extent([0, 0], [innerWidth, innerHeight]);
-    const svg = d3.select("#cluster-svg");
-    console.log(data_for_hex, hexbin(data_for_hex));
-    svg.selectAll("*").remove();
-    svg
-      .append("clipPath")
-      .attr("id", "clip")
-      .append("rect")
-      .attr("width", innerWidth)
-      .attr("height", innerHeight);
-
-    svg
-      .append("g")
-      .attr("clip-path", "url(#clip)")
-      .selectAll("path")
-      .data(hexbin(data_for_hex))
-      .enter()
-      .append("path")
-      .attr("d", (d) => `M${d.x},${d.y}${hexbin.hexagon()}`)
-      .attr("fill", function (points) {
-        const mean = d3.mean(points.map((p) => p[2]));
-        const distance = in_range(mean, target_range)
-          ? 0
-          : distance_to_range(mean, target_range);
-        // console.log(distance);
-        return colorScale(distance);
-      })
-      .attr("stroke", "black")
-      .attr("stroke-width", "0.1");
-  }
-
   function force_collision_centroid(
     data: tNode[],
     radius = node_radius,
@@ -303,7 +243,60 @@
     const content = svg
       .append("g")
       .attr("transform", `translate(${margin}, ${margin})`);
+    const noise_group = content.append("g").attr("class", "noise-group");
+    const line_group = svg.append("g").attr("class", "line-group");
+    const utility_group = svg.append("g").attr("class", "utility");
+    const show_test_set_button = {
+      parent: utility_group,
+      class_name: "show-test-set",
+      activated_color: "rgb(187 247 208)",
+      deactivated_color: "white",
+      activated_text_color: "black",
+      deactivated_text_color: "#aaaaaa",
+      text: "test set",
+      x: 5,
+      y: 5,
+      width: 60,
+      height: 20,
+      onClick: () => {
+        show_test_set = !show_test_set;
+        const test_case_circles = content
+          .selectAll("circle")
+          .filter((d) => d.test_case);
+        line_group
+          .selectAll("line.test-case-line")
+          .data(test_case_circles)
+          .join("line")
+          .classed("test-case-line", true)
+          .attr("x1", (d) => +d3.select(d).attr("cx") + margin)
+          .attr("y1", (d) => +d3.select(d).attr("cy") + margin)
+          .attr("x2", () => 5 + 60 / 2)
+          .attr("y2", () => 5 + 20 / 2)
+          .attr("opacity", show_test_set ? 0.8 : 0)
+          .attr("stroke", "gray")
+          .attr("stroke-width", 1)
+          .attr("stroke-dasharray", "4,2");
+      },
+    };
+    add_utility_button(show_test_set_button);
 
+    const show_noise_button = {
+      parent: utility_group,
+      class_name: "show-noise",
+      activated_color: "rgb(187 247 208)",
+      deactivated_color: "white",
+      activated_text_color: "black",
+      deactivated_text_color: "#aaaaaa",
+      text: "noise",
+      x: 70,
+      y: 5,
+      width: 60,
+      height: 20,
+      onClick: () => {
+        show_noise = !show_noise;
+      },
+    };
+    add_utility_button(show_noise_button);
     // const xAxis = d3.axisBottom(xScale);
     // const yAxis = d3.axisLeft(yScale);
 
@@ -335,6 +328,7 @@
       cluster_nodes[datum.cluster].push(datum);
     });
     let centroids = {};
+    let local_testset: tNode[] = [];
     Object.keys(cluster_nodes).forEach((cluster_label) => {
       const nodes = cluster_nodes[cluster_label];
       const mean_x = d3.mean(nodes.map((d) => d.coordinates[0]));
@@ -342,7 +336,10 @@
       const { x, y, nearest } = find_nearest(mean_x, mean_y, nodes);
       centroids[cluster_label] = [x, y];
       nearest.test_case = true;
+      local_testset.push(nearest);
     });
+    test_set.set(local_testset);
+
     return centroids;
   }
 
@@ -368,14 +365,116 @@
       nearest: nearest,
     };
   }
+
+  function add_utility_button({
+    parent,
+    class_name,
+    activated_color,
+    deactivated_color,
+    activated_text_color,
+    deactivated_text_color,
+    text,
+    x,
+    y,
+    width,
+    height,
+    onClick,
+  }) {
+    const utility_button = parent.append("g").attr("class", class_name);
+    const animation_scale_factor = 1.1;
+    utility_button
+      .append("rect")
+      .classed("utility-button", true)
+      .attr("x", x)
+      .attr("y", y)
+      .attr("width", width)
+      .attr("height", height)
+      .attr("fill", deactivated_color)
+      .on("mouseover", function () {
+        d3.select(this).attr("stroke-width", 2);
+
+        // d3.select(this).attr(
+        //   "fill",
+        //   show_test_set ? deactivated_color : activated_color
+        // );
+        // d3.select(this.parentNode)
+        //   .select("text")
+        //   .attr(
+        //     "fill",
+        //     show_test_set ? deactivated_text_color : activated_text_color
+        //   );
+      })
+      .on("mouseout", function () {
+        d3.select(this).attr("stroke-width", 1);
+        // d3.select(this)
+        //   .transition()
+        //   .duration(100)
+        //   .attr("x", x)
+        //   .attr("y", y)
+        //   .attr("width", width)
+        //   .attr("height", height);
+        // d3.select(this).attr(
+        //   "fill",
+        //   show_test_set ? activated_color : deactivated_color
+        // );
+        // d3.select(this.parentNode)
+        //   .select("text")
+        //   .attr(
+        //     "fill",
+        //     show_test_set ? activated_text_color : deactivated_text_color
+        //   );
+      })
+      .on("click", function () {
+        onClick();
+        const activated = d3.select(this).attr("fill") === activated_color;
+        console.log("click", activated);
+        d3.select(this)
+          .attr("fill", activated ? deactivated_color : activated_color)
+          .transition()
+          .duration(200)
+          .attr("x", function () {
+            return x - (width * (animation_scale_factor - 1)) / 2;
+          })
+          .attr("y", function () {
+            return y - (height * (animation_scale_factor - 1)) / 2;
+          })
+          .attr("width", function () {
+            return width * animation_scale_factor;
+          })
+          .attr("height", function () {
+            return height * animation_scale_factor;
+          })
+          .transition()
+          .duration(100)
+          .attr("x", x)
+          .attr("y", y)
+          .attr("width", width)
+          .attr("height", height);
+        d3.select(this.parentNode)
+          .select("text")
+          .attr(
+            "fill",
+            activated ? deactivated_text_color : activated_text_color
+          );
+      });
+    utility_button
+      .append("text")
+      .attr("x", x + width / 2)
+      .attr("y", y + height / 2)
+      .attr("pointer-events", "none")
+      .text(text)
+      .attr("fill", deactivated_text_color)
+      .attr("dominant-baseline", "middle")
+      .attr("text-anchor", "middle");
+  }
 </script>
 
 <div class="container w-full h-full relative">
   <svg id="cluster-svg" class="w-full h-full"> </svg>
-  <div class="absolute top-0 left-0 flex flex-col">
+  <!-- <div class="absolute top-0 left-0 flex flex-col">
     <Switch label="Show Noise" bind:checked={show_noise}></Switch>
     <Switch label="Show Test set" bind:checked={show_test_set}></Switch>
-  </div>
+  </div> -->
   <div class="absolute top-0 right-0">
     <ClusterModeRadio id="cluster-mode" bind:cluster_mode={$cluster_mode}
     ></ClusterModeRadio>
@@ -404,6 +503,23 @@
     & .test-case {
       stroke: #363535;
       stroke-width: 1.5;
+    }
+    & .utility-button {
+      cursor: pointer;
+      rx: 1%;
+      stroke: gray;
+    }
+  }
+  :global(.test-case-line) {
+    animation: moving 4s linear infinite;
+  }
+
+  @keyframes moving {
+    from {
+      stroke-dashoffset: 100;
+    }
+    to {
+      stroke-dashoffset: 0;
     }
   }
 </style>

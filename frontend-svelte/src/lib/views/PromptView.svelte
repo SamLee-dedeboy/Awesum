@@ -8,11 +8,10 @@
   } from "lib/types";
   import { createEventDispatcher } from "svelte";
   import { metrics } from "lib/constants";
-  import { selected_metrics } from "lib/store";
+  import { selected_metrics, test_set } from "lib/store";
 
   const server_address = "http://localhost:5000";
   const dispatch = createEventDispatcher();
-  export let data: tNode[] = [];
 
   let executing_prompt = false;
   // let prompts_by_metric = initPrompts(metrics);
@@ -103,7 +102,7 @@
         instruction: instruction,
         examples: examples,
         data_template: data_template,
-        data: data,
+        data: $test_set,
         metrics: $selected_metrics,
       }),
     })
@@ -287,7 +286,7 @@
       <span class="text-gray-500">
         to
         <span class="underline">
-          {data.length}
+          {$test_set.length}
         </span> articles
       </span>
     </div>
