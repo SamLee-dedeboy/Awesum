@@ -1,22 +1,10 @@
 import nltk
-import torch
-import ot
-from nltk.corpus import stopwords
-from time import time
-import os
 import numpy as np
-import pandas as pd
-import json
 import matplotlib.pyplot as plt
 import stanza
 from transformers import pipeline
 import spacy
-from spacy import displacy
-from collections import Counter
-from nltk.parse.corenlp import CoreNLPDependencyParser
-nltk.download('stanford-corenlp')
-nltk.download('stanford-corenlp-4.2.0')
-stanza.download('en')       
+from collections import Counter   
 
 class naturalness:
     def __init__(self,df): #Pass empty string to load all processors or choose from the above options and pass in 1 comma seperated string
@@ -32,14 +20,6 @@ class naturalness:
         self.range_avg_left_subtree_ht = (min(df['writer_avg_left_subtree_height'].min(),df['LLM_avg_left_subtree_height'].min()),max(df['writer_avg_left_subtree_height'].max(),df['LLM_avg_left_subtree_height'].max()))
         self.range_avg_right_subtree_ht = (min(df['writer_avg_right_subtree_height'].min(),df['LLM_avg_right_subtree_height'].min()),max(df['writer_avg_right_subtree_height'].max(),df['LLM_avg_right_subtree_height'].max()))
         self.ranges = np.array([self.range_avg_dep_tree_ht,self.range_avg_sentence_length,self.range_avg_left_subtree_ht,self.range_avg_right_subtree_ht])
-        # self.writer_avg_sentence_length_range = (self.dataset['writer_average_sentence_lengths'].min(),self.dataset['writer_average_sentence_lengths'].max())
-        # self.llm_avg_sentence_length_range = (self.dataset['LLM_average_sentence_lengths'].min(),self.dataset['LLM_average_sentence_lengths'].max())
-        # self.Writer_avg_dep_tree_heights_range =(self.dataset['Writer Average Dependency tree heights'].min(),self.dataset['Writer Average Dependency tree heights'].max())
-        # self.LLM_avg_dep_tree_heights_range =(self.dataset['LLM Average Dependency tree heights'].min(),self.dataset['LLM Average Dependency tree heights'].max())
-        # self.writer_avg_left_subtree_height_range = (self.dataset['writer_avg_left_subtree_height'].min(),self.dataset['writer_avg_left_subtree_height'].max()) 
-        # self.LLM_avg_left_subtree_height_range = (self.dataset['LLM_avg_left_subtree_height'].min(),self.dataset['LLM_avg_left_subtree_height'].max()) 
-        # self.writer_avg_righht_subtree_height_range = (self.dataset['writer_avg_right_subtree_height'].min(),self.dataset['writer_avg_right_subtree_height'].max()) 
-        # self.LLM_avg_right_subtree_height_range = (self.dataset['LLM_avg_right_subtree_height'].min(),self.dataset['LLM_avg_right_subtree_height'].max()) 
 
     def naturalness_helper(self,features, weights):
         inverses = 1.0-features
@@ -375,50 +355,3 @@ class Emotions:
     def sentiments(self,input):
         return self.classifier(input)
     
-
-
-    # def calculate_subtree_stats(self,sentences):
-    #     overall_sum_left = 0
-    #     overall_num_left = 0
-    #     overall_sum_right = 0
-    #     overall_num_right = 0
-    #     for sentence in sentences:
-    #         doc = self.nlp(sentence)
-    #         left_subtree_heights = [0] * len(doc)
-    #         right_subtree_heights = [0] * len(doc)
-    #         num_left_subtrees = 0
-    #         num_right_subtrees = 0
-    #         for token in doc:
-    #             left_height = 0
-    #             right_height = 0
-    #             # Calculate left subtree height
-    #             for child in token.lefts:
-    #                 left_height = max(left_height, 1 + left_subtree_heights[child.i])
-    #             # Calculate right subtree height
-    #             for child in token.rights:
-    #                 right_height = max(right_height, 1 + right_subtree_heights[child.i])
-    #             left_subtree_heights[token.i] = left_height
-    #             right_subtree_heights[token.i] = right_height
-    #             if left_height > 0:
-    #                 num_left_subtrees += 1
-    #                 overall_sum_left += left_height
-    #             if right_height > 0:
-    #                 num_right_subtrees += 1
-    #                 overall_sum_right += right_height
-
-    #         overall_num_left += num_left_subtrees
-    #         overall_num_right += num_right_subtrees
-
-    #     overall_avg_left = overall_sum_left / overall_num_left if overall_num_left > 0 else 0
-    #     overall_avg_right = overall_sum_right / overall_num_right if overall_num_right > 0 else 0
-    #     max_left_ht = max(left_subtree_heights)
-    #     max_right_ht = max(right_subtree_heights)
-
-    #     return {
-    #         "avg_left_subtree_height": overall_avg_left,
-    #         "avg_right_subtree_height": overall_avg_right,
-    #         "num_left_subtrees": overall_num_left,
-    #         "num_right_subtrees": overall_num_right,
-    #         "Height left subtree": max_left_ht,
-    #         "Height right subtree": max_right_ht,
-    #         }
