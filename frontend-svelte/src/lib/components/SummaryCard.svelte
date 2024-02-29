@@ -4,6 +4,15 @@
   const dispatch = createEventDispatcher();
   export let summary: String = "";
   export let statistics: { [key: string]: number };
+  export let in_example: boolean = false;
+
+  function toggleExample() {
+    if (in_example) {
+      dispatch("remove_example", { summary });
+    } else {
+      dispatch("add_example", { summary });
+    }
+  }
 </script>
 
 <div class="card bg-stone-50 shadow-lg outline outline-1 outline-gray-300">
@@ -13,11 +22,12 @@
     <div
       role="button"
       tabindex="0"
-      class="w-fit bg-green-200 p-1 outline outline-1 outline-gray-400 text-xs text-gray-500 !rounded hover:bg-gray-100 cursor-pointer shadow-[0_0_1px_1px_gray]"
-      on:click={() => dispatch("click")}
+      class="w-fit p-1 outline outline-1 outline-gray-400 text-xs text-gray-500 !rounded hover:bg-gray-100 cursor-pointer shadow-[0_0_1px_1px_gray]"
+      style={`background-color: ${in_example ? "#f0f0f0" : "rgb(187 247 208)"}`}
+      on:click={toggleExample}
       on:keyup={() => {}}
     >
-      add to example
+      {in_example ? "Remove from example" : "Add to example"}
     </div>
     <div class="flex justify-center divide-x divide-stone-400">
       {#each Object.keys(statistics) as metric}

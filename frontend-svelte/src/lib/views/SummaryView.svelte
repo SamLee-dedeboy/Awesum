@@ -2,8 +2,10 @@
   import SummaryCard from "lib/components/SummaryCard.svelte";
   import type { tNode } from "lib/types";
   import { createEventDispatcher } from "svelte";
-  import { recommended_nodes } from "lib/store";
+  import { recommended_nodes, example_nodes } from "lib/store";
   const dispatch = createEventDispatcher();
+
+  $: example_nodes_ids = $example_nodes.map((node) => node.id);
 </script>
 
 <div class="flex flex-col">
@@ -18,7 +20,12 @@
         <SummaryCard
           statistics={datum.features}
           summary={datum.summary}
-          on:click={() => dispatch("add_example", datum)}
+          in_example={example_nodes_ids.includes(datum.id)}
+          on:add_example={() => example_nodes.set([datum, ...$example_nodes])}
+          on:remove_example={() =>
+            example_nodes.set(
+              $example_nodes.filter((node) => node.id !== datum.id)
+            )}
         ></SummaryCard>
       {/each}
     </div>

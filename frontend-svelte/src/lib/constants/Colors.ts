@@ -62,3 +62,11 @@ export const metric_colors = Array(100).fill("#8dd3c7");
 //     "#2ca02c",
 //     "#3b9ab2",
 //   ];
+
+export const optimization_colors = [
+    "#ccebc5",
+    "#cab2d6",
+    "#ffff99",
+    "#2ca02c",
+    "#3b9ab2",
+  ];

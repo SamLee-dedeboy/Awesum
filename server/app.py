@@ -20,14 +20,14 @@ evaluator = features.StyleEvaluator()
 metrics = ["readability", "formality", "sentiment", "faithfulness", "length"]
 correlations = json.load(open('data/tmp/pearson_r.json'))
 feature_descriptions = json.load(open('data/tmp/feature_descriptions.json'))
+dataset = json.load(open('data/tmp/df_summaries_features.json'))
 
-# dataset = json.load(open('data/tmp/df_summaries_features.json'))
 # dataset = features.add_all_features(evaluator, dataset)
 # save_json(dataset, "data/tmp/df_summaries_features.json")
 # # coordinates
-# target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-# method = 'kernel_pca'
-# coordinates = dr.scatter_plot(target_features, method=method)
+target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
+method = 'kernel_pca'
+coordinates, dr_estimator, dr_scaler, min_coord, max_coord = dr.scatter_plot(target_features, method=method)
 # coordinates = coordinates.tolist()
 # save_json(coordinates, 'data/tmp/df_summaries_{}.json'.format(method))
 
@@ -152,22 +152,28 @@ def execute_prompt_all():
     data_template = request.json['data_template']
     prompt_template = gpt.combine_templates(instruction, examples, data_template)
     data = request.json['data']
-    metrics = request.json['metrics']
+    # metrics = request.json['metrics']
     prompts = []
     for datum in data:
         prompt = copy.deepcopy(prompt_template)
         for message in prompt:
             message['content'] = gpt.replace_data(message['content'], datum)
         prompts.append(prompt)
-    save_json(prompts, 'data/debug/prompts.json')
+    # save_json(prompts, 'data/debug/prompts.json')
     summaries = gpt.multithread_prompts(openai_client, prompts)
-    save_json(summaries, 'data/debug/summaries.json')
+    # save_json(summaries, 'data/debug/summaries.json')
     results = []
     for index, new_summary in enumerate(summaries):
         default_metrics = features.evaluate(evaluator, data[index]['text'], new_summary, metrics)
+
         results.append({
+            "id": data[index]['id'],
+            "cluster": data[index]['cluster'],
+            "features": default_metrics,
+            "coordinates": dr.reapply_dr([[default_metrics[metric] for metric in metrics]], dr_estimator, dr_scaler, min_coord, max_coord).tolist()[0],
             "summary": new_summary,
-            "features": default_metrics
+            "text": data[index]['text'],
+            "test_case": True
         })
     feature_matrix = np.array(list(map(lambda x: [x['features'][m] for m in metrics], results)))
     statistics = []

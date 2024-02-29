@@ -150,7 +150,7 @@
       .attr("r", (d: any) => node_radius)
       .attr("stroke", "gray")
       .attr("stroke-width", 0.5);
-    force_collision_centroid(data, node_radius + 0.7, centroids);
+    // force_collision_centroid(data, node_radius + 0.7, centroids);
   }
 
   async function update_by_cluster() {

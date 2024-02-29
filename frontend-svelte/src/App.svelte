@@ -167,7 +167,7 @@
     statistics,
     prompt,
   }: {
-    results: any[];
+    results: tNode[];
     statistics: tStatBarData[];
     prompt: tPrompt;
   }) {
@@ -339,7 +339,7 @@
       </div>
       <div class="w-full grow flex max-h-[50%] border-black">
         <!-- Prompt Editor -->
-        <div class="h-full w-[30rem] flex flex-col">
+        <div class="h-full w-[30rem] shrink-0 flex flex-col">
           <div class="sticky top-0 view-header">
             <img src="bot.svg" alt="*" class="aspect-square" />
             Prompt Editor
@@ -351,7 +351,7 @@
             ></PromptView>
           </div>
         </div>
-        <div class="grow">
+        <div class="">
           <TrackingView {optimizations}></TrackingView>
         </div>
       </div>

@@ -35,63 +35,6 @@
     prompt_template.examples = value;
   });
 
-  // function initPrompts(metrics) {
-  //   let prompts: { [key: string]: tPrompt } = {};
-  //   metrics.forEach((metric) => {
-  //     prompts[metric] = {
-  //       instruction:
-  //         "You are a writing assistant. You will be given a news article to summarize. Please make sure the summary is",
-  //       examples: [],
-  //       data_template: "Article: ${text}",
-  //     };
-  //   });
-  //   return prompts;
-  // }
-
-  // let instruction: string =
-  //   "You are a writing assistant. You will be given a news article to summarize. Please make sure the summary is readable.";
-  // let examples: tExampleMessage[] = [
-  //   {
-  //     id: "test",
-  //     example_input: "Article: ${text}",
-  //     example_output: "Summary: ${summary}",
-  //   },
-  // ];
-  // let user_input_data = "Article: ${text}";
-  // let pause = false;
-  // let index = 0;
-  // $: prompt_promises = generate_prompt_promises(
-  //   messages,
-  //   data,
-  //   selected_metrics
-  // );
-
-  // function add_default_message() {
-  //   const default_messages = {
-  //     role: "system",
-  //     content: "",
-  //   };
-  //   messages = [...messages, default_messages];
-  // }
-
-  // function execute_sequential() {
-  //   Promise.resolve().then(prompt_promises[index]).then(check_pause);
-  // }
-
-  // function check_pause(data) {
-  //   console.log(data);
-  //   if (!pause) {
-  //     index += 1;
-  //     if (index < prompt_promises.length) execute_sequential();
-  //   }
-  // }
-
-  // function start_sequential() {
-  //   console.log("start");
-  //   index = 0;
-  //   execute_sequential();
-  // }
-
   function start_all({
     persona,
     context,
@@ -99,8 +42,6 @@
     examples,
     data_template,
   }: tPrompt) {
-    // const messages = combine_messages(instruction, examples, user_input_data);
-    // console.log("running prompt on all data...", messages, { data });
     const instruction = persona + ". " + context + ". " + constraints;
     const url = new URL(server_address + "/executePromptAll/");
     executing_prompt = true;
@@ -115,7 +56,7 @@
         examples: examples,
         data_template: data_template,
         data: $test_set,
-        metrics: $selected_metrics,
+        // metrics: metrics,
       }),
     })
       .then((response) => response.json())
@@ -123,7 +64,7 @@
         executing_prompt = false;
         dispatch("promptDone", {
           ...res,
-          ...{ persona, context, constraints, examples, data_template },
+          prompt: { persona, context, constraints, examples, data_template },
         });
       });
   }
