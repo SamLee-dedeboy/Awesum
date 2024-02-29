@@ -1,12 +1,26 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
+  import { createEventDispatcher, onMount, tick } from "svelte";
   import { selected_metrics } from "lib/store";
-  import { createPopover, createTooltip, melt } from "@melt-ui/svelte";
-  import { cluster_colors, metrics, feature_descriptions } from "lib/constants";
+  import {
+    createPopover,
+    createSelect,
+    createTooltip,
+    melt,
+  } from "@melt-ui/svelte";
+  import Select from "lib/components/Select.svelte";
+  import {
+    cluster_colors,
+    metrics,
+    feature_descriptions,
+    metric_categories,
+  } from "lib/constants";
   import { fade } from "svelte/transition";
   // import { CorrelationGraph } from "lib/renderers/correlation_graph";
   import { CorrelationMatrix } from "lib/renderers/correlation_matrix";
   import MetricRecommendation from "lib/components/MetricRecommendation.svelte";
+  import { feature_recommendations, feature_target_levels } from "lib/store";
+  import type { tNode } from "lib/types";
+  const dispatch = createEventDispatcher();
 
   // let correlation_graph = new CorrelationGraph(
   //   "metric-correlations-svg",
@@ -24,25 +38,32 @@
     toggle_metric
   );
   export let metric_metadata: any;
-  $: removed_metrics = metrics.filter((m) => !$selected_metrics.includes(m));
-
-  let selected_metric: string | undefined = undefined;
+  export let data: tNode[];
+  export let local_selected_metrics: string[] = $selected_metrics;
   let hovered_metric: string | undefined = undefined;
 
   onMount(() => {
-    console.log(metric_metadata);
     correlation_matrix.init();
   });
 
   $: if (metric_metadata.correlations)
-    update_correlation_graph($selected_metrics, metric_metadata.correlations);
+    update_correlation_graph(metrics, metric_metadata.correlations);
   async function update_correlation_graph(selected_metrics, correlations) {
     await tick();
     correlation_matrix.update(selected_metrics, correlations);
   }
-  function removeMetric(metric) {
-    selected_metrics.set($selected_metrics.filter((m) => m !== metric));
-  }
+
+  feature_recommendations.subscribe((value) => {
+    if (value) {
+      const features = value.map((f) => f.feature_name);
+      correlation_matrix.update_tag_disability(features);
+      correlation_matrix.update_cell_disability(metrics, features);
+      correlation_matrix.update_cells(metrics, metric_metadata.correlations);
+      value.forEach((f) => {
+        $feature_target_levels[f.feature_name] = f.level;
+      });
+    }
+  });
 
   function show_description(metric, flag) {
     open.set(flag);
@@ -50,11 +71,13 @@
   }
 
   function toggle_metric(metric) {
-    // if ($selected_metrics.includes(metric)) {
-    //   selected_metrics.set($selected_metrics.filter((m) => m !== metric));
-    // } else {
-    //   selected_metrics.set([...$selected_metrics, metric]);
-    // }
+    if (local_selected_metrics.includes(metric)) {
+      local_selected_metrics = local_selected_metrics.filter(
+        (m) => m !== metric
+      );
+    } else {
+      local_selected_metrics = [...local_selected_metrics, metric];
+    }
   }
 
   // setting up melt ui popover
@@ -73,7 +96,7 @@
 
 <div class="flex flex-col h-full">
   <div class="view-header">Metric Selection</div>
-  <div class="topc-section flex relative">
+  <div class="topc-section flex relative gap-x-2">
     <!-- <div
       class="flex flex-col grow h-fit items-center justify-center border-gray-500"
     >
@@ -135,8 +158,33 @@
         </pattern>
       </svg>
     </div>
-    <div class="absolute bottom-1 right-1 text-sm">
-      <button class="p-1 bg-green-100 border-green-200">Apply</button>
+    <div class="flex flex-col gap-y-0.5 justify-between py-2">
+      {#each metrics as metric, index}
+        <div class="flex items-center gap-x-1 font-mono text-[0.55rem]">
+          <span class="w-[4rem] text-left"> {metric} </span>
+          <Select
+            options={metric_categories[metric].map((c) => c.label)}
+            tw_font_size="text-[0.55rem]"
+            tw_font_family="font-mono"
+            bind:selected_label={$feature_target_levels[metric]}
+          />
+        </div>
+      {/each}
+    </div>
+    <div
+      class="absolute bottom-1 right-1 text-xs flex flex-col items-center gap-x-1 gap-y-1"
+    >
+      <!-- todo: add info on what 'Apply' does -->
+      <img
+        src="info_icon.svg"
+        alt="*"
+        class="w-[1rem] h-[1rem] ml-auto right-0"
+      />
+      <button
+        class="p-1 bg-green-100 border-green-200"
+        on:click={() => selected_metrics.set(local_selected_metrics)}
+        >Apply</button
+      >
     </div>
     <!-- {#if hovered_metric}
       <div class="text-xs text-left ml-1 font-mono break-words">
@@ -145,7 +193,12 @@
     {/if} -->
   </div>
   <div class="flex w-full flex-1">
-    <MetricRecommendation></MetricRecommendation>
+    <MetricRecommendation
+      {data}
+      {metric_metadata}
+      on:highlight_recommendation={(e) =>
+        dispatch("highlight_recommendation", e.detail)}
+    ></MetricRecommendation>
   </div>
 </div>
 {#if $open && hovered_metric}

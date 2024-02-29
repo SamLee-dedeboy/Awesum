@@ -3,12 +3,14 @@ export type tDataset = {
     metric_data: any;
     cluster_labels: string[];
     statistics: any;
-    metric_metadata: {
-      correlations: any[],
-      descriptions: any
-    }
+    metric_metadata: tMetricMetadata 
+    centroids? : {[key:string]: tNode[]};
   };
 
+export type tMetricMetadata = {
+    correlations: any[],
+    descriptions: any
+}
 export type tNode = {
     id: string,
     cluster: string

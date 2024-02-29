@@ -8,7 +8,7 @@ export let metric_abbrs = {
     "faithfulness": "fth",
     "length": "len",
 }
-
+export const metric_category_rotates = [true, true, false, false, false]
 export const metric_categories: {[key:string]: tMetricStep[]} = {
     "readability": [
         {
@@ -56,37 +56,37 @@ export const metric_categories: {[key:string]: tMetricStep[]} = {
         {
             start: 90,
             end: 100,
-            "label": "5th grade",
+            "label": "5 grade",
             "note": "Very easy to read. Easily understood by an 11-year-old student."
         }
     ],
     "formality": [
         {
             start: 0,
-            end: 20,
+            end: 30,
             "label": "Very informal",
             "note": "Casual, conversational language."
         },
         {
-            start: 20,
-            end: 40,
+            start: 30,
+            end: 60,
             "label": "Informal",
             "note": "Everyday language."
         },
         {
-            start: 40,
-            end: 60,
+            start: 60,
+            end: 100,
             "label": "Neutral",
             "note": "Standard, neutral language."
         },
         {
-            start: 60,
-            end: 80,
+            start: 100,
+            end: 200,
             "label": "Formal",
             "note": "Professional or academic language."
         },
         {
-            start: 80,
+            start: 200,
             end: -1,
             "label": "Very formal",
             "note": "Highly technical or legal language."

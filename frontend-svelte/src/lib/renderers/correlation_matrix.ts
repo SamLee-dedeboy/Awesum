@@ -17,12 +17,16 @@ export class CorrelationMatrix {
     show_description: any
     toggle_metric: any
     metrics_toggled: boolean[]
+    row_bands: any
+    col_bands: any
     constructor(svgId, svgSize, show_description: any, toggle_metric: any) {
         this.svgId = svgId;
         this.svgSize = svgSize;
         this.show_description = show_description
         this.toggle_metric = toggle_metric
         this.metrics_toggled = []
+        this.row_bands = null
+        this.col_bands = null
     }
 
     init() {
@@ -38,8 +42,8 @@ export class CorrelationMatrix {
     update(metrics: string[], correlations: any[]) {
         console.log(metrics, correlations)
         this.metrics_toggled = metrics.map(() => true)
-        const {row_bands, col_bands } = this.updateAxis(metrics, correlations)
-        this.update_cells(metrics, correlations, row_bands, col_bands)
+        this.updateAxis(metrics, correlations)
+        this.update_cells(metrics, correlations)
         // this.update_nodes(nodes);
         // this.update_links(links);
         // this.update_force(nodes, links);
@@ -50,6 +54,8 @@ export class CorrelationMatrix {
         const nums = [...Array(metrics.length-1).keys()]
         const row_bands = d3.scaleBand().domain([...Array(metrics.length).keys()]).range([0, this.svgSize.width]);
         const col_bands = d3.scaleBand().domain([...Array(metrics.length).keys()]).range([0, this.svgSize.height]);
+        this.row_bands = row_bands
+        this.col_bands = col_bands
         const axis_group = d3.select("#" + this.svgId).select("g.axis-group");
         axis_group.select("line.row-start").remove()
         axis_group.append("line").classed("row-start", true)
@@ -125,17 +131,19 @@ export class CorrelationMatrix {
             const tag = d3.select(this)
             const index = metrics.indexOf(d)
             self.metrics_toggled[index] = !self.metrics_toggled[index]
-            self.update_cells(metrics, correlations, row_bands, col_bands)
+            self.update_cells(metrics, correlations)
             if(tag.classed("tag-selected")) {
                 tag.classed("tag-selected", false)
             } else {
                 tag.classed("tag-selected", true)
             }
           })
-        return {row_bands, col_bands}
     }
 
-    update_cells(metrics, correlations, row_bands, col_bands) {
+    update_cells(metrics, correlations) {
+      console.log({metrics, correlations})
+        const row_bands = this.row_bands
+        const col_bands = this.col_bands
         console.log({correlations})
         const scaleSize = d3.scalePow().exponent(1).domain([0, 1]).range([0, row_bands.bandwidth() ]);
         const threshold = 0.2
@@ -232,6 +240,22 @@ export class CorrelationMatrix {
             })
     }
 
+    update_cell_disability(all_metrics, enabled_metrics) {
+      all_metrics.forEach((metric, i) => {
+        this.metrics_toggled[i] = false
+        if(enabled_metrics.includes(metric)) {
+          this.metrics_toggled[i] = true 
+        }
+      })
+    }
+
+    update_tag_disability(enabled_metrics) {
+        const label_container_group = d3.select("#" + this.svgId).select("g.label-container-group");
+        label_container_group.selectAll("rect.axis-label-container")
+          .classed("tag-selected", false)
+          .filter(d => enabled_metrics.includes(d))
+          .classed("tag-selected", true)
+    }
     update_nodes(nodes: tNode[]) {
         const node_group = d3.select("#" + this.svgId).select("g.node-group");
         const label_group = d3.select("#" + this.svgId).select("g.label-group");
@@ -272,6 +296,7 @@ export class CorrelationMatrix {
           .attr("x2", (d) => d.target.x)
           .attr("y2", (d) => d.target.y);
       }
+
       update_force(nodes: tNode[], links: tLink[]) {
         const svgId = this.svgId
         const svgSize = this.svgSize

@@ -6,7 +6,7 @@
     grid-area: none;
   }
   .view-header {
-    @apply bg-[#89d0ff] border-b border-gray-100 text-center text-xl font-bold w-full flex items-center justify-center gap-x-1 px-1
+    @apply bg-[#89d0ff] border-b border-gray-100 text-center font-bold w-full flex items-center justify-center gap-x-1 px-1
    }
 }
 :root {

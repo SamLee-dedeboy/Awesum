@@ -23,9 +23,12 @@ def k_means(X, n_clusters=10, random_state=42, **kwargs):
     # for i, label in enumerate(labels):
     #     print(f"Matrix {i + 1} is assigned to Cluster {label + 1}")
     return labels
-def optics(X, min_samples=10, metric="cosine", **kwargs):
+def optics(X, min_samples=10, metric="cosine", auto_adjust=False, **kwargs):
     scaler = StandardScaler()
     X = np.array(X)
+    print(auto_adjust, X.shape)
     X = scaler.fit_transform(X)
+    if(auto_adjust):
+        min_samples = [-1, 62, 22, 13, 10][X.shape[1]-1]
     clustering = OPTICS(min_samples=min_samples, metric=metric).fit(X)
     return clustering.labels_

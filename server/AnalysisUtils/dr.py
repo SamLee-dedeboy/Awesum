@@ -29,3 +29,6 @@ def min_max_normalize(data):
     normalized_data = (data - min_vals) / (max_vals - min_vals)
     
     return normalized_data
+
+def lr_decision_boundary(c1, c2):
+    return

@@ -1,3 +1,4 @@
+import type { tNode } from './server';
 export type tMessage = {
     role: string;
     name?: string;
@@ -20,7 +21,7 @@ export type tPrompt = {
     context: string;
     constraints: string;
     // instruction: string;
-    examples: tExampleData[];
+    examples: tNode[];
     data_template: string;
 }
 

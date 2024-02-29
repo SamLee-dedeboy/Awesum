@@ -7,8 +7,8 @@
     tExampleData,
   } from "lib/types";
   import { createEventDispatcher } from "svelte";
-  import { metrics } from "lib/constants";
-  import { selected_metrics, test_set } from "lib/store";
+  import { cluster_colors, metrics } from "lib/constants";
+  import { selected_metrics, test_set, example_nodes } from "lib/store";
 
   const server_address = "http://localhost:5000";
   const dispatch = createEventDispatcher();
@@ -19,9 +19,21 @@
     persona: "You are a writing assistant.",
     context: "You will be given a news article to summarize.",
     constraints: "Please make sure the summary is __.",
+    // examples: Array.from(Array(30).keys()).map((i) => ({
+    //   id: i.toString(),
+    //   cluster: "2",
+    //   summary: "summary",
+    //   text: "text",
+    //   coordinates: [0, 0],
+    //   features: {},
+    // })),
     examples: [],
     data_template: "Article: ${text}",
   };
+
+  example_nodes.subscribe((value) => {
+    prompt_template.examples = value;
+  });
 
   // function initPrompts(metrics) {
   //   let prompts: { [key: string]: tPrompt } = {};
@@ -109,7 +121,10 @@
       .then((response) => response.json())
       .then((res) => {
         executing_prompt = false;
-        dispatch("promptDone", { ...res });
+        dispatch("promptDone", {
+          ...res,
+          ...{ persona, context, constraints, examples, data_template },
+        });
       });
   }
 
@@ -167,7 +182,7 @@
   //   }
   // }
 
-  export function add_example(example: tExampleData) {
+  export function add_example(example: tNode) {
     prompt_template.examples = [...prompt_template.examples, example];
   }
 </script>
@@ -193,7 +208,7 @@
     <div class="grow flex gap-x-1">
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header">
-          <span class="p-1 rounded !outline-none"> Persona </span>
+          <span class=" rounded !outline-none"> Persona </span>
         </div>
         <div
           class="prompt-section-content editable"
@@ -205,7 +220,7 @@
       </div>
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header">
-          <span class="p-1 rounded !outline-none"> Context </span>
+          <span class="rounded !outline-none"> Context </span>
         </div>
         <div
           class="prompt-section-content editable"
@@ -217,7 +232,7 @@
       </div>
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header">
-          <span class="p-1 rounded !outline-none"> Constraints </span>
+          <span class=" rounded !outline-none"> Constraints </span>
         </div>
         <div
           class="prompt-section-content editable"
@@ -232,24 +247,33 @@
     <div class="flex grow gap-x-4">
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header relative">
-          <span class="p-1 rounded !outline-none"> Examples </span>
+          <span class=" rounded !outline-none"> Examples </span>
         </div>
         <div
-          class="prompt-section-content flex flex-col overflow-y-auto max-h-[10rem]"
+          class="prompt-section-content flex flex-wrap overflow-y-auto max-h-[10rem] items-center px-1"
           on:input={(e) => e.target?.textContent}
         >
           {#each prompt_template.examples as example}
-            <div
-              class="flex w-full gap-x-2 text-sm justify-between items-center px-1"
-            >
-              <div class="">{example.id}</div>
+            <div class="w-fit">
+              <!-- <div class="">{example.id}</div> -->
+              <svg class="w-[1rem] h-[1rem]" viewBox="0 0 10 10">
+                <circle
+                  fill={cluster_colors(example.cluster)}
+                  stroke="black"
+                  stroke-width="0.5"
+                  r="4"
+                  cx="5"
+                  cy="5"
+                >
+                </circle></svg
+              >
             </div>
           {/each}
         </div>
       </div>
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header">
-          <span class="p-1 rounded !outline-none"> Data </span>
+          <span class=" rounded !outline-none"> Data </span>
         </div>
         <div
           class="prompt-section-content editable"
@@ -304,14 +328,14 @@
 
 <style lang="postcss">
   .prompt-section {
-    @apply shrink-0 flex  justify-center rounded  border-gray-200;
+    @apply shrink-0 flex justify-center rounded  border-gray-200;
     box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.1);
   }
   .prompt-section-header {
-    @apply w-full font-semibold shrink-0 flex items-center justify-center border-b border-gray-200 bg-sky-100;
+    @apply w-full font-semibold text-sm shrink-0 flex items-center justify-center border-b border-gray-200 bg-sky-100;
   }
   .prompt-section-content {
-    @apply py-1 grow overflow-y-auto w-full;
+    @apply py-1 grow overflow-y-auto w-full text-sm;
   }
   .editable {
     max-width: calc(100%);

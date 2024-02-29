@@ -70,35 +70,48 @@ def get_data():
 def adjust_metrics():
     metrics = request.json['metrics']
     dataset = request.json['dataset']
+    recommended_features = request.json['recommended_features']
     method = request.json['method']
-    kwargs = request.json['parameters']
+    # kwargs = request.json['parameters']
     target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
     # rerun coordinates and clusters
     coordinates = dr.scatter_plot(target_features, method='tsne')
     coordinates = coordinates.tolist()
-    cluster_labels = run_cluster(method, target_features, kwargs)
+    cluster_labels = run_cluster(method, target_features, auto_adjust=True)
     for i, datum in enumerate(dataset):
         datum['coordinates'] = coordinates[i]
         datum['cluster'] = str(cluster_labels[i])
     cluster_label_set = list(map(lambda l: str(l), set(cluster_labels)))
     statistics, metric_data = features.collect_statistics(dataset, metrics)
+    closest_cluster = None
+    if len(recommended_features['features']) > 0:
+        closest_cluster = helper.fit_cluster(dataset, recommended_features['features'], recommended_features['feature_pool'], feature_descriptions)
     return {
         "metric_data": metric_data, 
         "dataset": dataset, 
         "cluster_labels": cluster_label_set, 
-        "statistics": statistics
+        "statistics": statistics,
+        "closest_cluster": closest_cluster
     } 
+@app.route("/data/query_closest_cluster/", methods=['GET', 'POST'])
+def query_closest_cluster():
+    recommended_features = request.json['recommended_features']
+    dataset = request.json['dataset']
+    closest_cluster = helper.fit_cluster(dataset, recommended_features['features'], recommended_features['feature_pool'], feature_descriptions)
+    return {
+        "closest_cluster": closest_cluster
+    }
 
 
 @app.route("/data/cluster/", methods=["POST"])
 def get_cluster():
     method = request.json['method']
-    kwargs = request.json['parameters']
+    # kwargs = request.json['parameters']
     dataset = request.json['dataset']
     metrics = request.json['metrics']
     print(metrics)
     target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-    cluster_labels = run_cluster(method, target_features, kwargs)
+    cluster_labels = run_cluster(method, target_features, auto_adjust=True)
     # save_json(cluster_labels, 'data/tmp/df_summaries_cluster_labels.json')
     for i, datum in enumerate(dataset):
         datum['cluster'] = str(cluster_labels[i])
@@ -114,11 +127,11 @@ def get_cluster():
         "statistics": statistics
     }
 
-def run_cluster(method, target_features, kwargs):
+def run_cluster(method, target_features, auto_adjust=False):
     if method == "optics":
-        return clusters.optics(target_features, **kwargs).tolist()
+        return clusters.optics(target_features, auto_adjust=auto_adjust).tolist()
     elif method == "kmeans":
-        return clusters.k_means(target_features, **kwargs).tolist()
+        return clusters.k_means(target_features).tolist()
     
 
 # @app.route("/executePrompt/", methods=['POST'])
@@ -149,22 +162,21 @@ def execute_prompt_all():
     save_json(prompts, 'data/debug/prompts.json')
     summaries = gpt.multithread_prompts(openai_client, prompts)
     save_json(summaries, 'data/debug/summaries.json')
-    cluster_nodes = []
+    results = []
     for index, new_summary in enumerate(summaries):
         default_metrics = features.evaluate(evaluator, data[index]['text'], new_summary, metrics)
-        cluster_nodes.append({
+        results.append({
             "summary": new_summary,
             "features": default_metrics
         })
-    feature_matrix = np.array(list(map(lambda x: [x['features'][m] for m in metrics], cluster_nodes)))
+    feature_matrix = np.array(list(map(lambda x: [x['features'][m] for m in metrics], results)))
     statistics = []
     for c in range(feature_matrix.shape[1]):
         column = feature_matrix[:, c]
         statistics.append(features.collect_local_stats(column))
 
     return json.dumps({
-        "messages": prompt_template,
-        "cluster_nodes": cluster_nodes,
+        "results": results,
         "statistics": statistics
     })
 
@@ -172,12 +184,17 @@ def execute_prompt_all():
 def query_metric():
     question = request.json['question']
     feature_pool = request.json['feature_pool']
+    # nodes = request.json['nodes']
     feature_definition_prompt = gpt.formulate_feature_definitions_prompt(feature_pool, feature_descriptions)
     prompt = gpt.formulate_metric_prompt(question, feature_definition_prompt)
-    response = gpt.request_chatgpt_gpt4(openai_client, prompt, format='json')
-    features = json.loads(response)
+    while True:
+        features = json.loads(gpt.request_chatgpt_gpt4(openai_client, prompt, format='json'))
+        if gpt.check_metric_recommendation_validity(features, feature_pool, feature_descriptions):
+            break
+    # closest_cluster = helper.fit_cluster(nodes, features['features'], feature_pool, feature_descriptions)
     return {
-        "response": features
+        "features": features['features'],
+        # "closest_cluster": closest_cluster,
     }
 
 # ====================== deprecated ===============================

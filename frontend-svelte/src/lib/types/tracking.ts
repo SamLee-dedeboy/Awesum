@@ -1,11 +1,11 @@
 import type { tStatBarData } from "./statistics"
-import type { tMessage } from "./prompt"
+import type { tPrompt } from "./prompt"
 import type { tNode } from "./server"
-export type tClusterOptimization = {
+export type tOptimization = {
     // summaries: String[]
     features: any[]
-    cluster_nodes: tNode[]
-    prompts: tMessage[]
+    nodes: tNode[]
+    prompt: tPrompt
     statistics: tStatBarData[]
 }
 

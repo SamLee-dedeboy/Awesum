@@ -1,5 +1,5 @@
 import * as d3 from "d3"
-import { cluster_colors, metric_colors } from "lib/constants";
+import { cluster_colors, metric_categories, metric_colors, metrics, metric_category_rotates } from "lib/constants";
 import type { tStatBarData } from "lib/types/statistics";
 export class Statbars {
     svgId: string
@@ -26,6 +26,7 @@ export class Statbars {
         this.barMouseover = barMouseover
         this.barMouseout = barMouseout
         this.barClick = barClick
+        this.xScales = []
     }
     update(stats: tStatBarData[], 
       global_means: number[], global_mins: number[], global_maxes: number[], 
@@ -37,10 +38,18 @@ export class Statbars {
       let xScales;
       const g = d3.select(this.svgId).select("g.inner");
       // scales
-      if (sameScale) {
+      if (sameScale) { // metric
         console.assert(global_means.length === 1 && global_mins.length === 1 && global_maxes.length === 1)
-        const half_width = Math.max(Math.abs(global_maxes[0] - global_means[0]), Math.abs(global_means[0] - global_mins[0]));
-        xScales = [d3.scaleLinear().domain([-half_width, half_width]).range([0, this.innerSize.width])];
+        const ranges = metric_categories[metrics[this.metric_index]]
+        const xMax =
+          ranges[ranges.length - 1].end === -1
+            ? global_maxes[0]
+            : ranges[ranges.length - 1].end;
+        xScales = [d3
+          .scaleLinear()
+          .domain([ranges[0].start, xMax])
+          .range([0, this.innerSize.width])]
+        this.update_categories(xScales[0], metric_category_rotates[this.metric_index], xMax)
       } else {
         console.assert(stats.length === global_means.length && stats.length === global_mins.length && stats.length === global_maxes.length)
          xScales = stats.map((_, index) => {
@@ -65,16 +74,24 @@ export class Statbars {
         .data(stats)
         .join("rect")
         .attr("x", (d: tStatBarData, i) => {
-          i = sameScale ? 0 : i;
-          return xScales[i](d.min - global_means[i])
+          if(sameScale) {
+            return xScales[0](d.min)
+          } else {
+            return xScales[i](d.min - global_means[i])
+          }
         })
         .attr("y", (_: tStatBarData, i) => yScale(i))
         .attr(
           "width",
           (d: tStatBarData, i) => {
-            i = sameScale ? 0 : i;
-            return xScales[i](d.max - global_means[i]) -
-            xScales[i](d.min - global_means[i])
+            if(sameScale) {
+              // if(this.metric_index === 2)
+              // console.log(this.metric_index, d)
+              return xScales[0](d.max) - xScales[0](d.min)
+            } else {
+              return xScales[i](d.max - global_means[i]) -
+              xScales[i](d.min - global_means[i])
+            }
           }
         )
         .attr("height", yScale.bandwidth())
@@ -97,7 +114,10 @@ export class Statbars {
             d3.select(this).classed("rect-hovered", false)
             if(self.barMouseout) self.barMouseout(cluster_labels?.[rects.nodes().indexOf(this)])
           })
-        .on("click", function(_, d) {  self.barClick(d, self.metric_index, cluster_labels?.[rects.nodes().indexOf(this)])});
+        .on("click", function(_, d) {  
+          self.update_selected_range([d.min, d.max], global_means[0])
+          self.barClick(d, self.metric_index, cluster_labels?.[rects.nodes().indexOf(this)])
+        });
       }
 
 
@@ -106,13 +126,19 @@ export class Statbars {
         .join("line")
         .attr("class", "mean")
         .attr("x1", (d: tStatBarData, i) => {
-          i = sameScale ? 0 : i;
-          return xScales[i](d.mean - global_means[i])
+          if(sameScale) {
+            return xScales[0](d.mean)
+          } else {
+            return xScales[i](d.mean - global_means[i])
+          }
         })
         .attr("y1", (_, i) => yScale(i))
         .attr("x2", (d: tStatBarData, i) => {
-          i = sameScale ? 0 : i;
-          return xScales[i](d.mean - global_means[i])
+          if(sameScale) {
+            return xScales[0](d.mean)
+          } else {
+            return xScales[i](d.mean - global_means[i])
+          }
         })
         .attr("y2", (_, i) => yScale(i) + yScale.bandwidth())
         .attr("stroke", "gray");
@@ -129,20 +155,70 @@ export class Statbars {
         .attr("stroke-width", 0.3);
     }
 
-    update_selected_range(selected_range: number[]|undefined, global_mean: number) {
-      console.log("selected_range", selected_range)
+    update_selected_range(selected_range: [number|undefined, number|undefined], global_mean: number) {
       const g = d3.select(this.svgId).select("g.inner");
-      g.selectAll("line.selected-range").remove();
-        const xScale = this.xScales[0];
-        g.selectAll("line.range")
-          .data(selected_range)
-          .join("line")
-          .attr("class", "range")
-          .attr("x1", (d) => xScale(d - global_mean))
-          .attr("y1", -this.svgSize.margin)
-          .attr("x2", (d) => xScale(d - global_mean))
-          .attr("y2", this.innerSize.height + this.svgSize.margin)
-          .attr("stroke", "gray");
+      g.selectAll("line.range").remove();
+      const xScale = this.xScales[0];
+      g.selectAll("line.range")
+        .data(selected_range)
+        .join("line")
+        .attr("class", "range")
+        .attr("x1", (d) => d? xScale(d): 0)
+        .attr("y1", -this.svgSize.margin)
+        .attr("x2", (d) => d? xScale(d) : 0)
+        .attr("y2", this.innerSize.height + this.svgSize.margin)
+        .attr("stroke", "gray")
+        .attr("opacity", (d) => d? 1: 0)
+    }
+
+    update_categories(xScale: any, rotate: boolean, xMax: number) {
+      const svg = d3.select(this.svgId);
+      const ranges = metric_categories[metrics[this.metric_index]]
+
+      const details = svg.append("g").attr("class", "step-divider-group");
+      details.selectAll("line").remove();
+      details.append("line").attr("class", "start")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", 0)
+        .attr("y2", this.svgSize.height)
+      details
+        .selectAll("line.divider")
+        .data(ranges.slice(1))
+        .join("line")
+        .attr("class", "divider")
+        .attr("x1", (d) => xScale(d.start))
+        .attr("y1", 0)
+        .attr("x2", (d) => xScale(d.start))
+        .attr("y2", this.svgSize.height)
+      details.selectAll("line")
+        .attr("stroke", "red")
+        .attr("stroke-width", 0.2)
+        .attr("stroke-dasharray", "2, 4")
+        .classed("hide", true);
+      const labels = details
+        .selectAll("text.divider-label")
+        .data(ranges)
+        .join("text")
+        .attr("class", "divider-label")
+        .attr(
+          "font-family",
+          "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace"
+        )
+        .attr("font-size", "0.2rem")
+        .text((d) => d.label)
+        .attr("pointer-events", "none")
+        .classed("hide", true);
+      if(rotate) {
+        labels
+        .attr("text-anchor", "start")
+        .attr("dominant-baseline", "baseline")
+        .attr("transform", (d, i) => `translate(${xScale(d.start)+1}, 1) rotate(90) `)
+      } else {
+        labels.attr("text-anchor", "middle").attr("dominant-baseline", "hanging")
+        .attr("transform", (d, i) => `translate(${(xScale(d.start) + xScale(d.end === -1 ? xMax : d.end)) / 2}, 1)`)
+        ;
+      }
     }
 
 }

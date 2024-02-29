@@ -73,8 +73,8 @@ def formulate_metric_prompt(question, feature_definitions):
             Then, tell them what level of the feature they should aim for and briefly explain why.
             Reply with the following JSON format:
             {{ "features": [
-                {{ "feature"name": string, "level": string, "explanation": string}},
-                {{ "feature"name": string, "level": string, "explanation": string}},
+                {{ "feature"name": string, "level": string (one of the provided), "explanation": string}},
+                {{ "feature"name": string, "level": string (one of the provided), "explanation": string}},
                 ...
             ]}}
             """.format(feature_definitions=feature_definitions)
@@ -102,3 +102,16 @@ def formulate_feature_definitions_prompt(feature_pool, feature_descriptions):
         for feature_range in definitions["ranges"]:
             definition_prompt += "Between {min} and {max}, the {feature} is at level {level}, which means {explanation}\n".format(min=feature_range[0], max=feature_range[1], feature=feature, level=feature_range[2], explanation=feature_range[3])
     return definition_prompt
+
+def check_metric_recommendation_validity(recommendations, feature_pool, feature_descriptions):
+    for recommendation in recommendations['features']:
+        feature_name = recommendation['feature_name']
+        # check feature name
+        if feature_name not in feature_pool:
+            return False
+        # check level
+        level = recommendation['level']
+        ranges = feature_descriptions[feature_name]['ranges']
+        if level not in [range[2] for range in ranges]:
+            return False
+    return True

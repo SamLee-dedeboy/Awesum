@@ -1,9 +1,21 @@
 <script lang="ts">
   import { server_address } from "lib/constants";
   import { metrics } from "lib/constants";
-  import type { tMetricRecommendationResponse } from "lib/types";
+  import type { tNode, tMetricRecommendationResponse } from "lib/types";
+  import { createEventDispatcher } from "svelte";
+  import {
+    selected_metrics,
+    // recommended_cluster,
+    feature_target_levels,
+    target_range_metric,
+    feature_recommendations,
+  } from "lib/store";
+  const dispatch = createEventDispatcher();
   let delayed_user_question_response = "Response will be here...";
+  export let data: tNode[];
+  export let metric_metadata: any;
   let loading_response = false;
+  // let recommended_cluster = "";
   function handleQuery(e) {
     if (e.key === "Enter" || e.keyCode === 13) {
       const user_question = e.target.textContent;
@@ -15,19 +27,26 @@
   function query_metric(question: string) {
     console.log(question);
     loading_response = true;
-    const feature_pool = metrics;
+    const feature_pool = $selected_metrics;
+    const nodes = data;
     fetch(server_address + "/query_metric/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ question, feature_pool }),
+      body: JSON.stringify({ question, feature_pool, nodes }),
     })
       .then((response) => response.json())
       .then((data) => {
         console.log("Success:", data);
         // make_delay(data.response);
-        make_delay(make_paragraph(data.response.features));
+        feature_recommendations.set(data.features);
+        $feature_target_levels = {};
+        data.features.forEach((feature: tMetricRecommendationResponse) => {
+          $feature_target_levels[feature.feature_name] = feature.level;
+        });
+        make_delay(make_paragraph(data.features, metric_metadata.correlations));
+        // recommended_cluster.set(data.closest_cluster);
         loading_response = false;
       })
       .catch((error) => {
@@ -63,14 +82,41 @@
     }
   }
 
-  function make_paragraph(responses: tMetricRecommendationResponse[]) {
+  function make_paragraph(
+    responses: tMetricRecommendationResponse[],
+    correlations
+  ) {
     let p = "";
+    // feature descriptions
     responses.forEach((response) => {
       p += "<p>";
       p += `<span class="feature-name">${response.feature_name}</span>: <span class="level">${response.level}</span>. <span class="explanation">${response.explanation}</span>`;
       p += "</p>";
     });
-    // p += `<p><span class="feature-name">readability</span>: <span class="level">Professional</span>. <span class="explanation">To make your writing academic, aim for a readability level of Professional (0-10) to ensure it is extremely difficult to read and best understood by university graduates.</span></p>`;
+    // correlations
+    const recommended_features = responses.map((r) => r.feature_name);
+    let first = true;
+    correlations.forEach((corr) => {
+      if (
+        Math.abs(corr[2]) > 0.2 &&
+        recommended_features.includes(corr[0]) &&
+        recommended_features.includes(corr[1])
+      ) {
+        p += "<p>";
+        if (first) {
+          p += `<span class="feature-name">Correlations: </span>`;
+          first = false;
+        }
+        p += `<span class="feature-name">${
+          corr[0]
+        }</span> and <span class="feature-name">${
+          corr[1]
+        }</span> have a <span class="level">${
+          corr[2] < 0 ? "negative" : "positive"
+        } </span> correlation.`;
+        p += "</p>";
+      }
+    });
     return p;
   }
 </script>
@@ -104,6 +150,12 @@
       </span>
     </div>
   </div>
+  <!-- <button
+    class="w-fit sticky ml-auto bottom-1 right-0 text-[0.6rem] p-1 bg-amber-400 border-amber-500"
+    on:click={() => dispatch("highlight_recommendation", recommended_cluster)}
+  >
+    Find cluster
+  </button> -->
 </div>
 
 <style lang="postcss">

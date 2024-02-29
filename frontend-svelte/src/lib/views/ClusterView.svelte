@@ -6,13 +6,58 @@
   import * as d3_hexbin from "d3-hexbin";
   import ClusterModeRadio from "lib/components/ClusterModeRadio.svelte";
   import Switch from "lib/components/Switch.svelte";
+  import {
+    example_nodes,
+    // recommended_cluster,
+    recommended_nodes,
+  } from "lib/store";
 
-  import { target_range, cluster_mode, test_set } from "lib/store";
+  import {
+    target_ranges,
+    target_range_metric,
+    cluster_mode,
+    selected_metrics,
+    test_set,
+  } from "lib/store";
   export let data: tNode[];
+  export let centroids: { [key: string]: tNode[] };
   export let highlight_cluster_label: string | undefined;
-  export let show_noise: boolean = false;
-  export let show_test_set: boolean = false;
+  let show_noise: boolean = false;
+  let show_test_set: boolean = false;
+  let show_recommendations: boolean = false;
   export let statistics: tStatistics;
+
+  recommended_nodes.subscribe((value) => {
+    if (!value) return;
+    if (!show_recommendations) {
+      toggle_recommendations();
+    }
+    update_recommendations(show_recommendations);
+  });
+
+  $: {
+    if (show_recommendations) {
+      const show_recommendation_button = d3.select("g.show-recommendation");
+      show_recommendation_button
+        .select(".utility-button")
+        .attr("fill", "rgb(187 247 208)");
+      show_recommendation_button.select("text").attr("fill", "black");
+      d3.select("g.add-to-examples")
+        .attr("pointer-events", "auto")
+        .select("text")
+        .attr("fill", "black");
+    } else {
+      const show_recommendation_button = d3.select("g.show-recommendation");
+      show_recommendation_button
+        .select(".utility-button")
+        .attr("fill", "white");
+      show_recommendation_button.select("text").attr("fill", "#aaaaaa");
+      d3.select("g.add-to-examples")
+        .attr("pointer-events", "none")
+        .select("text")
+        .attr("fill", "#aaaaaa");
+    }
+  }
 
   const width = 500;
   const height = 500;
@@ -27,21 +72,30 @@
   });
 
   $: update_nodes(data);
-  function update_nodes(data) {
+  function update_nodes(data: tNode[]) {
     if (data) {
       data = data.filter((d) => d.cluster !== "-1");
-      const centroids = generate_centroids(data);
+      // const centroids = generate_centroids(data);
+      // console.log({ centroids });
       update(data, centroids);
       if ($cluster_mode === "metric") {
-        update_by_metric($target_range);
+        update_by_metric($target_ranges);
       } else {
         update_by_cluster();
       }
+      // if ($recommended_cluster !== undefined) {
+      //   toggle_recommendations();
+      // }
     }
   }
 
   $: if ($cluster_mode === "metric") {
-    update_by_metric($target_range);
+    update_by_metric($target_ranges);
+    d3.select("g.cluster-mode")
+      .attr("pointer-events", "auto")
+      .select("text")
+      // .text("cluster")
+      .attr("fill", "black");
   } else {
     update_by_cluster();
   }
@@ -50,7 +104,6 @@
 
   $: update_noise(show_noise, data);
   function update_noise(show_noise, data) {
-    console.log("update noise", show_noise);
     if (show_noise) {
       d3.select("#cluster-svg")
         .select("g.noise-group")
@@ -74,7 +127,6 @@
   }
 
   $: if (show_test_set) {
-    console.log("show test set");
     d3.select("#cluster-svg")
       .select("g.node-group")
       .selectAll("circle")
@@ -87,7 +139,7 @@
       .classed("test-case", false);
   }
 
-  async function update(data: tNode[], centroids: any) {
+  async function update(data: tNode[], centroids: { [key: string]: tNode[] }) {
     await tick();
     const g = d3.select("#cluster-svg").select("g.node-group");
     g.selectAll("circle")
@@ -106,17 +158,22 @@
     const g = d3.select("#cluster-svg").select("g.node-group");
     const points = g
       .selectAll("circle")
-      .attr("fill", (d) => cluster_colors(d.cluster));
+      .attr("fill", (d) => cluster_colors(d.cluster))
+      .attr("stroke", "gray")
+      .attr("stroke-width", 0.5);
+    // .attr("opacity", show_recommendations ? 0.8 : 0)
+    // .attr("stroke", "gray")
+    // .attr("stroke-width", 1)
+    // .attr("stroke-dasharray", "4,2");
     // if (show_noise) {
     //   points.attr("opacity", 1);
     // }
     // force_collision_centroid(data, node_radius + 0.7);
   }
 
-  async function update_by_metric(target_range) {
+  async function update_by_metric(target_ranges) {
     await tick();
-    const target_metric_index = target_range[2];
-    const target_metric = metrics[target_metric_index];
+    // const target_metric = metrics[target_metric_index];
     // const offset = 0.01;
     // const metric_values = data.map((d) => d.features[target_metric]);
     // target_range = [
@@ -128,28 +185,26 @@
     //   statistics.global_means[target_metric_index] * (1 - offset),
     //   statistics.global_means[target_metric_index] * (1 + offset),
     // ];
-    const max_distance = Math.max(
-      Math.abs(statistics.global_maxes[target_metric_index] - target_range[1]),
-      Math.abs(statistics.global_mins[target_metric_index] - target_range[0])
-    );
-    console.log({ statistics, max_distance, target_range });
+    let total_max_distance = 0;
+    $selected_metrics.forEach((metric) => {
+      const target_metric_index = metrics.indexOf(metric);
+      const target_range = target_ranges[metric];
+      if (target_range[0] === undefined) return;
+      const max_distance = Math.max(
+        Math.abs(
+          statistics.global_maxes[target_metric_index] - target_range[1]
+        ),
+        Math.abs(statistics.global_mins[target_metric_index] - target_range[0])
+      );
+      total_max_distance += max_distance;
+    });
     const colorScale = d3
       .scalePow()
       // .domain([
       //   statistics.global_mins[target_metric_index],
       //   statistics.global_maxes[target_metric_index],
       // ])
-      .domain([
-        0,
-        Math.max(
-          Math.abs(
-            statistics.global_maxes[target_metric_index] - target_range[1]
-          ),
-          Math.abs(
-            statistics.global_mins[target_metric_index] - target_range[0]
-          )
-        ),
-      ])
+      .domain([0, total_max_distance])
       .range(["red", "transparent"])
       .exponent(0.2);
     // const colorScale = d3
@@ -165,14 +220,20 @@
     const points = g
       .selectAll("circle")
       .attr("fill", (d) => {
-        const value = d.features[target_metric];
-        const distance = in_range(value, target_range)
-          ? 0
-          : distance_to_range(value, target_range);
-        // console.log(value, distance);
-        return colorScale(distance);
+        d.total_distance = undefined;
+        $selected_metrics.forEach((metric) => {
+          if ($target_ranges[metric][0] === undefined) return;
+          const value = d.features[metric];
+          const distance = in_range(value, $target_ranges[metric])
+            ? 0
+            : distance_to_range(value, $target_ranges[metric]);
+          if (d.total_distance === undefined) d.total_distance = 0;
+          d.total_distance += distance;
+        });
+        return colorScale(d.total_distance);
       })
-      .attr("stroke", "white");
+      .attr("stroke", (d) => (d.total_distance === 0 ? "black" : "white"))
+      .attr("stroke-width", (d) => (d.total_distance === 0 ? 1.5 : 1));
     // if (show_noise) {
     //   points.attr("opacity", 1);
     // }
@@ -184,7 +245,6 @@
     radius = node_radius,
     centroids: any
   ) {
-    console.log("force collision", data);
     const collisionForce = d3
       .forceSimulation(data)
       .force(
@@ -219,10 +279,18 @@
             "cy",
             (d) => (d.y = clip(d.y, [node_radius, innerHeight - node_radius]))
           );
+        d3.select("#cluster-svg")
+          .select("g.line-group")
+          .selectAll("line.recommended-case-line")
+          // .data(recommended_case_circles)
+          // .join("line")
+          // .classed("recommended-case-line", true)
+          .attr("x1", (d) => +d3.select(d).attr("cx") + margin)
+          .attr("y1", (d) => +d3.select(d).attr("cy") + margin);
       });
   }
 
-  function update_highlight_cluster(cluster_label: string | undefined) {
+  export function update_highlight_cluster(cluster_label: string | undefined) {
     const g = d3.select("#cluster-svg").select("g.node-group");
     if (cluster_label === undefined) {
       g.selectAll("circle")
@@ -240,11 +308,11 @@
       .select("#cluster-svg")
       .attr("viewBox", `0 0 ${width} ${height}`);
 
+    const line_group = svg.append("g").attr("class", "line-group");
     const content = svg
       .append("g")
       .attr("transform", `translate(${margin}, ${margin})`);
     const noise_group = content.append("g").attr("class", "noise-group");
-    const line_group = svg.append("g").attr("class", "line-group");
     const utility_group = svg.append("g").attr("class", "utility");
     const show_test_set_button = {
       parent: utility_group,
@@ -290,13 +358,65 @@
       text: "noise",
       x: 70,
       y: 5,
-      width: 60,
+      width: 45,
       height: 20,
       onClick: () => {
         show_noise = !show_noise;
       },
     };
     add_utility_button(show_noise_button);
+
+    const show_recommendation_button = {
+      parent: utility_group,
+      class_name: "show-recommendation",
+      activated_color: "rgb(187 247 208)",
+      deactivated_color: "white",
+      activated_text_color: "black",
+      deactivated_text_color: "#aaaaaa",
+      text: "recommendations",
+      x: 120,
+      y: 5,
+      width: 150,
+      height: 20,
+      onClick: toggle_recommendations,
+    };
+    add_utility_button(show_recommendation_button);
+
+    const add_to_examples_button = {
+      parent: utility_group,
+      class_name: "add-to-examples",
+      activated_color: "rgb(187 247 208)",
+      deactivated_color: "white",
+      activated_text_color: "black",
+      deactivated_text_color: "#aaaaaa",
+      text: "add to examples",
+      x: 275,
+      y: 5,
+      width: 135,
+      height: 20,
+      onClick: add_examples,
+      stateless: true,
+    };
+    add_utility_button(add_to_examples_button);
+    d3.select("g.add-to-examples").attr("pointer-events", "none");
+
+    const cluster_mode_button = {
+      parent: utility_group,
+      class_name: "cluster-mode",
+      activated_color: "rgb(187 247 208)",
+      deactivated_color: "white",
+      activated_text_color: "black",
+      deactivated_text_color: "#aaaaaa",
+      text: "switch",
+      x: 415,
+      y: 5,
+      width: 60,
+      height: 20,
+      onClick: toggle_cluster_mode,
+      stateless: true,
+    };
+    add_utility_button(cluster_mode_button);
+    d3.select("g.cluster-mode").attr("pointer-events", "none");
     // const xAxis = d3.axisBottom(xScale);
     // const yAxis = d3.axisLeft(yScale);
 
@@ -310,6 +430,50 @@
     content.append("g").attr("class", "node-group");
   }
 
+  function toggle_recommendations() {
+    show_recommendations = !show_recommendations;
+  }
+
+  function toggle_cluster_mode() {
+    // d3.select("g.cluster-mode").select("text").text($cluster_mode);
+    cluster_mode.set($cluster_mode === "metric" ? "cluster" : "metric");
+  }
+  $: update_recommendations(show_recommendations);
+  function update_recommendations(show_recommendations) {
+    // if ($recommended_cluster === undefined) return;
+    if ($recommended_nodes === undefined) return;
+    console.log("show recommendations", $recommended_nodes);
+    const svg = d3.select("#cluster-svg");
+    const line_group = svg.select("g.line-group");
+    const recommended_node_ids = $recommended_nodes.map((node) => node.id);
+    const recommended_case_circles = svg
+      .selectAll("circle")
+      .filter((d) => recommended_node_ids.includes(d.id));
+    line_group
+      .selectAll("line.recommended-case-line")
+      .data(recommended_case_circles)
+      .join("line")
+      .classed("recommended-case-line", true)
+      .attr("x1", (d) => +d3.select(d).attr("cx") + margin)
+      .attr("y1", (d) => +d3.select(d).attr("cy") + margin)
+      .attr("x2", () => 135 + 150 / 2)
+      .attr("y2", () => 5 + 20 / 2)
+      .attr("opacity", show_recommendations ? 0.8 : 0)
+      .attr("stroke", "gray")
+      .attr("stroke-width", 1)
+      .attr("stroke-dasharray", "4,2");
+    // if (show_recommendations) {
+    //   const button = d3.select("g.show-recommendation");
+    //   button.select(".utility-button").attr("fill", "rgb(187 247 208)");
+    //   button.select("text").attr("fill", "black");
+    // }
+  }
+
+  function add_examples() {
+    example_nodes.set($recommended_nodes!);
+    return;
+  }
+
   function clip(x, range) {
     return Math.max(Math.min(x, range[1]), range[0]);
   }
@@ -318,52 +482,6 @@
   }
   function distance_to_range(value, range) {
     return Math.min(Math.abs(value - range[0]), Math.abs(value - range[1]));
-  }
-  function generate_centroids(data: tNode[]) {
-    let cluster_nodes = {};
-    data.forEach((datum) => {
-      if (cluster_nodes[datum.cluster] === undefined) {
-        cluster_nodes[datum.cluster] = [];
-      }
-      cluster_nodes[datum.cluster].push(datum);
-    });
-    let centroids = {};
-    let local_testset: tNode[] = [];
-    Object.keys(cluster_nodes).forEach((cluster_label) => {
-      const nodes = cluster_nodes[cluster_label];
-      const mean_x = d3.mean(nodes.map((d) => d.coordinates[0]));
-      const mean_y = d3.mean(nodes.map((d) => d.coordinates[1]));
-      const { x, y, nearest } = find_nearest(mean_x, mean_y, nodes);
-      centroids[cluster_label] = [x, y];
-      nearest.test_case = true;
-      local_testset.push(nearest);
-    });
-    test_set.set(local_testset);
-
-    return centroids;
-  }
-
-  function find_nearest(
-    x: number,
-    y: number,
-    nodes: tNode[]
-  ): { x: number; y: number; nearest: tNode } {
-    let min_distance = Infinity;
-    let nearest: tNode = nodes[0];
-    nodes.forEach((node) => {
-      const distance = Math.sqrt(
-        (node.coordinates[0] - x) ** 2 + (node.coordinates[1] - y) ** 2
-      );
-      if (distance < min_distance) {
-        min_distance = distance;
-        nearest = node;
-      }
-    });
-    return {
-      x: nearest.coordinates[0],
-      y: nearest.coordinates[1],
-      nearest: nearest,
-    };
   }
 
   function add_utility_button({
@@ -379,6 +497,7 @@
     width,
     height,
     onClick,
+    stateless = false,
   }) {
     const utility_button = parent.append("g").attr("class", class_name);
     const animation_scale_factor = 1.1;
@@ -392,44 +511,16 @@
       .attr("fill", deactivated_color)
       .on("mouseover", function () {
         d3.select(this).attr("stroke-width", 2);
-
-        // d3.select(this).attr(
-        //   "fill",
-        //   show_test_set ? deactivated_color : activated_color
-        // );
-        // d3.select(this.parentNode)
-        //   .select("text")
-        //   .attr(
-        //     "fill",
-        //     show_test_set ? deactivated_text_color : activated_text_color
-        //   );
       })
       .on("mouseout", function () {
         d3.select(this).attr("stroke-width", 1);
-        // d3.select(this)
-        //   .transition()
-        //   .duration(100)
-        //   .attr("x", x)
-        //   .attr("y", y)
-        //   .attr("width", width)
-        //   .attr("height", height);
-        // d3.select(this).attr(
-        //   "fill",
-        //   show_test_set ? activated_color : deactivated_color
-        // );
-        // d3.select(this.parentNode)
-        //   .select("text")
-        //   .attr(
-        //     "fill",
-        //     show_test_set ? activated_text_color : deactivated_text_color
-        //   );
       })
       .on("click", function () {
         onClick();
-        const activated = d3.select(this).attr("fill") === activated_color;
-        console.log("click", activated);
-        d3.select(this)
-          .attr("fill", activated ? deactivated_color : activated_color)
+        const button = d3.select(this);
+        const activated = button.attr("fill") === activated_color;
+        button.attr("fill", activated ? deactivated_color : activated_color);
+        button
           .transition()
           .duration(200)
           .attr("x", function () {
@@ -449,13 +540,18 @@
           .attr("x", x)
           .attr("y", y)
           .attr("width", width)
-          .attr("height", height);
-        d3.select(this.parentNode)
-          .select("text")
-          .attr(
-            "fill",
-            activated ? deactivated_text_color : activated_text_color
-          );
+          .attr("height", height)
+          .on("end", () => {
+            if (stateless) button.attr("fill", deactivated_color);
+          });
+        if (!stateless) {
+          d3.select(this.parentNode)
+            .select("text")
+            .attr(
+              "fill",
+              activated ? deactivated_text_color : activated_text_color
+            );
+        }
       });
     utility_button
       .append("text")
@@ -476,13 +572,15 @@
     <Switch label="Show Test set" bind:checked={show_test_set}></Switch>
   </div> -->
   <div class="absolute top-0 right-0">
-    <ClusterModeRadio id="cluster-mode" bind:cluster_mode={$cluster_mode}
-    ></ClusterModeRadio>
-    {#if $cluster_mode === "metric"}
+    <!-- <ClusterModeRadio id="cluster-mode" bind:cluster_mode={$cluster_mode}
+    ></ClusterModeRadio> -->
+    <!-- {#if $cluster_mode === "metric"}
       <div class="ml-auto right-0 w-fit pr-1 text-sm font-sans">
-        {metrics[$target_range[2]]}: {$target_range[0]} - {$target_range[1]}
+        {metrics[$target_range_metric]}: {$target_ranges[
+          $target_range_metric
+        ][0]} - {$target_ranges[$target_range_metric][1]}
       </div>
-    {/if}
+    {/if} -->
   </div>
 </div>
 
@@ -496,12 +594,12 @@
       /* stroke-width: 1; */
     }
     & .highlight {
-      stroke: #363535;
+      stroke: #676767;
       stroke-width: 1.5;
     }
 
     & .test-case {
-      stroke: #363535;
+      stroke: #505050;
       stroke-width: 1.5;
     }
     & .utility-button {
@@ -510,7 +608,7 @@
       stroke: gray;
     }
   }
-  :global(.test-case-line) {
+  :global(.test-case-line, .recommended-case-line) {
     animation: moving 4s linear infinite;
   }
 
