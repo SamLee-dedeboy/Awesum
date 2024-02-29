@@ -1,23 +1,11 @@
 import nltk
 import numpy as np
-import matplotlib.pyplot as plt
-import stanza
-from transformers import pipeline
 import spacy
-from collections import Counter   
 
 class NaturalnessHelper:
     def __init__(self): 
         self.nlp = spacy.load("en_core_web_sm")
     
-    def get_ranges(self,df):
-        range_avg_dep_tree_ht = (min(df['Writer Average Dependency tree heights'].min(),df['LLM Average Dependency tree heights'].min()),max(df['Writer Average Dependency tree heights'].max(),df['LLM Average Dependency tree heights'].max()))
-        range_avg_sentence_length = (min(df['writer_average_sentence_lengths'].min(),df['LLM_average_sentence_lengths'].min()),max(df['writer_average_sentence_lengths'].max(),df['LLM_average_sentence_lengths'].max()))
-        range_avg_left_subtree_ht = (min(df['writer_avg_left_subtree_height'].min(),df['LLM_avg_left_subtree_height'].min()),max(df['writer_avg_left_subtree_height'].max(),df['LLM_avg_left_subtree_height'].max()))
-        range_avg_right_subtree_ht = (min(df['writer_avg_right_subtree_height'].min(),df['LLM_avg_right_subtree_height'].min()),max(df['writer_avg_right_subtree_height'].max(),df['LLM_avg_right_subtree_height'].max()))
-        ranges = np.array([range_avg_dep_tree_ht,range_avg_sentence_length,range_avg_left_subtree_ht,range_avg_right_subtree_ht])
-        return ranges
-
     def calculate_subtree_features(self,text):
         doc = self.nlp(text)
         spacy.tokens.Token.set_extension('depth', getter=lambda token: len(list(token.ancestors)), force=True)
@@ -67,3 +55,11 @@ class NaturalnessHelper:
         total_tokens = sum(len(sentence.split()) for sentence in sentences)
         average_length= total_tokens / len(sentences)
         return average_length
+
+def get_ranges(df):
+    range_avg_dep_tree_ht = (min(df['Writer Average Dependency tree heights'].min(),df['LLM Average Dependency tree heights'].min()),max(df['Writer Average Dependency tree heights'].max(),df['LLM Average Dependency tree heights'].max()))
+    range_avg_sentence_length = (min(df['writer_average_sentence_lengths'].min(),df['LLM_average_sentence_lengths'].min()),max(df['writer_average_sentence_lengths'].max(),df['LLM_average_sentence_lengths'].max()))
+    range_avg_left_subtree_ht = (min(df['writer_avg_left_subtree_height'].min(),df['LLM_avg_left_subtree_height'].min()),max(df['writer_avg_left_subtree_height'].max(),df['LLM_avg_left_subtree_height'].max()))
+    range_avg_right_subtree_ht = (min(df['writer_avg_right_subtree_height'].min(),df['LLM_avg_right_subtree_height'].min()),max(df['writer_avg_right_subtree_height'].max(),df['LLM_avg_right_subtree_height'].max()))
+    ranges = np.array([range_avg_dep_tree_ht,range_avg_sentence_length,range_avg_left_subtree_ht,range_avg_right_subtree_ht])
+    return ranges

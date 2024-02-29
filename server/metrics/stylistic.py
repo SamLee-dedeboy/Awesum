@@ -8,26 +8,37 @@ import numpy as np
 from summac.model_guardrails import NERInaccuracyPenalty
 import nltk
 import spacy
-from Naturalness_helper import NaturalnessHelper
+from .naturalness import get_ranges, NaturalnessHelper
+import json
+import pandas as pd
 
 class StyleEvaluator:
-    def __init__(self):
+    def __init__(self, naturalness_range_path=r'metrics/tmp/final_metrics_naturalness.json'):
         self.sentiment_scorer = SentimentEvaluator()
         self.faithfulness_scorer = FaithfulnessEvaluator()
+        # self.naturalness_scorer = NaturalnessEvaluator(self.load_naturalness_ranges(naturalness_range_path))
 
     def default(self, original_text, summary):
         readability_score = ReadabilityEvaluator(summary).default()
         formality_score = FormalityEvaluator(summary).default()
         sentiment_score = self.sentiment_scorer.default(summary) 
         faithfulness_score = self.faithfulness_scorer.default(original_text, summary)
+        # naturalness_score = self.naturalness_scorer.default(summary)
         length_score = len(summary)
         return {
             "readability": readability_score,
             "formality": formality_score,
             "sentiment": sentiment_score,
             "faithfulness": faithfulness_score,
+            # "naturalness": naturalness_score,
             "length": length_score,
         }
+
+    def load_naturalness_ranges(self, path=r'metrics/tmp/final_metrics_naturalness.json'):
+        data_nat = json.load(open(path))
+        df = pd.DataFrame(data_nat)
+        ranges = get_ranges(df)
+        return ranges
 
 class ReadabilityEvaluator:
     def __init__(self, text):

@@ -1,13 +1,11 @@
 from openai import OpenAI
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
 # from DataUtils import DocumentController
-from AnalysisUtils import dr, clusters, features, helper
+from AnalysisUtils import dr, clusters, features, helper, gpt
 from metrics.stylistic import StyleEvaluator
 import numpy as np
-import concurrent
-from tqdm import tqdm
 import copy
 
 def save_json(data, filepath=r'new_data.json'):
@@ -16,18 +14,22 @@ def save_json(data, filepath=r'new_data.json'):
 app = Flask(__name__)
 CORS(app)
 openai_api_key = open("api_key").read()
-client=OpenAI(api_key=openai_api_key)
+openai_client=OpenAI(api_key=openai_api_key)
 # document_controller = DocumentController(r'../data/result/chunk_embeddings/1103/all_chunks.json', openai_api_key)
 evaluator = features.StyleEvaluator()
 metrics = ["readability", "formality", "sentiment", "faithfulness", "length"]
+correlations = json.load(open('data/tmp/pearson_r.json'))
+feature_descriptions = json.load(open('data/tmp/feature_descriptions.json'))
+
 # dataset = json.load(open('data/tmp/df_summaries_features.json'))
 # dataset = features.add_all_features(evaluator, dataset)
 # save_json(dataset, "data/tmp/df_summaries_features.json")
 # # coordinates
 # target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-# coordinates = dr.scatter_plot(target_features)
+# method = 'kernel_pca'
+# coordinates = dr.scatter_plot(target_features, method=method)
 # coordinates = coordinates.tolist()
-# save_json(coordinates, 'data/tmp/df_summaries_tsne.json')
+# save_json(coordinates, 'data/tmp/df_summaries_{}.json'.format(method))
 
 # # optic labels
 # optic_labels = clusters.optics(target_features)
@@ -44,37 +46,48 @@ def get_data():
     dataset = json.load(open('data/tmp/df_summaries_features.json'))
     # default coordinates and clusters
     print("loading coordinates and clusters...")
-    coordinates = json.load(open('data/tmp/df_summaries_tsne.json'))
+    # coordinates = json.load(open('data/tmp/df_summaries_tsne.json'))
+    coordinates = json.load(open('data/tmp/df_summaries_kernel_pca.json'))
     optic_labels = json.load(open('data/tmp/df_summaries_optic_labels.json'))
     for i, datum in enumerate(dataset):
+        datum['id'] = i
         datum['coordinates'] = coordinates[i]
         datum['cluster'] = str(optic_labels[i])
     cluster_labels = list(map(lambda l: str(l), set(optic_labels)))
     statistics, metric_data = features.collect_statistics(dataset, metrics)
-    return {
+    return json.dumps({
         "metric_data": metric_data, 
         "dataset": dataset, 
         "cluster_labels": cluster_labels, 
+        "statistics": statistics,
+        "metric_metadata": {
+            "correlations": correlations,
+            "descriptions": feature_descriptions
+        }
+    }) 
+
+@app.route("/data/metrics/", methods=['GET', 'POST'])
+def adjust_metrics():
+    metrics = request.json['metrics']
+    dataset = request.json['dataset']
+    method = request.json['method']
+    kwargs = request.json['parameters']
+    target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
+    # rerun coordinates and clusters
+    coordinates = dr.scatter_plot(target_features, method='tsne')
+    coordinates = coordinates.tolist()
+    cluster_labels = run_cluster(method, target_features, kwargs)
+    for i, datum in enumerate(dataset):
+        datum['coordinates'] = coordinates[i]
+        datum['cluster'] = str(cluster_labels[i])
+    cluster_label_set = list(map(lambda l: str(l), set(cluster_labels)))
+    statistics, metric_data = features.collect_statistics(dataset, metrics)
+    return {
+        "metric_data": metric_data, 
+        "dataset": dataset, 
+        "cluster_labels": cluster_label_set, 
         "statistics": statistics
     } 
-# @app.route("/data/metrics/", methods=['GET', 'POST'])
-# def adjust_metrics():
-#     metrics = request.json['metrics']
-#     dataset = request.json['dataset']
-#     target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-#     # rerun coordinates and clusters
-#     coordinates = dr.scatter_plot(features, method='tsne')
-#     coordinates = coordinates.tolist()
-#     optic_labels = clusters.optics(features)
-#     optic_labels = optic_labels.tolist()
-#     for i, datum in enumerate(dataset):
-#         datum['coordinates'] = coordinates[i]
-#         datum['cluster'] = str(optic_labels[i])
-#     cluster_labels = list(map(lambda l: str(l), set(optic_labels)))
-#     return {
-#         "dataset": dataset, 
-#         "cluster_labels": cluster_labels, 
-#     } 
 
 
 @app.route("/data/cluster/", methods=["POST"])
@@ -85,22 +98,28 @@ def get_cluster():
     metrics = request.json['metrics']
     print(metrics)
     target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-    if method == "optics":
-        cluster_labels = clusters.optics(target_features, **kwargs)
-    elif method == "kmeans":
-        cluster_labels = clusters.k_means(target_features, **kwargs)   
-    cluster_labels = cluster_labels.tolist()
+    cluster_labels = run_cluster(method, target_features, kwargs)
     # save_json(cluster_labels, 'data/tmp/df_summaries_cluster_labels.json')
     for i, datum in enumerate(dataset):
         datum['cluster'] = str(cluster_labels[i])
-    cluster_labels = list(map(lambda l: str(l), set(cluster_labels)))
+    cluster_label_set = list(map(lambda l: str(l), set(cluster_labels)))
     statistics, metric_data = features.collect_statistics(dataset, metrics)
-    return {
+    # del statistics['global_means']
+    # del statistics['global_mins']
+    # del statistics['global_maxes']
+    return { 
         "metric_data": metric_data, 
         "dataset": dataset, 
-        "cluster_labels": cluster_labels, 
+        "cluster_labels": cluster_label_set, 
         "statistics": statistics
-    } 
+    }
+
+def run_cluster(method, target_features, kwargs):
+    if method == "optics":
+        return clusters.optics(target_features, **kwargs).tolist()
+    elif method == "kmeans":
+        return clusters.k_means(target_features, **kwargs).tolist()
+    
 
 # @app.route("/executePrompt/", methods=['POST'])
 # def execute_prompt():
@@ -115,21 +134,20 @@ def get_cluster():
 
 @app.route("/executePromptAll/", methods=['POST'])
 def execute_prompt_all():
-    prompt_template = request.json['prompt']
+    instruction = request.json['instruction']
+    examples = request.json['examples']
+    data_template = request.json['data_template']
+    prompt_template = gpt.combine_templates(instruction, examples, data_template)
     data = request.json['data']
     metrics = request.json['metrics']
     prompts = []
     for datum in data:
         prompt = copy.deepcopy(prompt_template)
-        summary = datum['summary']
-        text = datum['text']
         for message in prompt:
-            # replace ${summary} with datum.summary
-            message['content'] = message['content'].replace("${summary}", summary)
-            message['content'] = message['content'].replace("${text}", text)
+            message['content'] = gpt.replace_data(message['content'], datum)
         prompts.append(prompt)
     save_json(prompts, 'data/debug/prompts.json')
-    summaries = multithread_prompts(prompts)
+    summaries = gpt.multithread_prompts(openai_client, prompts)
     save_json(summaries, 'data/debug/summaries.json')
     cluster_nodes = []
     for index, new_summary in enumerate(summaries):
@@ -145,38 +163,22 @@ def execute_prompt_all():
         statistics.append(features.collect_local_stats(column))
 
     return json.dumps({
+        "messages": prompt_template,
         "cluster_nodes": cluster_nodes,
         "statistics": statistics
     })
 
-
-def request_chatgpt_gpt4(messages, format=None):
-    model = 'gpt-3.5-turbo-1106'
-    # model="gpt-4-1106-preview"
-    if format == "json":
-        response = client.chat.completions.create(
-            # model="gpt-4-1106-preview",
-            model = model,
-            messages=messages,
-            response_format={ "type": "json_object" }
-        )
-    else:
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-        )
-    return response.choices[0].message.content
-
-def multithread_prompts(prompts):
-    l = len(prompts)
-    # results = np.zeros(l)
-    with tqdm(total=l) as pbar:
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=len(prompts))
-        futures = [executor.submit(request_chatgpt_gpt4, prompt) for prompt in prompts]
-        for _ in concurrent.futures.as_completed(futures):
-            pbar.update(1)
-    concurrent.futures.wait(futures)
-    return [future.result() for future in futures]
+@app.route("/query_metric/", methods=['POST'])
+def query_metric():
+    question = request.json['question']
+    feature_pool = request.json['feature_pool']
+    feature_definition_prompt = gpt.formulate_feature_definitions_prompt(feature_pool, feature_descriptions)
+    prompt = gpt.formulate_metric_prompt(question, feature_definition_prompt)
+    response = gpt.request_chatgpt_gpt4(openai_client, prompt, format='json')
+    features = json.loads(response)
+    return {
+        "response": features
+    }
 
 # ====================== deprecated ===============================
 # def get_ravasz():

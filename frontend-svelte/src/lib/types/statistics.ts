@@ -11,3 +11,9 @@ export  type tStatistics = {
     global_mins: number[]
     global_maxes: number[]
   }
+export type tMetricStep = {
+    start: number,
+    end: number,
+    label: string,
+    note: string
+}

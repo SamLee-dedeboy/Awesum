@@ -5,14 +5,35 @@ export class Statbars {
     svgId: string
     svgSize: any
     innerSize: any
+    metric_index: number
     barColor: string | undefined
-    constructor(svgId, svgSize, innerSize, barColor: string|undefined=undefined) {
+    barMouseover: any | undefined
+    barMouseout: any | undefined
+    barClick: any | undefined
+    xScales: any[]
+    yScale: any
+    constructor(svgId, svgSize, innerSize, 
+      metric_index, 
+      barColor: string|undefined=undefined, 
+      barMouseover: any=undefined,
+      barMouseout: any=undefined,
+      barClick: any=undefined) {
         this.svgId = svgId;
         this.svgSize = svgSize;
         this.innerSize = innerSize;
+        this.metric_index = metric_index;
         this.barColor = barColor
+        this.barMouseover = barMouseover
+        this.barMouseout = barMouseout
+        this.barClick = barClick
     }
-    update(stats: tStatBarData[], global_means: number[], global_mins: number[], global_maxes: number[], sameScale: boolean=false, colors: string[]=[] ) {
+    update(stats: tStatBarData[], 
+      global_means: number[], global_mins: number[], global_maxes: number[], 
+      sameScale: boolean=false, 
+      colors: string[]=[], 
+      cluster_labels: string[]|undefined=undefined,
+      ) {
+      let self = this; 
       let xScales;
       const g = d3.select(this.svgId).select("g.inner");
       // scales
@@ -37,8 +58,10 @@ export class Statbars {
         [...Array(stats.length).keys()],
         [0, this.innerSize.height]
       ); 
-      console.log(sameScale, this.barColor)
-      g.selectAll("rect")
+
+      this.xScales = xScales;
+      this.yScale = yScale;
+      const rects = g.selectAll("rect")
         .data(stats)
         .join("rect")
         .attr("x", (d: tStatBarData, i) => {
@@ -64,6 +87,18 @@ export class Statbars {
             return this.barColor && this.barColor === "white"? 0.5 : 0
           }
         });
+      if(this.barClick !== undefined) {
+        rects.attr("cursor", "pointer")
+          .on("mouseover", function(_, d) {
+            d3.select(this).classed("rect-hovered", true).raise()
+            if(self.barMouseover) self.barMouseover(cluster_labels?.[rects.nodes().indexOf(this)])
+          })
+          .on("mouseout", function(_, d) {
+            d3.select(this).classed("rect-hovered", false)
+            if(self.barMouseout) self.barMouseout(cluster_labels?.[rects.nodes().indexOf(this)])
+          })
+        .on("click", function(_, d) {  self.barClick(d, self.metric_index, cluster_labels?.[rects.nodes().indexOf(this)])});
+      }
 
 
       g.selectAll("line.mean")
@@ -81,6 +116,7 @@ export class Statbars {
         })
         .attr("y2", (_, i) => yScale(i) + yScale.bandwidth())
         .attr("stroke", "gray");
+
       // axis
       g.selectAll("line.y-axis").remove();
       g.append("line")
@@ -89,8 +125,24 @@ export class Statbars {
         .attr("y1", -this.svgSize.margin)
         .attr("x2", this.innerSize.width / 2)
         .attr("y2", this.innerSize.height + this.svgSize.margin)
-        .attr("stroke", "black")
-        .attr("stroke-width", 1);
+        .attr("stroke", "#a3a3a3")
+        .attr("stroke-width", 0.3);
+    }
+
+    update_selected_range(selected_range: number[]|undefined, global_mean: number) {
+      console.log("selected_range", selected_range)
+      const g = d3.select(this.svgId).select("g.inner");
+      g.selectAll("line.selected-range").remove();
+        const xScale = this.xScales[0];
+        g.selectAll("line.range")
+          .data(selected_range)
+          .join("line")
+          .attr("class", "range")
+          .attr("x1", (d) => xScale(d - global_mean))
+          .attr("y1", -this.svgSize.margin)
+          .attr("x2", (d) => xScale(d - global_mean))
+          .attr("y2", this.innerSize.height + this.svgSize.margin)
+          .attr("stroke", "gray");
     }
 
 }
