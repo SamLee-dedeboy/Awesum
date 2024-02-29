@@ -116,7 +116,7 @@ export class Statbars {
           })
         .on("click", function(_, d) {  
           self.update_selected_range([d.min, d.max], global_means[0])
-          self.barClick(d, self.metric_index, cluster_labels?.[rects.nodes().indexOf(this)])
+          self.barClick(d, self.metric_index)
         });
       }
 

@@ -262,35 +262,6 @@
     // cluster_mode.set("metric");
   }
 
-  // async function handleClusterClicked(
-  //   cluster_label: string,
-  //   prompt_version: number
-  // ) {
-  //   console.assert(stat_data !== undefined && data !== undefined);
-  //   if (!stat_data || !data) return;
-  //   mode = tMode.Detail;
-  //   const cluster_nodes = data.filter(
-  //     (datum) => "" + datum.cluster === "" + cluster_label
-  //   );
-  //   selected_cluster = {
-  //     cluster_label: cluster_label,
-  //     prompt_version: prompt_version,
-  //     stats: stat_data.cluster_statistics[cluster_label],
-  //     cluster_nodes: cluster_nodes,
-  //     // summaries: cluster_nodes.map((datum) => datum.summary),
-  //   };
-
-  //   console.log(optimizations[selected_cluster.cluster_label]);
-  //   await tick();
-  //   clickedClusterStat = stat_data.cluster_statistics[cluster_label];
-  //   detail_statbars[selected_cluster.cluster_label][0].update(
-  //     clickedClusterStat,
-  //     stat_data.global_means,
-  //     stat_data.global_mins,
-  //     stat_data.global_maxes
-  //   );
-  // }
-
   function handleOptimizationClicked(prompt_version: number) {
     console.assert(selected_cluster !== undefined);
     if (!selected_cluster) return;
@@ -304,31 +275,27 @@
     selected_cluster = selected_cluster;
   }
 
-  function handleMetricRangeSelected(
-    d: tStatBarData,
-    metric_index: number,
-    cluster_label: string
-  ) {
+  function handleMetricRangeSelected(d: tStatBarData, metric_index: number) {
     if (
       $target_ranges[metrics[metric_index]][0] === d.min &&
       $target_ranges[metrics[metric_index]][1] === d.max
     ) {
       $target_ranges[metrics[metric_index]] = [undefined, undefined];
-      if (
-        Object.values($target_ranges).every(
-          (range) => range[0] === undefined && range[1] === undefined
-        )
-      )
-        cluster_mode.set("cluster");
-      return;
+    } else {
+      $target_ranges[metrics[metric_index]] = [d.min, d.max];
     }
-    $target_ranges[metrics[metric_index]] = [d.min, d.max];
     const in_range_nodes = data?.filter(
       (d) => d.cluster !== "-1" && inAllRange(d.features, $target_ranges)
     );
     console.log(in_range_nodes);
     recommended_nodes.set(in_range_nodes);
-    cluster_mode.set("metric");
+    if (
+      Object.values($target_ranges).every(
+        (range) => range[0] === undefined && range[1] === undefined
+      )
+    )
+      cluster_mode.set("cluster");
+    else cluster_mode.set("metric");
   }
 
   function handleMetricRangeMouseover(cluster_label: string) {
@@ -342,6 +309,12 @@
     features: { [key: string]: number },
     ranges: { [key: string]: [number | undefined, number | undefined] }
   ) {
+    if (
+      Object.values(ranges).every(
+        ([min, max]) => min === undefined && max === undefined
+      )
+    )
+      return false;
     let inRange = true;
     Object.entries(ranges).forEach(([metric, range]) => {
       if (range[0] === undefined || range[1] === undefined) return;
@@ -387,48 +360,8 @@
               on:mouseout={() => handleClusterMouseout()}
               on:mouseover={(e) => handleClusterHovered(e.detail)}
             ></ClusterProfile>
-            <!-- <div
-              role="button"
-              tabindex={index}
-              class="cluster-stat-container w-[120px] h-[78px] border border-1 border-gray-100 relative hoverable gap-x-0.5 gap-y-0.5"
-              use:melt={trigger_instances[index]}
-              on:keyup={() => {}}
-              on:click={() => handleClusterClicked(cluster_label)}
-              on:m-pointerenter={() => handleClusterHovered(cluster_label)}
-              on:m-focus={() => handleClusterHovered(cluster_label)}
-              on:m-pointerleave={() => {
-                handleClusterMouseout();
-              }}
-              on:m-blur={() => {
-                handleClusterMouseout();
-              }}
-            >
-              <p
-                class="text-sm absolute ml-0.5 top-[-0.1rem] pointer-events-none"
-              >
-                {cluster_label}
-              </p>
-              <svg
-                id={`stat-cluster-${index}`}
-                class="w-full h-full pointer-events-none"
-                viewBox={`0 0 ${svgSize.width} ${svgSize.height}`}
-              >
-                <g
-                  class="inner"
-                  transform={`translate(${svgSize.margin}, ${svgSize.margin})`}
-                ></g>
-              </svg>
-            </div> -->
           {/each}
         </div>
-        <!-- <div
-        class="sticky bottom-1 w-full bg-white border border-1 border-black pl-1"
-      >
-        <ClusterStat
-          cluster_stat={hoveredClusterStat}
-          global_means={stat_data?.global_means}
-        ></ClusterStat>
-      </div> -->
       {:else if mode === tMode.All_Metric}
         <div
           class="flex flex-wrap outline outline-1 outline-gray-100 justify-between"

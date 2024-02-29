@@ -3,9 +3,6 @@
   import { onMount, tick } from "svelte";
   import { cluster_colors, metrics } from "lib/constants";
   import type { tStatistics, tNode } from "lib/types";
-  import * as d3_hexbin from "d3-hexbin";
-  import ClusterModeRadio from "lib/components/ClusterModeRadio.svelte";
-  import Switch from "lib/components/Switch.svelte";
   import {
     example_nodes,
     // recommended_cluster,
@@ -83,9 +80,6 @@
       } else {
         update_by_cluster();
       }
-      // if ($recommended_cluster !== undefined) {
-      //   toggle_recommendations();
-      // }
     }
   }
 
@@ -150,7 +144,7 @@
       .attr("r", (d: any) => node_radius)
       .attr("stroke", "gray")
       .attr("stroke-width", 0.5);
-    // force_collision_centroid(data, node_radius + 0.7, centroids);
+    force_collision_centroid(data, node_radius + 0.7, centroids);
   }
 
   async function update_by_cluster() {
@@ -160,6 +154,7 @@
       .selectAll("circle")
       .attr("fill", (d) => cluster_colors(d.cluster))
       .attr("stroke", "gray")
+      .attr("opacity", 1)
       .attr("stroke-width", 0.5);
     // .attr("opacity", show_recommendations ? 0.8 : 0)
     // .attr("stroke", "gray")
@@ -198,39 +193,24 @@
       );
       total_max_distance += max_distance;
     });
-    const colorScale = d3
-      .scalePow()
-      // .domain([
-      //   statistics.global_mins[target_metric_index],
-      //   statistics.global_maxes[target_metric_index],
-      // ])
-      .domain([0, total_max_distance])
-      .range(["red", "transparent"])
-      .exponent(0.2);
     // const colorScale = d3
     //   .scalePow()
-    //   .domain([
-    //     statistics.global_mins[target_metric_index],
-    //     statistics.global_maxes[target_metric_index],
-    //   ])
-    //   .range(["white", "red"])
-    //   .exponent(1.5);
+    //   .domain([0, total_max_distance])
+    //   .range(["red", "transparent"])
+    //   .exponent(0.2);
+    const opacityScale = d3
+      .scalePow()
+      .domain([0, total_max_distance])
+      .range([1, 0])
+      .exponent(1);
 
     const g = d3.select("#cluster-svg").select("g.node-group");
     const points = g
       .selectAll("circle")
-      .attr("fill", (d) => {
-        d.total_distance = undefined;
-        $selected_metrics.forEach((metric) => {
-          if ($target_ranges[metric][0] === undefined) return;
-          const value = d.features[metric];
-          const distance = in_range(value, $target_ranges[metric])
-            ? 0
-            : distance_to_range(value, $target_ranges[metric]);
-          if (d.total_distance === undefined) d.total_distance = 0;
-          d.total_distance += distance;
-        });
-        return colorScale(d.total_distance);
+      .attr("fill", (d) => cluster_colors(d.cluster))
+      .attr("opacity", (d) => {
+        d.total_distance = compute_distance(d);
+        return opacityScale(d.total_distance);
       })
       .attr("stroke", (d) => (d.total_distance === 0 ? "black" : "white"))
       .attr("stroke-width", (d) => (d.total_distance === 0 ? 1.5 : 1));
@@ -282,9 +262,6 @@
         d3.select("#cluster-svg")
           .select("g.line-group")
           .selectAll("line.recommended-case-line")
-          // .data(recommended_case_circles)
-          // .join("line")
-          // .classed("recommended-case-line", true)
           .attr("x1", (d) => +d3.select(d).attr("cx") + margin)
           .attr("y1", (d) => +d3.select(d).attr("cy") + margin);
       });
@@ -292,14 +269,19 @@
 
   export function update_highlight_cluster(cluster_label: string | undefined) {
     const g = d3.select("#cluster-svg").select("g.node-group");
+    const recommended_node_ids = $recommended_nodes?.map((node) => node.id);
     if (cluster_label === undefined) {
       g.selectAll("circle")
+        .filter((d) => !recommended_node_ids?.includes(d.id))
         .classed("dismissed", false)
         .classed("highlight", false);
     } else {
       g.selectAll("circle")
         .classed("dismissed", true)
-        .classed("highlight", (d) => d.cluster === cluster_label);
+        .classed("highlight", (d) => d.cluster === cluster_label)
+        .filter((d) => recommended_node_ids?.includes(d.id))
+        .classed("dismissed", false)
+        .classed("highlight", true);
     }
   }
 
@@ -442,13 +424,15 @@
   function update_recommendations(show_recommendations) {
     // if ($recommended_cluster === undefined) return;
     if ($recommended_nodes === undefined) return;
-    console.log("show recommendations", $recommended_nodes);
     const svg = d3.select("#cluster-svg");
     const line_group = svg.select("g.line-group");
     const recommended_node_ids = $recommended_nodes.map((node) => node.id);
     const recommended_case_circles = svg
       .selectAll("circle")
-      .filter((d) => recommended_node_ids.includes(d.id));
+      .classed("dismissed", false)
+      .classed("highlight", false)
+      .filter((d) => recommended_node_ids.includes(d.id))
+      .classed("highlight", true);
     line_group
       .selectAll("line.recommended-case-line")
       .data(recommended_case_circles)
@@ -562,6 +546,20 @@
       .attr("fill", deactivated_text_color)
       .attr("dominant-baseline", "middle")
       .attr("text-anchor", "middle");
+  }
+
+  function compute_distance(d) {
+    let total_distance: number | undefined = undefined;
+    $selected_metrics.forEach((metric) => {
+      if ($target_ranges[metric][0] === undefined) return;
+      const value = d.features[metric];
+      const distance = in_range(value, $target_ranges[metric])
+        ? 0
+        : distance_to_range(value, $target_ranges[metric]);
+      if (total_distance === undefined) total_distance = 0;
+      total_distance += distance;
+    });
+    return total_distance;
   }
 </script>
 
