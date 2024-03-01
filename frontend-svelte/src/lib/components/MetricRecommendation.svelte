@@ -14,14 +14,12 @@
   let delayed_user_question_response = "Response will be here...";
   export let data: tNode[];
   export let metric_metadata: any;
+  let query_area;
   let loading_response = false;
   // let recommended_cluster = "";
-  function handleQuery(e) {
-    if (e.key === "Enter" || e.keyCode === 13) {
-      const user_question = e.target.textContent;
-      query_metric(user_question);
-      // make_delay(make_paragraph([]));
-    }
+  function handleQuery() {
+    const user_question = query_area.textContent;
+    query_metric(user_question);
   }
 
   function query_metric(question: string) {
@@ -129,12 +127,23 @@
     >
       <img src="user.svg" alt="*" class="w-full h-full" />
     </div>
-    <div
-      class="h-[4rem] w-full ml-3 pl-2 mt-3 textarea-border p-1 bg-stone text-sm text-left placeholder empty:before:content-['Ask_any_question_here...']"
-      contenteditable
-      role="form"
-      on:keyup={(e) => handleQuery(e)}
-    ></div>
+    <div class="h-[4rem] w-full ml-3 mt-3 relative bg-stone">
+      <div
+        bind:this={query_area}
+        class="h-full grow textarea-border pr-[1.5rem] pl-2 bg-stone text-area-border text-sm text-left placeholder empty:before:content-['Ask_any_question_here...']"
+        contenteditable
+        role="form"
+      ></div>
+      <div
+        role="button"
+        tabindex="0"
+        class="absolute right-0 top-0 h-full w-[1.5rem] flex items-center justify-center cursor-pointer rounded-r border-l border-gray-200 hover:bg-gray-200"
+        on:click={handleQuery}
+        on:keyup={() => {}}
+      >
+        <img src="arrow_down_2.svg" alt="*" class="w-[1.1rem] h-[1.1rem]" />
+      </div>
+    </div>
   </div>
 
   <div class="flex relative w-full">
@@ -155,7 +164,7 @@
       <img src="bot.svg" alt="*" class="absolute w-full h-full" />
     </div>
     <div
-      class="h-[12rem] w-full ml-3 textarea-border pl-2 mt-3 flex overflow-y-auto flex-none gap-x-1 p-1"
+      class="h-[12rem] grow ml-3 textarea-border pl-2 mt-3 flex overflow-y-auto flex-none gap-x-1 p-1"
     >
       <div class="grow bg-stone text-xs relative rounded">
         <span
