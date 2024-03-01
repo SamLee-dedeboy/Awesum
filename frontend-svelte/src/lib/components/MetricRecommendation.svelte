@@ -141,7 +141,7 @@
         on:click={handleQuery}
         on:keyup={() => {}}
       >
-        <img src="arrow_down_2.svg" alt="*" class="w-[1.1rem] h-[1.1rem]" />
+        <img src="send.svg" alt="*" class="w-[1.1rem] h-[1.1rem]" />
       </div>
     </div>
   </div>

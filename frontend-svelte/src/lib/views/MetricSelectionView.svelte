@@ -95,46 +95,25 @@
 </script>
 
 <div class="flex flex-col h-full">
-  <div class="view-header">Metric Selection</div>
-  <div class="topc-section flex relative gap-x-2">
-    <!-- <div
-      class="flex flex-col grow h-fit items-center justify-center border-gray-500"
-    >
-      {#each $selected_metrics as metric, index}
-        <div class="metric-title w-full flex flex-1 items-center px-1">
-          <div
-            role="button"
-            tabindex={index}
-            class="h-[1.2rem] aspect-square hover:bg-gray-300 rounded-full hide-button"
-            on:keyup={() => {}}
-            on:click={() => removeMetric(metric)}
-          >
-            <img src="close.svg" alt="*" />
-          </div>
-          <div
-            use:melt={$trigger}
-            class="w-[7rem] h-full flex text-left px-2 cursor-pointer hover:bg-gray-200"
-            on:m-click={() => {
-              selected_metric = metric;
-            }}
-          >
-            {metric}
-          </div>
-        </div>
-      {/each}
-      <div
-        use:melt={$add_trigger}
-        class="w-fit h-full flex flex-1 items-center justify-start px-1 hover:bg-gray-300 mr-auto"
-        style={removed_metrics.length === 0
-          ? "opacity: 0.5; cursor-not-allowed; pointer-events: none;"
-          : ""}
+  <div class="view-header relative">
+    Metric Selection
+    <div class="absolute right-0.5 text-xs flex items-center gap-x-1 gap-y-1">
+      <!-- todo: add info on what 'Apply' does -->
+      <!-- <img
+        src="info_icon.svg"
+        alt="*"
+        class="w-[1rem] h-[1rem] ml-auto right-0"
+      /> -->
+      <button
+        class=" bg-green-100 border-green-200 py-0 px-[0.09rem] h-[1.1rem] w-[1.7rem] flex justify-center"
+        class:disabled={Object.keys($feature_target_levels).length === 0 ||
+          Object.values($feature_target_levels).every((v) => !v)}
+        on:click={() => selected_metrics.set(local_selected_metrics)}
+        ><img src="forward.svg" alt="*" class="h-full" /></button
       >
-        <div class="h-[1.2rem] aspect-square rounded-full">
-          <img src="plus_circle.svg" alt="*" />
-        </div>
-        <div class="w-[7rem] h-full flex justify-start px-2">add more</div>
-      </div>
-    </div> -->
+    </div>
+  </div>
+  <div class="topc-section flex relative justify-between">
     <div
       class="max-w-[15rem] min-h-[8rem] max-h-[9rem] p-1 w-min aspect-square"
       use:melt={$trigger}
@@ -171,26 +150,6 @@
         </div>
       {/each}
     </div>
-    <div
-      class="absolute bottom-1 right-1 text-xs flex flex-col items-center gap-x-1 gap-y-1"
-    >
-      <!-- todo: add info on what 'Apply' does -->
-      <img
-        src="info_icon.svg"
-        alt="*"
-        class="w-[1rem] h-[1rem] ml-auto right-0"
-      />
-      <button
-        class="p-1 bg-green-100 border-green-200"
-        on:click={() => selected_metrics.set(local_selected_metrics)}
-        >Apply</button
-      >
-    </div>
-    <!-- {#if hovered_metric}
-      <div class="text-xs text-left ml-1 font-mono break-words">
-        {@html feature_descriptions[hovered_metric]}
-      </div>
-    {/if} -->
   </div>
   <div class="flex w-full flex-1">
     <MetricRecommendation
@@ -207,7 +166,6 @@
     class="shadow-sm"
     transition:fade={{ duration: 100 }}
   >
-    <!-- <div class="border border-black !bg-amber-50" use:melt={$arrow} /> -->
     <div
       class="flex flex-col py-2 px-2 w-[20rem] h-fit rounded border border-gray-500 bg-amber-50 relative"
     >
@@ -215,14 +173,6 @@
         {@html feature_descriptions[hovered_metric]}
       </p>
     </div>
-    <!-- <div
-      role="button"
-      tabindex="0"
-      use:melt={$close}
-      class="absolute p-0.5 bottom-1 right-1 text-sm bg-green-100 hover:bg-green-200 outline outline-1 outline-gray-500 rounded"
-    >
-      Got it
-    </div> -->
   </div>
 {/if}
 
@@ -274,5 +224,11 @@
   }
   .metric-title:hover .hide-button {
     opacity: 1;
+  }
+  .disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    background-color: white;
+    border: unset;
   }
 </style>
