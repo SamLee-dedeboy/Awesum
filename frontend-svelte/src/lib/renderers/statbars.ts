@@ -121,38 +121,40 @@ export class Statbars {
       }
 
 
-      g.selectAll("line.mean")
-        .data(stats)
-        .join("line")
-        .attr("class", "mean")
-        .attr("x1", (d: tStatBarData, i) => {
-          if(sameScale) {
-            return xScales[0](d.mean)
-          } else {
-            return xScales[i](d.mean - global_means[i])
-          }
-        })
-        .attr("y1", (_, i) => yScale(i))
-        .attr("x2", (d: tStatBarData, i) => {
-          if(sameScale) {
-            return xScales[0](d.mean)
-          } else {
-            return xScales[i](d.mean - global_means[i])
-          }
-        })
-        .attr("y2", (_, i) => yScale(i) + yScale.bandwidth())
-        .attr("stroke", "gray");
+      if(!sameScale) {
+        g.selectAll("line.mean")
+          .data(stats)
+          .join("line")
+          .attr("class", "mean")
+          .attr("x1", (d: tStatBarData, i) => {
+            if(sameScale) {
+              return xScales[0](d.mean)
+            } else {
+              return xScales[i](d.mean - global_means[i])
+            }
+          })
+          .attr("y1", (_, i) => yScale(i))
+          .attr("x2", (d: tStatBarData, i) => {
+            if(sameScale) {
+              return xScales[0](d.mean)
+            } else {
+              return xScales[i](d.mean - global_means[i])
+            }
+          })
+          .attr("y2", (_, i) => yScale(i) + yScale.bandwidth())
+          .attr("stroke", "gray");
+        // axis
+        g.selectAll("line.y-axis").remove();
+        g.append("line")
+          .attr("class", "y-axis")
+          .attr("x1", this.innerSize.width / 2)
+          .attr("y1", -this.svgSize.margin)
+          .attr("x2", this.innerSize.width / 2)
+          .attr("y2", this.innerSize.height + this.svgSize.margin)
+          .attr("stroke", "#a3a3a3")
+          .attr("stroke-width", 0.3);
+      }
 
-      // axis
-      g.selectAll("line.y-axis").remove();
-      g.append("line")
-        .attr("class", "y-axis")
-        .attr("x1", this.innerSize.width / 2)
-        .attr("y1", -this.svgSize.margin)
-        .attr("x2", this.innerSize.width / 2)
-        .attr("y2", this.innerSize.height + this.svgSize.margin)
-        .attr("stroke", "#a3a3a3")
-        .attr("stroke-width", 0.3);
     }
 
     update_selected_range(selected_range: [number|undefined, number|undefined], global_mean: number) {
@@ -192,7 +194,7 @@ export class Statbars {
         .attr("x2", (d) => xScale(d.start))
         .attr("y2", this.svgSize.height)
       details.selectAll("line")
-        .attr("stroke", "red")
+        .attr("stroke", "gray")
         .attr("stroke-width", 0.2)
         .attr("stroke-dasharray", "2, 4")
         .classed("hide", true);
