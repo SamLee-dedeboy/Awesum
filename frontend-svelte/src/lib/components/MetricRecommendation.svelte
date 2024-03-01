@@ -123,31 +123,47 @@
 
 <div class="flex flex-col w-full gap-y-1">
   <div class="view-header">Metrics Recommendation</div>
-  <div
-    class="h-[4rem] mx-3 textarea-border p-1 bg-stone text-sm text-left placeholder empty:before:content-['Ask_any_question_here...']"
-    contenteditable
-    role="form"
-    on:keyup={(e) => handleQuery(e)}
-  ></div>
-  <div class="h-[12rem] mx-3 flex overflow-y-auto flex-none gap-x-1 p-1">
+  <div class="flex relative w-full">
     <div
-      class="w-[2.5rem] h-[2.5rem] flex items-center justify-center p-1 rounded-full border-gray-300 relative"
+      class="w-[1.5rem] h-[1.5rem] flex items-center justify-center absolute bg-white z-10 rounded-full outline outline-1 outline-gray-100 p-0.5"
     >
-      <img src="bot.svg" alt="*" class="w-[80%] h-[80%]" />
-      {#if loading_response}
+      <img src="user.svg" alt="*" class="w-full h-full" />
+    </div>
+    <div
+      class="h-[4rem] w-full ml-3 pl-2 mt-3 textarea-border p-1 bg-stone text-sm text-left placeholder empty:before:content-['Ask_any_question_here...']"
+      contenteditable
+      role="form"
+      on:keyup={(e) => handleQuery(e)}
+    ></div>
+  </div>
+
+  <div class="flex relative w-full">
+    {#if loading_response}
+      <div
+        class="w-[2rem] h-[2rem] absolute left-[-0.25rem] top-[-0.25rem] flex items-center justify-center rounded-full border-gray-300"
+      >
         <img
           src="load.svg"
           alt="*"
-          class="absolute w-full h-full animate-[spin_1.5s_ease-in-out_infinite]"
+          class="absolute w-full h-full animate-[spin_1.5s_ease-in-out_infinite] z-20"
         />
-      {/if}
+      </div>
+    {/if}
+    <div
+      class="w-[1.5rem] h-[1.5rem] flex items-center justify-center absolute bg-white z-10 rounded-full outline outline-1 outline-gray-100 p-0.5"
+    >
+      <img src="bot.svg" alt="*" class="absolute w-full h-full" />
     </div>
-    <div class="grow textarea-border bg-stone text-xs relative rounded">
-      <span
-        class="bot-response absolute left-0 right-0 top-0 bottom-0 overflow-y-auto p-1 font-mono text-[0.75rem] text-left"
-      >
-        {@html delayed_user_question_response}
-      </span>
+    <div
+      class="h-[12rem] w-full ml-3 textarea-border pl-2 mt-3 flex overflow-y-auto flex-none gap-x-1 p-1"
+    >
+      <div class="grow bg-stone text-xs relative rounded">
+        <span
+          class="bot-response absolute left-0 right-0 top-0 bottom-0 overflow-y-auto p-1 font-mono text-[0.75rem] text-left"
+        >
+          {@html delayed_user_question_response}
+        </span>
+      </div>
     </div>
   </div>
   <!-- <button

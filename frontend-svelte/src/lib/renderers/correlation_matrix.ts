@@ -32,11 +32,11 @@ export class CorrelationMatrix {
     init() {
         console.log("init")
         const svg = d3.select("#" + this.svgId).attr("viewBox", `0 0 ${this.svgSize.width} ${this.svgSize.height}`);
-        const axis_group = svg.append("g").classed("axis-group", true);
         const node_group = svg.append("g").classed("node-group", true);
         const node_connector_group = node_group.append("g").classed("node-connector-group", true);
         const label_container_group = svg.append("g").classed("label-container-group", true);
         const label_group = svg.append("g").classed("label-group", true);
+        const axis_group = svg.append("g").classed("axis-group", true);
     }
 
     update(metrics: string[], correlations: any[]) {
@@ -158,11 +158,11 @@ export class CorrelationMatrix {
             cell_data.push({
                 source: i,
                 target: j,
-                // weight: weight,
+                weight: weight,
                 x: col_bands(i),
                 y: row_bands(j),
                 size: over_threshold? scaleSize(Math.abs(weight)): row_bands.bandwidth() ,
-                color: over_threshold? scaleColor(weight): "#eeeeee",
+                color: over_threshold? scaleColor(weight): "white",
                 over_threshold: over_threshold,
                 disabled: disabled
             })
@@ -176,14 +176,26 @@ export class CorrelationMatrix {
                 const cell = d3.select(this)
                 cell.selectAll("rect").remove()
                 cell.selectAll("line").remove()
+                cell.selectAll("text").remove()
                 cell.append("rect") 
+                    .attr("class", "correlation")
                     .attr("x", (d) => d.x + col_bands.bandwidth() / 2 - d.size / 2)
                     .attr("y", (d) => d.y + row_bands.bandwidth() / 2 - d.size / 2)
                     .attr("width", (d) => d.size)
                     .attr("height", (d) => d.size)
                     .attr("fill", (d) => d.color)
-                    .attr("stroke", "black")
+                    // .attr("stroke", "black")
                     .attr("pointer-events", "none")
+                cell.append("text") 
+                    .attr("x", (d) => d.x + col_bands.bandwidth() / 2)
+                    .attr("y", (d) => d.y + row_bands.bandwidth() / 2)
+                    .attr("text-anchor", "middle")
+                    .attr("dominant-baseline", "middle")
+                    .attr("font-size", "0.4rem")
+                    .attr("font-family", "monospace")
+                    .attr("pointer-events", "none")
+                    .attr("opacity", (d) => d.over_threshold? 0:1)
+                    .text(d => d.weight.toFixed(2))
                 if(d.over_threshold) {
                     console.log("over_threshold", d)
                     cell.append("line")
@@ -214,17 +226,18 @@ export class CorrelationMatrix {
                         .attr("height", row_bands.bandwidth())
                         .attr("fill", "white")
                         .attr("cursor", "pointer")
-                        .attr("stroke", "black")
-                        .on("mouseover", function(e) {
-                            console.log("mouseover", e)
+                        .on("mouseover", (e) => {
                             e.preventDefault()
-                            cell.selectAll("line").attr("opacity", 1)
-                            console.log(cell.selectAll("line").nodes())
+                            // cell.selectAll("line").attr("opacity", 1)
+                            cell.select("rect.correlation").attr("opacity", 0)
+                            cell.select("text").attr("opacity", 1)
                             cell.raise()
                         })
-                        .on("mouseout", function(e) {
+                        .on("mouseout", (e) => {
                             e.preventDefault()
                             cell.selectAll("line").attr("opacity", 0)
+                            cell.select("rect.correlation").attr("opacity", 1)
+                            cell.select("text").attr("opacity", 0)
                         })
                         .lower()
                 }
