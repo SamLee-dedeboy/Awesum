@@ -3,6 +3,7 @@
   import type { tNode } from "lib/types";
   import { createEventDispatcher } from "svelte";
   import { recommended_nodes, example_nodes } from "lib/store";
+  import { cluster_colors } from "lib/constants";
   const dispatch = createEventDispatcher();
 
   $: example_nodes_ids = $example_nodes.map((node) => node.id);
@@ -19,6 +20,7 @@
       {#each $recommended_nodes as datum}
         <SummaryCard
           statistics={datum.features}
+          color={cluster_colors(datum.cluster)}
           summary={datum.summary}
           in_example={example_nodes_ids.includes(datum.id)}
           on:add_example={() => example_nodes.set([datum, ...$example_nodes])}

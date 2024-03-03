@@ -12,6 +12,7 @@
     feature_target_levels,
     selected_metrics,
     test_set,
+    example_nodes,
     recommended_nodes,
   } from "lib/store";
   import {
@@ -381,6 +382,13 @@
             data={selected_cluster?.cluster_nodes || []}
             on:add_example={handleAddExample}
           ></SummaryView> -->
+          <div class="flex px-1 gap-y-2 justify-between">
+            {#if $recommended_nodes}
+              <span>
+                Examples: {$example_nodes?.length} / {$recommended_nodes.length}</span
+              >
+            {/if}
+          </div>
           <SummaryView></SummaryView>
         </div>
       </div>
