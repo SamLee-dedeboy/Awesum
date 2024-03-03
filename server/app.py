@@ -20,14 +20,28 @@ evaluator = features.StyleEvaluator()
 metrics = ["readability", "formality", "sentiment", "faithfulness", "length"]
 correlations = json.load(open('data/tmp/pearson_r.json'))
 feature_descriptions = json.load(open('data/tmp/feature_descriptions.json'))
-dataset = json.load(open('data/tmp/df_summaries_features.json'))
+dataset = json.load(open('data/tmp/df_summaries_features_w_topics.json'))
+topic_nodes = helper.group_by(dataset, lambda d: d['topic'])
+snapshots = {}
+for topic, nodes in topic_nodes.items():
+    target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), nodes))
+    method = 'kernel_pca'
+    coordinates, dr_estimator, dr_scaler, min_coord, max_coord = dr.scatter_plot(target_features, method=method)
+    optic_labels = clusters.optics(target_features)
+    optic_labels = optic_labels.tolist()
+    snapshots[topic] = {
+        'coordinates': coordinates.tolist(),
+        'dr_estimator': dr_estimator,
+        'dr_scaler': dr_scaler,
+        'min_coord': min_coord,
+        'max_coord': max_coord,
+        'optic_labels': optic_labels,
+        'nodes': nodes,
+    }
 
 # dataset = features.add_all_features(evaluator, dataset)
 # save_json(dataset, "data/tmp/df_summaries_features.json")
 # # coordinates
-target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-method = 'kernel_pca'
-coordinates, dr_estimator, dr_scaler, min_coord, max_coord = dr.scatter_plot(target_features, method=method)
 # coordinates = coordinates.tolist()
 # save_json(coordinates, 'data/tmp/df_summaries_{}.json'.format(method))
 
@@ -38,26 +52,31 @@ coordinates, dr_estimator, dr_scaler, min_coord, max_coord = dr.scatter_plot(tar
 
 @app.route("/data/", methods=['GET', 'POST'])
 def get_data():
+    topic = request.json['topic']
     # dataset = json.load(open('data/df_summaries.json'))
     # print("adding features...")
     # dataset = features.add_all_features(dataset)
     # save_json(dataset, "data/tmp/df_summaries_features.json")
     # default features
-    dataset = json.load(open('data/tmp/df_summaries_features.json'))
+    # dataset = json.load(open('data/tmp/df_summaries_features_w_topics.json'))
     # default coordinates and clusters
     print("loading coordinates and clusters...")
     # coordinates = json.load(open('data/tmp/df_summaries_tsne.json'))
-    coordinates = json.load(open('data/tmp/df_summaries_kernel_pca.json'))
-    optic_labels = json.load(open('data/tmp/df_summaries_optic_labels.json'))
-    for i, datum in enumerate(dataset):
-        datum['id'] = i
+    # coordinates = json.load(open('data/tmp/df_summaries_kernel_pca.json'))
+    # optic_labels = json.load(open('data/tmp/df_summaries_optic_labels.json'))
+    # dataset = list(filter(lambda x: x['topic'] == topic, dataset))
+    # optic_labels = generate_cluster_labels(dataset)
+    nodes = snapshots[topic]['nodes']
+    coordinates = snapshots[topic]['coordinates']
+    optic_labels = snapshots[topic]['optic_labels']
+    for i, datum in enumerate(nodes):
         datum['coordinates'] = coordinates[i]
         datum['cluster'] = str(optic_labels[i])
     cluster_labels = list(map(lambda l: str(l), set(optic_labels)))
-    statistics, metric_data = features.collect_statistics(dataset, metrics)
+    statistics, metric_data = features.collect_statistics(nodes, metrics)
     return json.dumps({
         "metric_data": metric_data, 
-        "dataset": dataset, 
+        "dataset": nodes, 
         "cluster_labels": cluster_labels, 
         "statistics": statistics,
         "metric_metadata": {
@@ -66,33 +85,34 @@ def get_data():
         }
     }) 
 
-@app.route("/data/metrics/", methods=['GET', 'POST'])
-def adjust_metrics():
-    metrics = request.json['metrics']
-    dataset = request.json['dataset']
-    recommended_features = request.json['recommended_features']
-    method = request.json['method']
-    # kwargs = request.json['parameters']
-    target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-    # rerun coordinates and clusters
-    coordinates = dr.scatter_plot(target_features, method='tsne')
-    coordinates = coordinates.tolist()
-    cluster_labels = run_cluster(method, target_features, auto_adjust=True)
-    for i, datum in enumerate(dataset):
-        datum['coordinates'] = coordinates[i]
-        datum['cluster'] = str(cluster_labels[i])
-    cluster_label_set = list(map(lambda l: str(l), set(cluster_labels)))
-    statistics, metric_data = features.collect_statistics(dataset, metrics)
-    closest_cluster = None
-    if len(recommended_features['features']) > 0:
-        closest_cluster = helper.fit_cluster(dataset, recommended_features['features'], recommended_features['feature_pool'], feature_descriptions)
-    return {
-        "metric_data": metric_data, 
-        "dataset": dataset, 
-        "cluster_labels": cluster_label_set, 
-        "statistics": statistics,
-        "closest_cluster": closest_cluster
-    } 
+# @app.route("/data/metrics/", methods=['GET', 'POST'])
+# def adjust_metrics():
+#     metrics = request.json['metrics']
+#     dataset = request.json['dataset']
+#     recommended_features = request.json['recommended_features']
+#     method = request.json['method']
+#     # kwargs = request.json['parameters']
+#     target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
+#     # rerun coordinates and clusters
+#     coordinates = dr.scatter_plot(target_features, method='tsne')
+#     coordinates = coordinates.tolist()
+#     cluster_labels = run_cluster(method, target_features, auto_adjust=True)
+#     for i, datum in enumerate(dataset):
+#         datum['coordinates'] = coordinates[i]
+#         datum['cluster'] = str(cluster_labels[i])
+#     cluster_label_set = list(map(lambda l: str(l), set(cluster_labels)))
+#     statistics, metric_data = features.collect_statistics(dataset, metrics)
+#     closest_cluster = None
+#     if len(recommended_features['features']) > 0:
+#         closest_cluster = helper.fit_cluster(dataset, recommended_features['features'], recommended_features['feature_pool'], feature_descriptions)
+#     return {
+#         "metric_data": metric_data, 
+#         "dataset": dataset, 
+#         "cluster_labels": cluster_label_set, 
+#         "statistics": statistics,
+#         "closest_cluster": closest_cluster
+#     } 
+
 @app.route("/data/query_closest_cluster/", methods=['GET', 'POST'])
 def query_closest_cluster():
     recommended_features = request.json['recommended_features']
@@ -103,29 +123,29 @@ def query_closest_cluster():
     }
 
 
-@app.route("/data/cluster/", methods=["POST"])
-def get_cluster():
-    method = request.json['method']
-    # kwargs = request.json['parameters']
-    dataset = request.json['dataset']
-    metrics = request.json['metrics']
-    print(metrics)
-    target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
-    cluster_labels = run_cluster(method, target_features, auto_adjust=True)
-    # save_json(cluster_labels, 'data/tmp/df_summaries_cluster_labels.json')
-    for i, datum in enumerate(dataset):
-        datum['cluster'] = str(cluster_labels[i])
-    cluster_label_set = list(map(lambda l: str(l), set(cluster_labels)))
-    statistics, metric_data = features.collect_statistics(dataset, metrics)
-    # del statistics['global_means']
-    # del statistics['global_mins']
-    # del statistics['global_maxes']
-    return { 
-        "metric_data": metric_data, 
-        "dataset": dataset, 
-        "cluster_labels": cluster_label_set, 
-        "statistics": statistics
-    }
+# @app.route("/data/cluster/", methods=["POST"])
+# def get_cluster():
+#     method = request.json['method']
+#     # kwargs = request.json['parameters']
+#     dataset = request.json['dataset']
+#     metrics = request.json['metrics']
+#     print(metrics)
+#     target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), dataset))
+#     cluster_labels = run_cluster(method, target_features, auto_adjust=True)
+#     # save_json(cluster_labels, 'data/tmp/df_summaries_cluster_labels.json')
+#     for i, datum in enumerate(dataset):
+#         datum['cluster'] = str(cluster_labels[i])
+#     cluster_label_set = list(map(lambda l: str(l), set(cluster_labels)))
+#     statistics, metric_data = features.collect_statistics(dataset, metrics)
+#     # del statistics['global_means']
+#     # del statistics['global_mins']
+#     # del statistics['global_maxes']
+#     return { 
+#         "metric_data": metric_data, 
+#         "dataset": dataset, 
+#         "cluster_labels": cluster_label_set, 
+#         "statistics": statistics
+#     }
 
 def run_cluster(method, target_features, auto_adjust=False):
     if method == "optics":
@@ -162,10 +182,13 @@ def execute_prompt_all():
     # save_json(prompts, 'data/debug/prompts.json')
     summaries = gpt.multithread_prompts(openai_client, prompts)
     # save_json(summaries, 'data/debug/summaries.json')
+    dr_estimator = snapshots[data[0]['topic']]['dr_estimator']
+    dr_scaler = snapshots[data[0]['topic']]['dr_scaler']
+    min_coord = snapshots[data[0]['topic']]['min_coord']
+    max_coord = snapshots[data[0]['topic']]['max_coord']
     results = []
     for index, new_summary in enumerate(summaries):
         default_metrics = features.evaluate(evaluator, data[index]['text'], new_summary, metrics)
-
         results.append({
             "id": data[index]['id'],
             "cluster": data[index]['cluster'],

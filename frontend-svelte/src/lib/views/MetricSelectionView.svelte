@@ -1,14 +1,15 @@
 <script lang="ts">
   import { createEventDispatcher, onMount, tick } from "svelte";
-  import { selected_metrics } from "lib/store";
+  import { selected_metrics, selected_topic } from "lib/store";
   import {
     createPopover,
     createSelect,
     createTooltip,
     melt,
   } from "@melt-ui/svelte";
-  import Select from "lib/components/Select.svelte";
+  import SelectLevel from "lib/components/SelectLevel.svelte";
   import {
+    topic_options,
     cluster_colors,
     metrics,
     feature_descriptions,
@@ -96,7 +97,9 @@
 
 <div class="flex flex-col h-full">
   <div class="view-header relative">
-    Metric Selection
+    Metric Selection for: {topic_options.filter(
+      (option) => option.value === $selected_topic
+    )[0].label}
     <div class="absolute right-0.5 text-xs flex items-center gap-x-1 gap-y-1">
       <!-- todo: add info on what 'Apply' does -->
       <!-- <img
@@ -141,7 +144,7 @@
       {#each metrics as metric, index}
         <div class="flex items-center gap-x-1 font-mono text-[0.55rem]">
           <span class="w-[4rem] text-left"> {metric} </span>
-          <Select
+          <SelectLevel
             options={metric_categories[metric].map((c) => c.label)}
             tw_font_size="text-[0.55rem]"
             tw_font_family="font-mono"

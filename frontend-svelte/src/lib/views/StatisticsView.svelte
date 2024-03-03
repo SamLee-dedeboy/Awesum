@@ -287,7 +287,6 @@
     const in_range_nodes = data?.filter(
       (d) => d.cluster !== "-1" && inAllRange(d.features, $target_ranges)
     );
-    console.log(in_range_nodes);
     recommended_nodes.set(in_range_nodes);
     if (
       Object.values($target_ranges).every(

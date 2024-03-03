@@ -13,3 +13,4 @@ export let recommended_nodes: Writable<tNode[]|undefined> = writable(undefined)
 export let feature_recommendations: Writable<tMetricRecommendationResponse[] | undefined> = writable(undefined)
 export let feature_target_levels: Writable<{[key:string]:string}> = writable({})
 export let example_nodes: Writable<tNode[]> = writable([])
+export let selected_topic: Writable<string | undefined> = writable(undefined);

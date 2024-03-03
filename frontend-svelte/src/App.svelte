@@ -6,9 +6,11 @@
   import TrackingView from "lib/views/TrackingView.svelte";
   import SummaryView from "lib/views/SummaryView.svelte";
   import MetricSelectionView from "lib/views/MetricSelectionView.svelte";
+  import Select from "lib/components/Select.svelte";
   import { onMount } from "svelte";
   import {
     // recommended_cluster,
+    selected_topic,
     feature_target_levels,
     selected_metrics,
     test_set,
@@ -20,6 +22,7 @@
     metric_categories,
     metrics,
     server_address,
+    topic_options,
   } from "lib/constants";
   import * as d3 from "d3";
 
@@ -68,9 +71,15 @@
     }
     adjustMetrics(dataset?.dataset, cluster_params, value);
   });
-
-  onMount(() => {
-    fetch(server_address + "/data/")
+  $: if ($selected_topic) fetch_data($selected_topic);
+  function fetch_data(topic) {
+    fetch(server_address + "/data/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ topic: topic }),
+    })
       .then((response) => response.json())
       .then((res) => {
         dataset = res;
@@ -82,7 +91,7 @@
           initOptimizations($test_set, dataset.statistics);
         }
       });
-  });
+  }
 
   function adjustMetrics(p_dataset, p_cluster_params, p_selected_metrics) {
     console.assert(p_dataset !== undefined);
@@ -291,7 +300,13 @@
 </script>
 
 <div class="h-screen w-screen p-1 flex gap-x-1">
-  {#if dataset === undefined}
+  {#if !$selected_topic}
+    <div class="flex w-full items-center justify-center gap-x-2">
+      <div>Choose a topic</div>
+      <Select bind:selected_value={$selected_topic} options={topic_options}
+      ></Select>
+    </div>
+  {:else if dataset === undefined}
     <div class="basis-1/2 h-1/2">Loading...</div>
   {:else}
     <div id="left" class="flex flex-col w-[75%] h-full shrink-0">
