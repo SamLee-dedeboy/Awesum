@@ -58,7 +58,7 @@ def combine_templates(instruction: str, examples: list, data_template: str):
 def replace_data(message:str, data):
     replaced = copy.deepcopy(message)
     replaced = replaced.replace("${summary}", data['summary'])
-    replaced = replaced.replace("${text}", data['text'])
+    replaced = replaced.replace("${article}", data['text'])
     return replaced
 
 def formulate_metric_prompt(question, feature_definitions):
@@ -115,3 +115,28 @@ def check_metric_recommendation_validity(recommendations, feature_pool, feature_
         if level not in [range[2] for range in ranges]:
             return False
     return True
+
+def formulate_prompt_block_suggestion_prompt(block_name, block_definition, current_prompt, goal):
+    messages = [
+        {
+            "role": "system",
+            "content": """You are a block recommendation assistant. 
+            You are given a {block_name} block.
+            The definition of the block is: {block_definition}
+            The user needs you to improve the prompts to be written in the block.
+            Please give suggestions specific to their current prompt and intended goal.
+            Be concise and reply with no more than 50 words.
+            Reply with the following JSON format:
+            {{ 
+                "improved_version": (string, less than 50 words),
+            }}
+            """.format(block_name=block_name, block_definition=block_definition)
+        },
+        {
+            "role": "user",
+            "content": """Current prompt: {current_prompt}\n
+            Intended Goal: {goal}""".format(current_prompt=current_prompt, goal=goal)
+        }
+    ]
+
+    return messages

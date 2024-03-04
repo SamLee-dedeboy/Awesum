@@ -15,3 +15,10 @@ export const topic_options = [
         value: "4", label: "Business",
     },
 ]
+export const topic_dict = {
+    "0": "Politics",
+    "1": "Sport",
+    "2": "Technology",
+    "3": "Entertainment",
+    "4": "Business",
+}

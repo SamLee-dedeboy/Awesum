@@ -200,7 +200,7 @@
       context: "",
       constraints: "Please summarize the following article into one paragraph.",
       examples: [],
-      data_template: "${text}",
+      data_template: "${article}",
     };
     optimizations = [
       {

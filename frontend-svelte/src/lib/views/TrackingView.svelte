@@ -3,7 +3,7 @@
   import { IndentIcon } from "lucide-svelte";
   import { onMount, tick } from "svelte";
   import { OptScatterplot } from "lib/renderers/opt_scatterplot";
-  import { optimization_colors } from "lib/constants";
+  // import { optimization_colors } from "lib/constants";
 
   export let optimizations: tOptimization[];
   const svgId = "opt-scatterplot-svg";
@@ -30,8 +30,7 @@
   <div class="flex flex-col items-center overflow-y-auto">
     {#each optimizations as optimization, index}
       <div
-        class="optimization-container flex flex-col p-1 max-w-full"
-        style={`background-color: ${optimization_colors[index % optimization_colors.length]}`}
+        class="optimization-container flex flex-col p-1 max-w-full bg-yellow-100"
       >
         <div class="optimization-title w-fit underline text-semibold">
           Prompt #{index}

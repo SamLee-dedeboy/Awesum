@@ -123,9 +123,9 @@
   <div class="view-header">Metrics Recommendation</div>
   <div class="flex relative w-full">
     <div
-      class="w-[1.5rem] h-[1.5rem] flex items-center justify-center absolute bg-white z-10 rounded-full outline outline-1 outline-gray-100 p-0.5"
+      class="w-[1.5rem] h-[1.5rem] flex items-center justify-center absolute bg-white z-10 rounded-full outline outline-1 outline-gray-300 p-1"
     >
-      <img src="user.svg" alt="*" class="w-full h-full" />
+      <img src="user.svg" alt="*" class="w-[100%] h-[100%]" />
     </div>
     <div class="h-[4rem] w-full ml-3 mt-3 relative bg-stone">
       <div
@@ -159,9 +159,9 @@
       </div>
     {/if}
     <div
-      class="w-[1.5rem] h-[1.5rem] flex items-center justify-center absolute bg-white z-10 rounded-full outline outline-1 outline-gray-100 p-0.5"
+      class="w-[1.5rem] h-[1.5rem] flex items-center justify-center absolute bg-white z-10 rounded-full outline outline-1 outline-gray-300 p-1"
     >
-      <img src="bot.svg" alt="*" class="absolute w-full h-full" />
+      <img src="bot.svg" alt="*" class="absolute w-[90%] h-[90%]" />
     </div>
     <div
       class="h-[12rem] grow ml-3 textarea-border pl-2 mt-3 flex overflow-y-auto flex-none gap-x-1 p-1"

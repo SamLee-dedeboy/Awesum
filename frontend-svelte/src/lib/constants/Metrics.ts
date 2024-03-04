@@ -163,6 +163,18 @@ export const categorize_metric = ( metric: string, value: number ): string => {
     }
     return "error"
 }
+export const range_to_categories = (metric: string, range: [number, number]): string[] => {
+    let categories: string[] = []
+    const metric_ranges = metric_categories[metric] 
+    metric_ranges.forEach(category_range => {
+        if (category_range.start >= range[1]) return
+        if (category_range.end !== -1 && category_range.end <= range[0]) return
+        categories.push(category_range.label)
+    })
+    console.log({categories})
+    return categories
+}
+
 export const feature_descriptions = {
     "readability": `<span class="highlight">Readability</span> metrics aim to quantify the readability of a piece of writing by considering various linguistic features, such as <span> sentence length, word length, syllable count or semantic difficulty</span>.`,
     "formality": `<span class="highlight">Formality</span> measures how formal a piece of writing is. It is based on the frequencies of different word classes in the corpus. <span> Nouns, adjectives, articles and prepositions </span> are more frequent in formal styles; <span>pronouns, adverbs, verbs and interjections </span> are more frequent in informal styles.`,

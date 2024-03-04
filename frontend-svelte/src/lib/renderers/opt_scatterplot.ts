@@ -1,5 +1,6 @@
 import type { tOptimization, tNode } from "lib/types";
-import { optimization_colors } from "lib/constants/Colors";
+// import { optimization_colors } from "lib/constants/Colors";
+import { cluster_colors } from "lib/constants";
 
 import * as d3 from "d3";
 export class OptScatterplot  {  
@@ -29,7 +30,7 @@ export class OptScatterplot  {
         .attr("class", "optimization")
         .each(function(optimization: tOptimization, i: number) {
             const group = d3.select(this);
-            const optimization_color = optimization_colors[i % optimization_colors.length];
+            // const optimization_color = optimization_colors[i % optimization_colors.length];
             group.selectAll("circle.node").data(optimization.nodes)
                 .join("circle")
                 .attr("class", "node")
@@ -37,7 +38,7 @@ export class OptScatterplot  {
                 .attr("cy", (node: tNode) => self.yScale(node.coordinates[1]))
                 .attr("r", 4)
                 // .attr("fill", (node: tNode) => cluster_colors(node.cluster))
-                .attr("fill", optimization_color)
+                .attr("fill", (d) => cluster_colors(d.cluster))
                 .attr("stroke", "gray")
                 .attr("stroke-width", 0.5)
         })

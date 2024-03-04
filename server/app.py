@@ -16,6 +16,7 @@ CORS(app)
 openai_api_key = open("api_key").read()
 openai_client=OpenAI(api_key=openai_api_key)
 # document_controller = DocumentController(r'../data/result/chunk_embeddings/1103/all_chunks.json', openai_api_key)
+prompt_block_definitions = json.load(open('data/prompt_block_definitions.json'))
 evaluator = features.StyleEvaluator()
 metrics = ["readability", "formality", "sentiment", "faithfulness", "length"]
 correlations = json.load(open('data/tmp/pearson_r.json'))
@@ -224,6 +225,18 @@ def query_metric():
     return {
         "features": features['features'],
         # "closest_cluster": closest_cluster,
+    }
+
+@app.route("/prompt_recommendation/", methods=['POST'])
+def prompt_recommendation():
+    block = request.json['block'].lower()
+    goal = request.json['goal']
+    current_prompt = request.json['current_prompt']
+    prompt_block_suggestion_prompt = gpt.formulate_prompt_block_suggestion_prompt(block, prompt_block_definitions[block], current_prompt, goal)
+    response = json.loads(gpt.request_chatgpt_gpt4(openai_client, prompt_block_suggestion_prompt, format='json'))
+    response = response['improved_version']
+    return {
+        "recommendation": response
     }
 
 # ====================== deprecated ===============================

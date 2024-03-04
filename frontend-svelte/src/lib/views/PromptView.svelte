@@ -9,6 +9,7 @@
   import { createEventDispatcher } from "svelte";
   import { cluster_colors, metrics } from "lib/constants";
   import { selected_metrics, test_set, example_nodes } from "lib/store";
+  import PromptBlockHeader from "lib/components/PromptBlockHeader.svelte";
 
   const server_address = "http://localhost:5000";
   const dispatch = createEventDispatcher();
@@ -28,7 +29,7 @@
     //   features: {},
     // })),
     examples: [],
-    data_template: "Article: ${text}",
+    data_template: "${article}",
   };
 
   example_nodes.subscribe((value) => {
@@ -129,27 +130,16 @@
 </script>
 
 <div class="flex flex-col px-2 overflow-y-auto h-full">
-  <div class="flex justify-between border-b border-gray-200">
-    <!-- {#each Object.keys(prompts_by_metric) as metric}
-      <div
-        role="button"
-        tabindex="0"
-        class="grow cursor-pointer hover:bg-gray-200 rounded-t p-1 border-t border-x border-gray-200 text-gray-400"
-        style={target_metric === metric
-          ? "background-color: #e0f2fe; color: black"
-          : ""}
-        on:click={() => (target_metric = metric)}
-        on:keyup={() => {}}
-      >
-        {metric}
-      </div>
-    {/each} -->
-  </div>
+  <div class="flex justify-between border-b border-gray-200"></div>
   <div id="prompt-table" class="flex flex-col max-w-full gap-y-1">
     <div class="grow flex gap-x-1">
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header">
-          <span class=" rounded !outline-none"> Persona </span>
+          <!-- <span class=" rounded !outline-none"> Persona </span> -->
+          <PromptBlockHeader
+            title="Persona"
+            prompt_content={prompt_template.persona}
+          />
         </div>
         <div
           class="prompt-section-content editable"
@@ -161,7 +151,10 @@
       </div>
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header">
-          <span class="rounded !outline-none"> Context </span>
+          <PromptBlockHeader
+            title="Context"
+            prompt_content={prompt_template.context}
+          />
         </div>
         <div
           class="prompt-section-content editable"
@@ -173,7 +166,10 @@
       </div>
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header">
-          <span class=" rounded !outline-none"> Constraints </span>
+          <PromptBlockHeader
+            title="Constraints"
+            prompt_content={prompt_template.constraints}
+          />
         </div>
         <div
           class="prompt-section-content editable"
@@ -188,7 +184,7 @@
     <div class="flex grow gap-x-4">
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header relative">
-          <span class=" rounded !outline-none"> Examples </span>
+          <PromptBlockHeader title="Examples" enable_suggestions={false} />
         </div>
         <div
           class="prompt-section-content flex flex-wrap overflow-y-auto max-h-[10rem] items-center px-1"
@@ -214,7 +210,10 @@
       </div>
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header">
-          <span class=" rounded !outline-none"> Data </span>
+          <PromptBlockHeader
+            title="Data"
+            prompt_content={prompt_template.data_template}
+          />
         </div>
         <div
           class="prompt-section-content editable"
@@ -255,13 +254,13 @@
         </span> articles
       </span>
     </div>
-    <div
+    <!-- <div
       class="flex flex-col justify-start items-start ml-auto right-0 text-gray-500 px-1 bg-yellow-50 outline outline-1 outline-gray-200"
     >
       <div class="italic">Codes:</div>
       <div class="text-sm">{`Full Article: $\{text\}`}</div>
       <div class="text-sm">{`Summary: $\{summary\}`}</div>
-    </div>
+    </div> -->
     <!-- <button class="w-fit m-1" on:click={start_sequential}> Start </button>
     <button class="w-fit m-1" on:click={() => (pause = true)}>Pause </button> -->
   </div>

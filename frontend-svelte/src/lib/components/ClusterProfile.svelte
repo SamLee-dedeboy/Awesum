@@ -25,7 +25,7 @@
 <div
   role="button"
   tabindex={index}
-  class="cluster-stat-container w-[120px] h-[78px] border border-1 border-gray-100 relative hoverable gap-x-0.5 gap-y-0.5"
+  class="cluster-stat-container w-[9rem] h-[7rem] border border-1 border-gray-100 relative hoverable gap-x-0.5 gap-y-0.5"
   use:melt={$trigger}
   on:keyup={() => {}}
   on:click={() => dispatch("click", cluster_label)}
