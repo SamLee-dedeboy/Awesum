@@ -76,7 +76,7 @@ export const metric_categories: {[key:string]: tMetricStep[]} = {
         {
             start: 60,
             end: 100,
-            "label": "Neutral",
+            "label": "Standard",
             "note": "Standard, neutral language."
         },
         {
@@ -96,19 +96,19 @@ export const metric_categories: {[key:string]: tMetricStep[]} = {
         {
             start: -1,
             end: -0.3,
-            "label": "negative",
+            "label": "Negative",
             "note": "negative sentiment."
         },
         {
             start: -0.3,
             end: 0.3,
-            "label": "neutral",
+            "label": "Neutral",
             "note": "neutral sentiment."
         },
         {
             start: 0.3,
             end: 1,
-            "label": "positive",
+            "label": "Positive",
             "note": "positive sentiment."
         }
     ],
@@ -116,13 +116,13 @@ export const metric_categories: {[key:string]: tMetricStep[]} = {
         {
             start: 0,
             end: 0.2,
-            "label": "unfaithful",
+            "label": "Unfaithful",
             "note": "Very unfaithful to the original text."
         },
         {
             start: 0.2,
             end: 1,
-            "label": "faithful",
+            "label": "Faithful",
             "note": "Very faithful to the original text."
         }
     ],

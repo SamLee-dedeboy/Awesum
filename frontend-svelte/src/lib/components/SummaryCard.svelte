@@ -7,6 +7,7 @@
   export let summary: String = "";
   export let color: string;
   export let statistics: { [key: string]: number };
+  $: console.log(statistics);
   export let in_example: boolean = false;
 
   function toggleExample() {
@@ -52,24 +53,27 @@
 >
   <div class="font-light text-xs text-gray-500">Summary:</div>
   <div>{summary}</div>
+  <div
+    class="flex justify-between divide-x divide-stone-400 text-xs whitespace-nowrap outline outline-1 outline-stone-400"
+  >
+    {#each Object.keys(statistics) as metric}
+      <span class="px-1 w-full text-center"
+        >{categorize_metric(metric, statistics[metric])}</span
+      >
+    {/each}
+  </div>
   <div class="flex items-center mt-2 gap-x-2">
     <div
       role="button"
       tabindex="0"
-      class="add_button w-fit p-1 outline outline-1 outline-gray-400 text-xs !rounded hover:bg-gray-100 cursor-pointer shadow-[0_0_1px_1px_gray]"
+      class="add_button whitespace-nowrap p-1 outline outline-1 outline-gray-400 text-xs !rounded hover:bg-gray-100 cursor-pointer shadow-[0_0_1px_1px_gray]"
       style={`background-color: ${in_example ? "#f0f0f0" : color}; color: ${contrast_color(
         in_example ? "#f0f0f0" : color
       )}`}
       on:click={toggleExample}
       on:keyup={() => {}}
     >
-      {in_example ? "Remove from example" : "Add to example"}
-    </div>
-    <div class="flex justify-center divide-x divide-stone-400">
-      {#each Object.keys(statistics) as metric}
-        <span class="px-1">{categorize_metric(metric, statistics[metric])}</span
-        >
-      {/each}
+      {in_example ? "Remove example" : "Add example"}
     </div>
   </div>
 </div>

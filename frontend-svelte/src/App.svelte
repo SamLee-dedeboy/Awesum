@@ -311,7 +311,7 @@
   {:else}
     <div id="left" class="flex flex-col w-[75%] h-full shrink-0">
       <div class="flex w-full h-[50%] gap-x-1">
-        <div class="min-w-[25%] max-w-[25%] p-1 flex flex-col">
+        <div class="min-w-[20rem] max-w-[25%] p-1 flex flex-col">
           <MetricSelectionView
             {metric_metadata}
             data={dataset.dataset}
@@ -353,9 +353,9 @@
           ></StatisticsView>
         </div>
       </div>
-      <div class="w-full grow flex max-h-[50%] border-black">
+      <div class="w-full grow flex max-h-[50%] border-black gap-x-1">
         <!-- Prompt Editor -->
-        <div class="h-full w-[30rem] shrink-0 flex flex-col">
+        <div class="h-full min-w-[16rem] max-w-[25%] flex flex-col">
           <div class="sticky top-0 view-header">
             <img src="bot.svg" alt="*" class="aspect-square" />
             Prompt Editor
@@ -367,7 +367,7 @@
             ></PromptView>
           </div>
         </div>
-        <div class="">
+        <div class="grow">
           <TrackingView {optimizations}></TrackingView>
         </div>
       </div>

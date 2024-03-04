@@ -127,7 +127,7 @@
     >
       <img src="user.svg" alt="*" class="w-[100%] h-[100%]" />
     </div>
-    <div class="h-[4rem] w-full ml-3 mt-3 relative bg-stone">
+    <div class="min-h-[4rem] max-h-[4rem] w-full ml-3 mt-3 relative bg-stone">
       <div
         bind:this={query_area}
         class="h-full grow textarea-border pr-[1.5rem] pl-2 bg-stone text-area-border text-sm text-left placeholder empty:before:content-['Ask_any_question_here...']"
@@ -146,7 +146,7 @@
     </div>
   </div>
 
-  <div class="flex relative w-full">
+  <div class="flex relative w-full grow">
     {#if loading_response}
       <div
         class="w-[2rem] h-[2rem] absolute left-[-0.25rem] top-[-0.25rem] flex items-center justify-center rounded-full border-gray-300"
@@ -164,7 +164,7 @@
       <img src="bot.svg" alt="*" class="absolute w-[90%] h-[90%]" />
     </div>
     <div
-      class="h-[12rem] grow ml-3 textarea-border pl-2 mt-3 flex overflow-y-auto flex-none gap-x-1 p-1"
+      class="grow ml-3 textarea-border pl-2 mt-3 flex overflow-y-auto flex-none gap-x-1 p-1"
     >
       <div class="grow bg-stone text-xs relative rounded">
         <span

@@ -26,41 +26,50 @@
   }
 </script>
 
-<div class="flex w-full h-full gap-x-2 p-1">
-  <div class="flex flex-col items-center overflow-y-auto">
-    {#each optimizations as optimization, index}
-      <div
-        class="optimization-container flex flex-col p-1 max-w-full bg-yellow-100"
-      >
-        <div class="optimization-title w-fit underline text-semibold">
-          Prompt #{index}
-        </div>
-        <div class="prompt text-start">
-          <span class="">{optimization.prompt.persona}</span>
-          <span>{optimization.prompt.context}</span>
-          <span>{optimization.prompt.constraints}</span>
-          <p>{optimization.prompt.data_template}</p>
-          <div>
-            <div class="flex">
-              <span> Examples: </span>
-              <!-- To be replaced with svg -->
+<div class="flex h-full gap-x-2">
+  <div>
+    <div class="view-header">
+      <img src="line_chart.svg" alt="*" class="aspect-square" />
+      Evaluation Tracker
+    </div>
+    <div class="flex flex-col items-center overflow-y-auto px-1">
+      {#each optimizations as optimization, index}
+        <div
+          class="optimization-container flex text-sm items-center p-1 bg-yellow-100 gap-x-1 relative"
+        >
+          <div class="flex flex-col flex-1">
+            <div class="optimization-title w-fit underline text-semibold">
+              Prompt #{index}
+            </div>
+            <div class="prompt text-start">
+              <span class="">{optimization.prompt.persona}</span>
+              <span>{optimization.prompt.context}</span>
+              <span>{optimization.prompt.constraints}</span>
+              <p>{optimization.prompt.data_template}</p>
               <div>
-                {optimization.prompt.examples.length === 0
-                  ? "None"
-                  : optimization.prompt.examples.map((e) => e.id)}
+                <div class="flex">
+                  <span> Examples: </span>
+                  <!-- To be replaced with svg -->
+                  <div>
+                    {optimization.prompt.examples.length === 0
+                      ? "None"
+                      : optimization.prompt.examples.map((e) => e.id)}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+          <div class="w-[5rem] h-[5rem] outline outline-1"></div>
         </div>
-      </div>
-      {#if index !== optimizations.length - 1}
-        <div class="w-[2rem] h-[2rem]">
-          <img class="w-full h-full" src="arrow_down.svg" alt="*" />
-        </div>
-      {/if}
-    {/each}
+        {#if index !== optimizations.length - 1}
+          <div class="w-[2rem] h-[2rem]">
+            <img class="w-full h-full" src="arrow_down.svg" alt="*" />
+          </div>
+        {/if}
+      {/each}
+    </div>
   </div>
-  <div class="h-full aspect-square border border-black">
+  <div class="h-full aspect-square outline outline-1 outline-gray-200">
     <svg
       id={svgId}
       class="w-full h-full"
