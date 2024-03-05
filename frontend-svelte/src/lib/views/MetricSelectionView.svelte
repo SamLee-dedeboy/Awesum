@@ -97,7 +97,7 @@
 
 <div class="flex flex-col h-full">
   <div class="view-header relative">
-    Metric Selection for: {topic_options.filter(
+    Feature Selection: {topic_options.filter(
       (option) => option.value === $selected_topic
     )[0].label}
     <div class="absolute right-0.5 text-xs flex items-center gap-x-1 gap-y-1">
@@ -230,7 +230,7 @@
   }
   .disabled {
     pointer-events: none;
-    opacity: 0.5;
+    opacity: 0.25;
     background-color: white;
     border: unset;
   }

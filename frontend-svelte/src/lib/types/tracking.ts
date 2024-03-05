@@ -1,4 +1,4 @@
-import type { tStatBarData } from "./statistics"
+import type { tStatBarData, tStatistics } from "./statistics"
 import type { tPrompt } from "./prompt"
 import type { tNode } from "./server"
 export type tOptimization = {
@@ -6,7 +6,7 @@ export type tOptimization = {
     features: any[]
     nodes: tNode[]
     prompt: tPrompt
-    statistics: tStatBarData[]
+    statistics: tStatistics
 }
 
 export type tSelectedClusterData = {

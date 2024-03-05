@@ -120,7 +120,7 @@
 </script>
 
 <div class="flex flex-col w-full gap-y-1">
-  <div class="view-header">Metrics Recommendation</div>
+  <div class="view-header">Feature Recommendation</div>
   <div class="flex relative w-full">
     <div
       class="w-[1.5rem] h-[1.5rem] flex items-center justify-center absolute bg-white z-10 rounded-full outline outline-1 outline-gray-300 p-1"

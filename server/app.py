@@ -27,7 +27,8 @@ snapshots = {}
 for topic, nodes in topic_nodes.items():
     target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), nodes))
     method = 'kernel_pca'
-    coordinates, dr_estimator, dr_scaler, min_coord, max_coord = dr.scatter_plot(target_features, method=method)
+    # method = 'tsne'
+    coordinates, dr_estimator, dr_scaler, min_coord, max_coord, init_positions = dr.scatter_plot(target_features, method=method)
     optic_labels = clusters.optics(target_features)
     optic_labels = optic_labels.tolist()
     snapshots[topic] = {
@@ -36,6 +37,7 @@ for topic, nodes in topic_nodes.items():
         'dr_scaler': dr_scaler,
         'min_coord': min_coord,
         'max_coord': max_coord,
+        'init_positions': init_positions,
         'optic_labels': optic_labels,
         'nodes': nodes,
     }
@@ -183,10 +185,6 @@ def execute_prompt_all():
     # save_json(prompts, 'data/debug/prompts.json')
     summaries = gpt.multithread_prompts(openai_client, prompts)
     # save_json(summaries, 'data/debug/summaries.json')
-    dr_estimator = snapshots[data[0]['topic']]['dr_estimator']
-    dr_scaler = snapshots[data[0]['topic']]['dr_scaler']
-    min_coord = snapshots[data[0]['topic']]['min_coord']
-    max_coord = snapshots[data[0]['topic']]['max_coord']
     results = []
     for index, new_summary in enumerate(summaries):
         default_metrics = features.evaluate(evaluator, data[index]['text'], new_summary, metrics)
@@ -199,6 +197,22 @@ def execute_prompt_all():
             "text": data[index]['text'],
             "test_case": True
         })
+    # # reapply tsne 
+    # dr_estimator = snapshots[data[0]['topic']]['dr_estimator']
+    # dr_scaler = snapshots[data[0]['topic']]['dr_scaler']
+    # min_coord = snapshots[data[0]['topic']]['min_coord']
+    # max_coord = snapshots[data[0]['topic']]['max_coord']
+    # init_positions = snapshots[data[0]['topic']]['init_positions']
+    # topic = data[0]['topic']
+    # nodes = snapshots[topic]['nodes']
+    # target_features = list(map(lambda x: helper.filter_by_key(x['features'], metrics), nodes))
+    # reapplied_coordinates = dr.reapply_tsne(target_features, dr_scaler, min_coord, max_coord, init_positions)
+    # for test_node in results:
+    #     coordinate_index = -1
+    #     for index, item in enumerate(nodes):
+    #         if item['id'] == test_node['id']:
+    #             break
+    #     test_node['coordinates'] = reapplied_coordinates[coordinate_index].tolist()
     feature_matrix = np.array(list(map(lambda x: [x['features'][m] for m in metrics], results)))
     statistics = []
     for c in range(feature_matrix.shape[1]):

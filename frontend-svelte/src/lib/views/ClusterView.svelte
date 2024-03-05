@@ -4,6 +4,13 @@
   import { cluster_colors, metrics } from "lib/constants";
   import type { tStatistics, tNode } from "lib/types";
   import {
+    BSplineShapeGenerator,
+    BubbleSet,
+    PointPath,
+    ShapeSimplifier,
+  } from "bubblesets";
+
+  import {
     example_nodes,
     // recommended_cluster,
     recommended_nodes,
@@ -63,7 +70,7 @@
   const innerHeight = height - 2 * margin;
   const node_radius = 4;
   const xScale = d3.scaleLinear().domain([0, 1]).range([0, innerWidth]);
-  const yScale = d3.scaleLinear().domain([0, 1]).range([innerHeight, 0]);
+  const yScale = d3.scaleLinear().domain([0, 1]).range([0, innerHeight]);
   onMount(() => {
     init();
   });
@@ -144,7 +151,7 @@
       .attr("r", (d: any) => node_radius)
       .attr("stroke", "gray")
       .attr("stroke-width", 0.5);
-    force_collision_centroid(data, node_radius + 0.7, centroids);
+    // force_collision_centroid(data, node_radius + 0.7, centroids);
   }
 
   async function update_by_cluster() {
@@ -446,11 +453,25 @@
       .attr("stroke", "gray")
       .attr("stroke-width", 1)
       .attr("stroke-dasharray", "4,2");
-    // if (show_recommendations) {
-    //   const button = d3.select("g.show-recommendation");
-    //   button.select(".utility-button").attr("fill", "rgb(187 247 208)");
-    //   button.select("text").attr("fill", "black");
-    // }
+    if (show_recommendations) {
+      console.log({ recommended_case_circles });
+      const bubble_path = create_bubble_path(
+        recommended_case_circles
+          .nodes()
+          .map((d) => [
+            +d3.select(d).attr("cx") + margin,
+            +d3.select(d).attr("cy") + margin,
+          ]),
+        node_radius
+      );
+      line_group.select("path.bubble_contour").remove();
+      line_group
+        .append("path")
+        .attr("class", "bubble_contour")
+        .attr("d", bubble_path)
+        .attr("fill", "lightgreen")
+        .attr("opacity", 0.2);
+    }
   }
 
   function add_examples() {
@@ -560,6 +581,32 @@
       total_distance += distance;
     });
     return total_distance;
+  }
+  function create_bubble_path(points, radius) {
+    const pad = 0;
+    // bubbles can be reused for subsequent runs or different sets of rectangles
+    const bubbles = new BubbleSet();
+    // rectangles needs to be a list of objects of the form { x: 0, y: 0, width: 0, height: 0 }
+    // lines needs to be a list of objects of the form { x1: 0, x2: 0, y1: 0, y2: 0 }
+    // lines can be null to infer lines between rectangles automatically
+    const rectangles = points.map((point) => ({
+      x: point[0] - radius,
+      y: point[1] - radius,
+      width: 2 * radius,
+      height: 2 * radius,
+    }));
+    const list = bubbles.createOutline(
+      BubbleSet.addPadding(rectangles, pad),
+      [],
+      null /* lines */
+    );
+    // outline is a path that can be used for the attribute d of a SVG path element
+    const outline = new PointPath(list).transform([
+      new ShapeSimplifier(0.0), // removes path points by removing (near) colinear points
+      new BSplineShapeGenerator(), // smoothes the output shape using b-splines
+      new ShapeSimplifier(0.0), // removes path points by removing (near) colinear points
+    ]);
+    return outline;
   }
 </script>
 

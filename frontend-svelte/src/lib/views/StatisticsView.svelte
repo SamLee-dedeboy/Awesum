@@ -344,7 +344,7 @@
           on:click={() => (mode = tMode.All_Metric)}
           on:keyup={() => {}}
         >
-          By Metric
+          By Feature
         </div>
       </div>
       {#if mode === tMode.All_Cluster}
