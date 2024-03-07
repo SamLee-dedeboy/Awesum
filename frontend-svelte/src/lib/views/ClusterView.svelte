@@ -18,8 +18,7 @@
 
   import {
     target_ranges,
-    target_range_metric,
-    cluster_mode,
+    // cluster_mode,
     selected_metrics,
     test_set,
   } from "lib/store";
@@ -82,24 +81,24 @@
       // const centroids = generate_centroids(data);
       // console.log({ centroids });
       update(data, centroids);
-      if ($cluster_mode === "metric") {
-        update_by_metric($target_ranges);
-      } else {
-        update_by_cluster();
-      }
+      // if ($cluster_mode === "metric") {
+      //   update_by_metric($target_ranges);
+      // } else {
+      //   update_by_cluster();
+      // }
     }
   }
 
-  $: if ($cluster_mode === "metric") {
-    update_by_metric($target_ranges);
-    d3.select("g.cluster-mode")
-      .attr("pointer-events", "auto")
-      .select("text")
-      // .text("cluster")
-      .attr("fill", "black");
-  } else {
-    update_by_cluster();
-  }
+  // $: if ($cluster_mode === "metric") {
+  //   update_by_metric($target_ranges);
+  //   d3.select("g.cluster-mode")
+  //     .attr("pointer-events", "auto")
+  //     .select("text")
+  //     // .text("cluster")
+  //     .attr("fill", "black");
+  // } else {
+  //   update_by_cluster();
+  // }
 
   $: update_highlight_cluster(highlight_cluster_label);
 
@@ -150,6 +149,7 @@
       .attr("cy", (d: any) => (d.y = yScale(d.coordinates[1])))
       .attr("r", (d: any) => node_radius)
       .attr("stroke", "gray")
+      .attr("fill", (d) => cluster_colors(d.cluster))
       .attr("stroke-width", 0.5);
     force_collision_centroid(data, node_radius + 0.7, centroids);
   }
@@ -220,8 +220,10 @@
         d.total_distance = compute_distance(d);
         return opacityScale(d.total_distance);
       })
-      .attr("stroke", (d) => (d.total_distance === 0 ? "black" : "white"))
-      .attr("stroke-width", (d) => (d.total_distance === 0 ? 1.5 : 1));
+      // .attr("stroke", (d) => (d.total_distance === 0 ? "black" : "white"))
+      .attr("stroke", "gray")
+      .attr("stroke-width", (d) => (d.total_distance === 0 ? 1.5 : 0.5));
+    // .attr("stroke-width", (d) => (d.total_distance === 0 ? 1.5 : 0.5));
     // if (show_noise) {
     //   points.attr("opacity", 1);
     // }
@@ -405,8 +407,8 @@
       onClick: toggle_cluster_mode,
       stateless: true,
     };
-    add_utility_button(cluster_mode_button);
-    d3.select("g.cluster-mode").attr("pointer-events", "none");
+    // add_utility_button(cluster_mode_button);
+    // d3.select("g.cluster-mode").attr("pointer-events", "none");
     // const xAxis = d3.axisBottom(xScale);
     // const yAxis = d3.axisLeft(yScale);
 
@@ -426,8 +428,9 @@
 
   function toggle_cluster_mode() {
     // d3.select("g.cluster-mode").select("text").text($cluster_mode);
-    cluster_mode.set($cluster_mode === "metric" ? "cluster" : "metric");
+    // cluster_mode.set($cluster_mode === "metric" ? "cluster" : "metric");
   }
+
   $: update_recommendations(show_recommendations);
   function update_recommendations(show_recommendations) {
     // if ($recommended_cluster === undefined) return;

@@ -153,7 +153,13 @@ export const metric_categories: {[key:string]: tMetricStep[]} = {
         }
     ]
 }
-
+export const metric_steps: {[key:string]: number} = {
+    "readability": 1,
+    "formality": 1,
+    "sentiment": 0.1,
+    "faithfulness": 0.1,
+    "length": 10
+}
 export const categorize_metric = ( metric: string, value: number ): string => {
     const ranges = metric_categories[metric]
     for (let i = 0; i < ranges.length; i++) {

@@ -5,7 +5,8 @@ import type {tNode, tMetricRecommendationResponse} from "lib/types"
 export let selected_cluster: Writable<any> = writable(null);
 export let selected_metrics: Writable<string[]> = writable(metrics)
 export let target_ranges: Writable<{[key:string]:[number|undefined, number|undefined]}> = writable(metrics.reduce((res, metric) => { res[metric] = [undefined, undefined]; return res}, {}))
-export let target_range_metric: Writable<string> = writable(metrics[0])
+export let default_ranges: Writable<{[key:string]:[number, number]}> = writable(metrics.reduce((res, metric) => { res[metric] = [0, 100]; return res}, {}))
+// export let target_range_metric: Writable<string> = writable(metrics[0])
 export let cluster_mode: Writable<string> = writable("cluster")
 export let test_set: Writable<tNode[]> = writable([])
 // export let recommended_cluster: Writable<string | undefined> = writable(undefined)

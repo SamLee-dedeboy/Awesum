@@ -34,6 +34,7 @@ export class Statbars {
       colors: string[]=[], 
       cluster_labels: string[]|undefined=undefined,
       ) {
+        console.log("update")
       let self = this; 
       let xScales;
       const g = d3.select(this.svgId).select("g.inner");
@@ -169,8 +170,19 @@ export class Statbars {
         .attr("y1", -this.svgSize.margin)
         .attr("x2", (d) => d? xScale(d) : 0)
         .attr("y2", this.innerSize.height + this.svgSize.margin)
-        .attr("stroke", "gray")
-        .attr("opacity", (d) => d? 1: 0)
+        .attr("stroke", "lightgreen")
+      g.select("rect.selected-range").remove();
+      g.selectAll("rect.selected-range")
+        .data([0])
+        .join("rect")
+        .attr("class", "selected-range")
+        .attr("x", () => xScale(selected_range[0]))
+        .attr("y", -this.svgSize.margin)
+        .attr("width", () => xScale(selected_range[1]) - xScale(selected_range[0]))
+        .attr("height", this.innerSize.height + this.svgSize.margin)
+        .attr("fill", "lightgreen")
+        .attr("opacity", 0.2)
+        .lower()
     }
 
     update_categories(xScale: any, rotate: boolean, xMax: number) {

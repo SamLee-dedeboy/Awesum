@@ -16,6 +16,8 @@
     test_set,
     example_nodes,
     recommended_nodes,
+    target_ranges,
+    default_ranges,
   } from "lib/store";
   import {
     cluster_colors,
@@ -37,6 +39,7 @@
     tMetricMetadata,
     tExampleData,
     tMetricRecommendationResponse,
+    tStatistics,
   } from "lib/types";
   let prompt_view;
   let cluster_view;
@@ -89,6 +92,7 @@
           metric_metadata = dataset.metric_metadata;
           dataset.centroids = generate_centroids(dataset.dataset);
           initOptimizations($test_set, dataset.statistics);
+          initTargetRanges(dataset.statistics);
         }
       });
   }
@@ -232,6 +236,20 @@
     //   cluster_optimizations[cluster_label][0].features.push(datum.features);
     // });
     // cluster_optimizations = cluster_optimizations;
+  }
+
+  function initTargetRanges(statistics: tStatistics) {
+    metrics.forEach((metric, index) => {
+      const global_max = statistics.global_maxes[index];
+      const ranges = metric_categories[metric];
+      const xMin = ranges[0].start;
+      const xMax =
+        ranges[ranges.length - 1].end === -1
+          ? global_max
+          : ranges[ranges.length - 1].end;
+      $target_ranges[metric] = [xMin, xMax];
+      $default_ranges[metric] = [xMin, xMax];
+    });
   }
 
   function handleAddExample(e) {

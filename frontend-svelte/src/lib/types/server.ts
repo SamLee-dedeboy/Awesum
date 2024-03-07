@@ -1,8 +1,10 @@
+import type { tStatistics } from ".";
+
 export type tDataset = {
     dataset: tNode[];
     metric_data: any;
     cluster_labels: string[];
-    statistics: any;
+    statistics: tStatistics;
     metric_metadata: tMetricMetadata 
     centroids? : {[key:string]: tNode[]};
   };

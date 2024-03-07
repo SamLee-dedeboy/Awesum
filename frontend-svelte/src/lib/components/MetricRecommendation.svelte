@@ -7,7 +7,6 @@
     selected_metrics,
     // recommended_cluster,
     feature_target_levels,
-    target_range_metric,
     feature_recommendations,
   } from "lib/store";
   const dispatch = createEventDispatcher();
