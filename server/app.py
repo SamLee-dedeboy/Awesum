@@ -76,11 +76,15 @@ def get_data():
         datum['coordinates'] = coordinates[i]
         datum['cluster'] = str(optic_labels[i])
     cluster_labels = list(map(lambda l: str(l), set(optic_labels)))
-    statistics, metric_data = features.collect_statistics(nodes, metrics)
+    global_statistics, metric_data = features.collect_statistics(nodes, metrics)
+
+    feature_matrix = np.array(list(map(lambda x: [x['features'][m] for m in metrics], nodes)))
+    statistics = [features.collect_local_stats(feature_matrix[:, c]) for c in range(feature_matrix.shape[1])]
     return json.dumps({
         "metric_data": metric_data, 
         "dataset": nodes, 
         "cluster_labels": cluster_labels, 
+        "global_statistics": global_statistics,
         "statistics": statistics,
         "metric_metadata": {
             "correlations": correlations,
@@ -202,7 +206,8 @@ def execute_prompt_all():
             "coordinates": coordinates,
             "summary": new_summary,
             "text": data[index]['text'],
-            "test_case": True
+            "test_case": True,
+            "intra_cluster_distance": data[index]['intra_cluster_distance']
         })
     # # reapply tsne 
     # dr_estimator = snapshots[data[0]['topic']]['dr_estimator']

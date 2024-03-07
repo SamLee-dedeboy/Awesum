@@ -1,10 +1,11 @@
-import type { tStatistics } from ".";
+import type { tStatBarData, tStatistics } from ".";
 
 export type tDataset = {
     dataset: tNode[];
     metric_data: any;
     cluster_labels: string[];
-    statistics: tStatistics;
+    global_statistics: tStatistics;
+    statistics: tStatBarData[];
     metric_metadata: tMetricMetadata 
     centroids? : {[key:string]: tNode[]};
   };
@@ -21,4 +22,5 @@ export type tNode = {
     summary: string
     text: string
     test_case?: boolean
+    intra_cluster_distance?: number
 }

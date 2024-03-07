@@ -19,7 +19,7 @@
   let prompt_template: tPrompt = {
     persona: "You are a writing assistant.",
     context: "You will be given a news article to summarize.",
-    constraints: "Please make sure the summary ",
+    constraints: "Please make sure the summary",
     // examples: Array.from(Array(30).keys()).map((i) => ({
     //   id: i.toString(),
     //   cluster: "2",

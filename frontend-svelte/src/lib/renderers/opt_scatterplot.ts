@@ -1,6 +1,6 @@
-import type { tOptimization, tNode } from "lib/types";
+import type { tOptimization, tNode, tStatistics } from "lib/types";
 // import { optimization_colors } from "lib/constants/Colors";
-import { cluster_colors } from "lib/constants";
+import { cluster_colors, optimization_opacities } from "lib/constants";
 import {
     BSplineShapeGenerator,
     BubbleSet,
@@ -27,6 +27,8 @@ export class OptScatterplot  {
         const line_group = svg.append("g").attr("class", "lines");
         const ideal_group = svg.append("g").attr("class", "ideal");
         const node_group = svg.append("g").attr("class", "nodes");
+        const src_node_group = node_group.append("g").attr("class", "src");
+        const dst_node_group = node_group.append("g").attr("class", "dst");
         const arrow_group = svg.append("g").attr("class", "arrows");
         this.xScale = d3.scaleLinear().domain([0, 1]).range([0, this.svgSize.width]);
         this.yScale = d3.scaleLinear().domain([0, 1]).range([0, this.svgSize.height]);
@@ -54,8 +56,49 @@ export class OptScatterplot  {
             .attr("stroke", "black")
             .attr("stroke-width", 1.2)
     }
+    update(src_optimization: tOptimization, dst_optimization: tOptimization | undefined) {
+        const self = this
+        const svg = d3.select(`#${this.svgId}`);
+        const node_group = svg.select("g.nodes");
+        const recommendation_node_ids = get(recommended_nodes)?.map(node => node.id) || []
+        const bubble_group = svg.select("g.bubbles");
+        bubble_group.selectAll("path.bubble_contour").remove()
+        const intra_cluster_distances = src_optimization.nodes.map(node => node.intra_cluster_distance!)
+        const min_intra_cluster_distance = Math.min(...intra_cluster_distances)
+        const max_intra_cluster_distance = Math.max(...intra_cluster_distances)
+        const nodeRadiusScale = d3.scaleLinear().domain([min_intra_cluster_distance, max_intra_cluster_distance]).range([3, 10])
+        // src
+        const src_group = node_group.select("g.src")
+        src_group.selectAll("*").remove()
+        const src_nodes = src_optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id))
+        this.update_optimization_snapshot(src_nodes, src_group, bubble_group, nodeRadiusScale, optimization_opacities[0])
+        if(dst_optimization === undefined) return
+        const dst_group = node_group.select("g.dst")
+        dst_group.selectAll("*").remove()
+        const dst_nodes = dst_optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id))
+        this.update_optimization_snapshot(dst_nodes, dst_group, bubble_group, nodeRadiusScale, optimization_opacities[1])
+    }
 
-    update(optimizations: tOptimization[]) {
+    update_optimization_snapshot(nodes: tNode[], node_parent: any, bubble_parent: any, nodeRadiusScale: any, opacity: number) {
+        const self = this
+        node_parent.selectAll("circle.node").data(nodes)
+            .join("circle")
+            .attr("class", "node")
+            .attr("cx", (node: tNode) => self.xScale(node.coordinates[0]))
+            .attr("cy", (node: tNode) => self.yScale(node.coordinates[1]))
+            .attr("r", (d) => nodeRadiusScale(d.intra_cluster_distance!))
+            .attr("fill", "white")
+            .attr("stroke", "black")
+            .attr("opacity", opacity)
+            .attr("stroke-width", 1)
+        const testset_bubble = create_bubble_path(nodes.map(node => [self.xScale(node.coordinates[0]), self.yScale(node.coordinates[1])]), 10)
+        bubble_parent.append("path")
+            .attr("class", "bubble_contour").attr("d", testset_bubble)
+            .attr("fill", "lightgray")
+            .attr("opacity", opacity)
+    }
+
+    _update(optimizations: tOptimization[]) {
         console.log("opt_scatterplot update", optimizations)
         const self = this
         const svg = d3.select(`#${this.svgId}`);
@@ -65,6 +108,11 @@ export class OptScatterplot  {
         const recommendation_node_ids = get(recommended_nodes)?.map(node => node.id) || []
         const bubble_group = svg.select("g.bubbles");
         bubble_group.selectAll("path.bubble_contour").remove()
+        const intra_cluster_distances = optimizations[0].nodes.map(node => node.intra_cluster_distance!)
+        const min_intra_cluster_distance = Math.min(...intra_cluster_distances)
+        const max_intra_cluster_distance = Math.max(...intra_cluster_distances)
+        const nodeRadiusScale = d3.scaleLinear().domain([min_intra_cluster_distance, max_intra_cluster_distance]).range([3, 10])
+
         const opt_group = node_group.selectAll("g.optimization")
         .data(optimizations)
         .join("g")
@@ -79,7 +127,7 @@ export class OptScatterplot  {
                 .attr("class", "node")
                 .attr("cx", (node: tNode) => self.xScale(node.coordinates[0]))
                 .attr("cy", (node: tNode) => self.yScale(node.coordinates[1]))
-                .attr("r", node_radius)
+                .attr("r", (d) => nodeRadiusScale(d.intra_cluster_distance!))
                 .attr("fill", "white")
                 .attr("stroke", "black")
                 // .attr("stroke", "#f0f0f0")
@@ -92,61 +140,48 @@ export class OptScatterplot  {
                 .attr("opacity", bubbleOpacityScale(i))
         })
     }
-    update_movement(optimizations: tOptimization[], ideal_nodes: tNode[]) {
-        console.log({optimizations})
+    update_movement(src_optimization: tOptimization, dst_optimization: tOptimization, statistics: tStatistics) {
         const self = this
         const svg = d3.select(`#${this.svgId}`);
         const line_group = svg.select("g.lines");
-        const global_mins = optimizations[0].statistics.global_mins
-        const global_maxes = optimizations[0].statistics.global_maxes
-        let opt_trajectory_colors: any[] = []
+        const global_mins = statistics.global_mins
+        const global_maxes = statistics.global_maxes
+        console.log({global_mins, global_maxes})
         const recommendation_node_ids = get(recommended_nodes)?.map(node => node.id) || []
-        const recommended_node_indices = optimizations[0].nodes.reduce((acc, node, i) => { if(!recommendation_node_ids.includes(node.id)) acc.push(i); return acc}, [] as any[])
-        for(let i = 0; i < optimizations.length-1; i++) {
-            const movement_srcs = optimizations[i].nodes
-            const movement_dsts = optimizations[i+1].nodes
-            const one_iteration_lines: [tNode, tNode][] = movement_srcs.map((_, i) => [movement_srcs[i], movement_dsts[i]])
-            const direction_colors = one_iteration_lines.map((d) => categorize_distance(d, get(selected_metrics), get(target_ranges), global_mins, global_maxes))
-            opt_trajectory_colors.push(direction_colors)
-        }
+        const recommended_node_indices = src_optimization.nodes.reduce((acc, node, i) => { if(!recommendation_node_ids.includes(node.id)) acc.push(i); return acc}, [] as any[])
+        // src_trajectory_colors 
+        const movement_srcs = src_optimization.nodes
+        const movement_dsts = dst_optimization.nodes
+        const one_iteration_lines: [tNode, tNode][] = movement_srcs.map((_, i) => [movement_srcs[i], movement_dsts[i]])
+        const direction_colors = one_iteration_lines.map((d) => categorize_distance(d, get(selected_metrics), get(target_ranges), global_mins, global_maxes))
 
-        const trajectory_groups = line_group.selectAll("g.trajectory_group")
-            .data(optimizations.slice(1))
+        const trajectory_colors = filter_by_indices(direction_colors, recommended_node_indices)
+        const end_trajectory_colors = trajectory_colors.map(color => d3.color(color).darker(1.5).formatHex())
+        const colorScales = trajectory_colors.map((color, i) => d3.scaleLinear().domain([0, dst_optimization.trajectories![0].length]).range([color, end_trajectory_colors[i]]))
+        const target_trajectories = filter_by_indices(dst_optimization.trajectories, recommended_node_indices)
+        line_group.selectAll("g.trajectory")
+            .data(target_trajectories)
             .join("g")
-            .attr("id", (_, i) => `trajectory-${i+1}`)
-            .attr("class", "trajectory_group")
-        optimizations.forEach((optimization, i) => {
-            if(optimization.trajectories === undefined) return
-            const trajectory_colors = filter_by_indices(opt_trajectory_colors[i-1], recommended_node_indices)
-            // const lighter_trajectory_colors = trajectory_colors.map(color => d3.color(color).brighter(3).formatHex())
-            const end_trajectory_colors = trajectory_colors.map(color => d3.color(color).darker(1.5).formatHex())
-            console.log(trajectory_colors, end_trajectory_colors)
-            const colorScales = trajectory_colors.map((color, i) => d3.scaleLinear().domain([0, optimization.trajectories[0].length]).range([color, end_trajectory_colors[i]]))
-            const target_trajectories = filter_by_indices(optimization.trajectories, recommended_node_indices)
-            console.log({target_trajectories}, recommended_node_indices)
-            const trajectory_group = line_group.select(`#trajectory-${i}`)
-            trajectory_group.selectAll("g.trajectory")
-                .data(target_trajectories)
-                .join("g")
-                .attr("class", "trajectory")
-                .each(function(trajectory, node_index) {
-                    // const opacityScale = d3.scaleLinear().domain([0, trajectory.length]).range([1, 0.2])
-                    // const colorScale = d3.scaleLinear().domain([0, trajectory.length]).range(["green", "lightgreen"])
-                    const trajectory_group = d3.select(this)
-                    trajectory_group.selectAll("circle.interpolation_point")
-                        .data(trajectory.filter((_, i) => i % 2 === 0))
-                        .join("circle")
-                        .attr("class", "interpolation_point")
-                        .attr("cx", (d: number[]) => self.xScale(d[0]))
-                        .attr("cy", (d: number[]) => self.yScale(d[1]))
-                        .attr("r", 3)
-                        .attr("fill", (_, i) => colorScales[node_index](i*3))
-                        // .attr("fill", "lightgreen")
-                        // .attr("opacity", (_, i) => opacityScale(i))
-                    
-                })
-        })
+            .attr("class", "trajectory")
+            .each(function(trajectory, node_index) {
+                // const opacityScale = d3.scaleLinear().domain([0, trajectory.length]).range([1, 0.2])
+                // const colorScale = d3.scaleLinear().domain([0, trajectory.length]).range(["green", "lightgreen"])
+                const trajectory_group = d3.select(this)
+                trajectory_group.selectAll("circle.interpolation_point")
+                    .data(trajectory.filter((_, i) => i % 2 === 0))
+                    .join("circle")
+                    .attr("class", "interpolation_point")
+                    .attr("cx", (d: number[]) => self.xScale(d[0]))
+                    .attr("cy", (d: number[]) => self.yScale(d[1]))
+                    .attr("r", 3)
+                    .attr("fill", "lightgray")
+                    // .attr("fill", (_, i) => colorScales[node_index](i*3))
+                    // .attr("fill", "lightgreen")
+                    // .attr("opacity", (_, i) => opacityScale(i))
+                
+            })
     }
+
     _update_movement(optimizations: tOptimization[], ideal_nodes: tNode[]) {
         console.log({optimizations})
         const self = this
@@ -287,6 +322,7 @@ function arrow_animation(parent, arrow_position_data){ // har
         .each("end", repeat);
     };
 };
+
 
 function compute_centroid(points: number[][]) {
     const centroid = points.reduce((acc, point) => {

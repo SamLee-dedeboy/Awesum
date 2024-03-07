@@ -74,6 +74,7 @@
     }
     adjustMetrics(dataset?.dataset, cluster_params, value);
   });
+
   $: if ($selected_topic) fetch_data($selected_topic);
   function fetch_data(topic) {
     fetch(server_address + "/data/", {
@@ -92,7 +93,7 @@
           metric_metadata = dataset.metric_metadata;
           dataset.centroids = generate_centroids(dataset.dataset);
           initOptimizations($test_set, dataset.statistics);
-          initTargetRanges(dataset.statistics);
+          initTargetRanges(dataset.global_statistics);
         }
       });
   }
@@ -132,49 +133,49 @@
       });
   }
 
-  function _adjustMetrics(p_dataset, p_cluster_params, p_selected_metrics) {
-    console.assert(p_dataset !== undefined);
-    if (!dataset) return;
-    const feature_recommendations = Object.entries($feature_target_levels)
-      .filter((f) => f[1])
-      .map((f) => {
-        return { feature_name: f[0], level: f[1] };
-      });
-    console.log({ feature_recommendations }, $feature_target_levels);
-    const parameters = {
-      method: p_cluster_params.name,
-      // parameters: p_cluster_params.params,
-      dataset: p_dataset,
-      metrics: p_selected_metrics,
-      recommended_features: {
-        features: feature_recommendations,
-        feature_pool: $selected_metrics,
-      },
-    };
-    cluster_loading = true;
-    fetch(server_address + "/data/metrics/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ ...parameters }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.assert(dataset !== undefined);
-        if (!dataset) return;
-        console.log("Success:", data);
-        dataset.cluster_labels = data.cluster_labels;
-        dataset.dataset = data.dataset;
-        dataset.statistics = data.statistics;
-        dataset.metric_data = data.metric_data;
-        dataset = dataset;
-        cluster_loading = false;
-        initOptimizations($test_set, dataset.statistics);
+  // function _adjustMetrics(p_dataset, p_cluster_params, p_selected_metrics) {
+  //   console.assert(p_dataset !== undefined);
+  //   if (!dataset) return;
+  //   const feature_recommendations = Object.entries($feature_target_levels)
+  //     .filter((f) => f[1])
+  //     .map((f) => {
+  //       return { feature_name: f[0], level: f[1] };
+  //     });
+  //   console.log({ feature_recommendations }, $feature_target_levels);
+  //   const parameters = {
+  //     method: p_cluster_params.name,
+  //     // parameters: p_cluster_params.params,
+  //     dataset: p_dataset,
+  //     metrics: p_selected_metrics,
+  //     recommended_features: {
+  //       features: feature_recommendations,
+  //       feature_pool: $selected_metrics,
+  //     },
+  //   };
+  //   cluster_loading = true;
+  //   fetch(server_address + "/data/metrics/", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({ ...parameters }),
+  //   })
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       console.assert(dataset !== undefined);
+  //       if (!dataset) return;
+  //       console.log("Success:", data);
+  //       dataset.cluster_labels = data.cluster_labels;
+  //       dataset.dataset = data.dataset;
+  //       dataset.statistics = data.statistics;
+  //       dataset.metric_data = data.metric_data;
+  //       dataset = dataset;
+  //       cluster_loading = false;
+  //       initOptimizations($test_set, dataset.statistics);
 
-        // recommended_cluster.set(data.closest_cluster);
-      });
-  }
+  //       // recommended_cluster.set(data.closest_cluster);
+  //     });
+  // }
 
   function setNewOptimization({
     results,
@@ -252,18 +253,6 @@
     });
   }
 
-  function handleAddExample(e) {
-    const example: tExampleData = {
-      id: e.detail.id,
-      text: e.detail.text,
-      summary: e.detail.summary,
-    };
-    prompt_view.add_example(example);
-  }
-
-  // function handleSelectedMetricChanged(metrics) {
-  //   generateCluster();
-  // }
   function generate_centroids(data: tNode[]) {
     let cluster_nodes = {};
     data.forEach((datum) => {
@@ -278,11 +267,14 @@
     Object.keys(cluster_nodes).forEach((cluster_label) => {
       if (cluster_label === "-1") return;
       const nodes = cluster_nodes[cluster_label];
+      const intra_cluster_distance = compute_intra_cluster_distance(nodes);
       const mean_x = d3.mean(nodes.map((d) => d.coordinates[0]));
       const mean_y = d3.mean(nodes.map((d) => d.coordinates[1]));
       const { x, y, nearest } = find_nearest(mean_x, mean_y, nodes);
+
       centroids[cluster_label] = [x, y];
       nearest.test_case = true;
+      nearest.intra_cluster_distance = intra_cluster_distance;
       local_testset.push(nearest);
     });
     test_set.set(local_testset);
@@ -311,6 +303,20 @@
         nearest: nearest,
       };
     }
+  }
+
+  function compute_intra_cluster_distance(node: tNode[]) {
+    let distance = 0;
+    for (let i = 0; i < node.length; i++) {
+      for (let j = i + 1; j < node.length; j++) {
+        distance += Math.sqrt(
+          (node[i].coordinates[0] - node[j].coordinates[0]) ** 2 +
+            (node[i].coordinates[1] - node[j].coordinates[1]) ** 2
+        );
+      }
+    }
+    distance /= node.length;
+    return distance;
   }
 
   function handleHighlightRecommendation() {
@@ -359,7 +365,7 @@
                   bind:this={cluster_view}
                   data={dataset.dataset}
                   centroids={dataset.centroids || {}}
-                  statistics={dataset.statistics}
+                  statistics={dataset.global_statistics}
                   highlight_cluster_label={hovered_cluster_label}
                 ></ClusterView>
               </div>
@@ -368,7 +374,7 @@
           <div class="grow border-t-4 border-[#89d0ff]">
             <StatisticsView
               bind:this={statistics_view}
-              stat_data={dataset.statistics}
+              stat_data={dataset.global_statistics}
               data={dataset.dataset}
               bind:selected_cluster
               bind:hovered_cluster_label
@@ -392,7 +398,8 @@
           </div>
         </div>
         <div class="grow">
-          <TrackingView {optimizations}></TrackingView>
+          <TrackingView {optimizations} statistics={dataset.global_statistics}
+          ></TrackingView>
         </div>
       </div>
     </div>

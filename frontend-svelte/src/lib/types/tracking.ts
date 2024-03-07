@@ -5,9 +5,9 @@ export type tOptimization = {
     // summaries: String[]
     features: any[]
     nodes: tNode[]
-    trajectories: any[]
+    trajectories?: any[]
     prompt: tPrompt
-    statistics: tStatistics
+    statistics: tStatBarData[]
 }
 
 export type tSelectedClusterData = {

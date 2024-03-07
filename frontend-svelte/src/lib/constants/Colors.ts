@@ -57,3 +57,4 @@ export const optimization_colors = [
     "#2ca02c",
     "#3b9ab2",
   ];
+export const optimization_opacities = [0.2, 0.8]

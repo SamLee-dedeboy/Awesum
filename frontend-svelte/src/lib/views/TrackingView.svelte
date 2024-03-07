@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { tOptimization } from "lib/types";
+  import type { tOptimization, tStatistics } from "lib/types";
   import { onMount, tick } from "svelte";
   import { OptScatterplot } from "lib/renderers/opt_scatterplot";
   import { OptimizationStats } from "lib/renderers/optimization_stats";
@@ -8,6 +8,7 @@
   // import { optimization_colors } from "lib/constants";
 
   export let optimizations: tOptimization[];
+  export let statistics: tStatistics;
   const tracking_svgId = "tracking-scatterplot-svg";
   const optimization_stat_svgId_factory = (index) =>
     `optimization-stats-svg-${index}`;
@@ -25,18 +26,26 @@
   }
   async function update(optimizations: tOptimization[]) {
     await tick();
-    opt_scatterplot.update(optimizations);
-    if (optimizations.length >= 2) {
+    if (optimizations.length === 1) {
+      opt_scatterplot.update(optimizations[0], undefined);
+    } else {
+      const length = optimizations.length;
+      opt_scatterplot.update(
+        optimizations[length - 2],
+        optimizations[length - 1]
+      );
       opt_scatterplot.update_movement(
-        optimizations,
-        $recommended_nodes!
+        optimizations[length - 2],
+        optimizations[length - 1],
+        statistics
         // optimizations.length - 2,
         // optimizations.length - 1
       );
     }
-    const global_mins = optimizations[0].statistics.global_mins;
-    const global_maxes = optimizations[0].statistics.global_maxes;
-    const global_means = optimizations[0].statistics.global_means;
+
+    const global_mins = statistics.global_mins;
+    const global_maxes = statistics.global_maxes;
+    const global_means = statistics.global_means;
 
     optimizations.forEach((optimization, index) => {
       optimization_stat_instances = [];
@@ -62,7 +71,15 @@
 
   async function update_recommendations(optimizations, recommended_nodes) {
     await tick();
-    opt_scatterplot.update(optimizations);
+    if (optimizations.length === 1) {
+      opt_scatterplot.update(optimizations[0], undefined);
+    } else {
+      const length = optimizations.length;
+      opt_scatterplot.update(
+        optimizations[length - 2],
+        optimizations[length - 1]
+      );
+    }
     opt_scatterplot.update_recommendations(recommended_nodes);
     optimization_stat_instances.forEach((instance) => {
       instance.update_recommendations(recommended_nodes, $target_ranges);
