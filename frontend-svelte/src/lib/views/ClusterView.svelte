@@ -151,7 +151,7 @@
       .attr("r", (d: any) => node_radius)
       .attr("stroke", "gray")
       .attr("stroke-width", 0.5);
-    // force_collision_centroid(data, node_radius + 0.7, centroids);
+    force_collision_centroid(data, node_radius + 0.7, centroids);
   }
 
   async function update_by_cluster() {
@@ -216,6 +216,7 @@
       .selectAll("circle")
       .attr("fill", (d) => cluster_colors(d.cluster))
       .attr("opacity", (d) => {
+        return 1;
         d.total_distance = compute_distance(d);
         return opacityScale(d.total_distance);
       })
@@ -335,7 +336,7 @@
           .attr("stroke-dasharray", "4,2");
       },
     };
-    add_utility_button(show_test_set_button);
+    // add_utility_button(show_test_set_button);
 
     const show_noise_button = {
       parent: utility_group,
@@ -454,7 +455,6 @@
       .attr("stroke-width", 1)
       .attr("stroke-dasharray", "4,2");
     if (show_recommendations) {
-      console.log({ recommended_case_circles });
       const bubble_path = create_bubble_path(
         recommended_case_circles
           .nodes()
@@ -582,6 +582,7 @@
     });
     return total_distance;
   }
+
   function create_bubble_path(points, radius) {
     const pad = 0;
     // bubbles can be reused for subsequent runs or different sets of rectangles

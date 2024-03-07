@@ -1,6 +1,8 @@
 import * as d3 from "d3"
 import type { tOptimization, tNode } from "lib/types";
 import { metric_categories } from "lib/constants";
+import { get, writable } from "svelte/store";
+import { recommended_nodes } from "lib/store";
 export class OptimizationStats {
     svgId: string
     svgSize: any
@@ -57,6 +59,7 @@ export class OptimizationStats {
         svg.selectAll("g").remove();
         console.log("optimization", optimization, svg.node(), this.svgId)
         const features = optimization.nodes.map(node => node.features)
+        const recommendation_node_ids = get(recommended_nodes)?.map(node => node.id) || []
         this.metrics.forEach((metric, i) => {
             const metric_group = svg.append("g").attr("class", metric)
             const metric_values = features.map(feature => feature[metric])
@@ -71,8 +74,9 @@ export class OptimizationStats {
             //     .attr("fill", "#e0e0e0")
             //     .attr("stroke", "black")
             //     .attr("stroke-width", 1)
+            const testset_nodes = optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id))
             const test_nodes = metric_group.selectAll("rect.test_case")
-                .data(optimization.nodes)
+                .data(testset_nodes)
                 .join("rect")
                 .attr("class", "test_case")
                 .attr("x", (node: tNode) => this.xScales[i](node.features[metric] - this.global_means[i]))
@@ -83,9 +87,10 @@ export class OptimizationStats {
                 // .attr("stroke", "black")
         })
     } 
-    update_recommendations(ideal_nodes: tNode[]) {
+    update_recommendations(ideal_nodes: tNode[], target_ranges: {[key:string]:[number|undefined, number|undefined]}) {
         const svg = d3.select(`#${this.svgId}`)
         const features = ideal_nodes.map(node => node.features)
+        const target_features = Object.keys(target_ranges).filter(metric => target_ranges[metric][0] !== undefined && target_ranges[metric][1] !== undefined)
         this.metrics.forEach((metric, i) => {
             const metric_group = svg.select("g." + metric)
             metric_group.selectAll("rect.recommendation").remove()
@@ -103,6 +108,7 @@ export class OptimizationStats {
                 .attr("stroke", "gray")
                 .attr("stroke-dasharray", "20,20")
                 .attr("stroke-width", 1)
+                .attr("opacity", target_features.includes(metric) ? 1 : 0)
         // const ideal_node_elements = metric_group.selectAll("circle.ideal_node")
         //     .data(ideal_nodes)
         //     .join("circle")

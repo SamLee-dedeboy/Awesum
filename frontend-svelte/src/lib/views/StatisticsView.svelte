@@ -186,33 +186,33 @@
     });
   }
 
-  async function update_detail(
-    cluster_label: string,
-    optimization_snippets: tOptimization[],
-    data: tStatistics
-  ) {
-    await tick();
-    optimization_snippets.forEach((optimization_snippet, index) => {
-      if (index >= detail_statbars[cluster_label].length) {
-        detail_statbars[cluster_label].push(
-          new Statbars(
-            `#stat-detail-${cluster_label}-${index}`,
-            svgSize,
-            innerSize,
-            null,
-            cluster_colors(cluster_label)
-          )
-        );
-      }
-      const statbars = detail_statbars[cluster_label][index];
-      statbars.update(
-        optimization_snippet.statistics,
-        data.global_means,
-        data.global_mins,
-        data.global_maxes
-      );
-    });
-  }
+  // async function update_detail(
+  //   cluster_label: string,
+  //   optimization_snippets: tOptimization[],
+  //   data: tStatistics
+  // ) {
+  //   await tick();
+  //   optimization_snippets.forEach((optimization_snippet, index) => {
+  //     if (index >= detail_statbars[cluster_label].length) {
+  //       detail_statbars[cluster_label].push(
+  //         new Statbars(
+  //           `#stat-detail-${cluster_label}-${index}`,
+  //           svgSize,
+  //           innerSize,
+  //           null,
+  //           cluster_colors(cluster_label)
+  //         )
+  //       );
+  //     }
+  //     const statbars = detail_statbars[cluster_label][index];
+  //     statbars.update(
+  //       optimization_snippet.statistics,
+  //       data.global_means,
+  //       data.global_mins,
+  //       data.global_maxes
+  //     );
+  //   });
+  // }
 
   function initDetailStatbars(cluster_statistics: {
     [key: string]: tStatBarData[];
@@ -254,6 +254,7 @@
         metrics[index],
         stat.mean
       );
+      $target_ranges[metrics[index]] = [stat.min, stat.max];
       // recommended_cluster.set(cluster_label);
       recommended_nodes.set(
         data?.filter((datum) => datum.cluster === cluster_label)

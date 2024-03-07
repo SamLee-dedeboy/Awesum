@@ -175,6 +175,7 @@
       </div>
     </div>
   </div>
+
   <!-- <button
     class="w-fit sticky ml-auto bottom-1 right-0 text-[0.6rem] p-1 bg-amber-400 border-amber-500"
     on:click={() => dispatch("highlight_recommendation", recommended_cluster)}

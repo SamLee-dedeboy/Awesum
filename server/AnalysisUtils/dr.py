@@ -32,6 +32,7 @@ def reapply_dr(X, estimator, scaler, min_val, max_val):
     XY = estimator.transform(X)
     XY, _, _ = min_max_normalize(XY, min_val, max_val)
     return XY
+
 def reapply_tsne(X, scaler, min_val, max_val, init_positions):
     X = np.array(X)
     X = scaler.transform(X)
@@ -39,6 +40,27 @@ def reapply_tsne(X, scaler, min_val, max_val, init_positions):
     XY, _, _ = min_max_normalize(XY, min_val, max_val)
     return XY
 
+def trajectory(estimator, scaler, min_val, max_val, src_points, dst_points):
+    print("===============")
+    print(src_points)
+    print("--------------------")
+    print(dst_points)
+    print("===============")
+    src_points = scaler.transform(np.array(src_points)) # shape is (# of points, # of features)
+    dst_points = scaler.transform(np.array(dst_points))
+    print(src_points.shape, dst_points.shape)
+    trajectory_points = []
+    for src, dst in zip(src_points, dst_points):
+        # src and dst shape is (1, # of features)
+        interpolation_points = np.array(list(getEquidistantPoints(src, dst, 100))) # shape is (100, # of features)
+        print(interpolation_points.shape)
+        dr_xy = estimator.transform(interpolation_points) # shape is (100, 2)
+        dr_xy, _, _ = min_max_normalize(dr_xy, min_val, max_val)
+        trajectory_points.append(dr_xy.tolist())
+    return trajectory_points
+
+def getEquidistantPoints(p1, p2, parts):
+    return zip(*[np.linspace(p1[i], p2[i], parts+1) for i in range(len(p1))])
 
 def min_max_normalize(data, min_vals=None, max_vals=None):
     if min_vals is None: min_vals = np.min(data, axis=0)

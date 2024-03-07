@@ -171,7 +171,6 @@ export const range_to_categories = (metric: string, range: [number, number]): st
         if (category_range.end !== -1 && category_range.end <= range[0]) return
         categories.push(category_range.label)
     })
-    console.log({categories})
     return categories
 }
 

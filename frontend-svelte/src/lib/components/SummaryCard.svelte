@@ -7,7 +7,6 @@
   export let summary: String = "";
   export let color: string;
   export let statistics: { [key: string]: number };
-  $: console.log(statistics);
   export let in_example: boolean = false;
 
   function toggleExample() {

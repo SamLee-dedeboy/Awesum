@@ -175,10 +175,12 @@
   function setNewOptimization({
     results,
     statistics,
+    trajectories,
     prompt,
   }: {
     results: tNode[];
     statistics: tStatBarData[];
+    trajectories: any[];
     prompt: tPrompt;
   }) {
     console.log({ results, statistics, prompt });
@@ -187,6 +189,7 @@
       {
         // summaries: cluster_nodes.map((node) => node.summary),
         nodes: results,
+        trajectories: trajectories,
         features: results.map((node) => node.features),
         prompt: prompt,
         statistics: statistics,
@@ -255,6 +258,7 @@
     let centroids = {};
     let local_testset: tNode[] = [];
     Object.keys(cluster_nodes).forEach((cluster_label) => {
+      if (cluster_label === "-1") return;
       const nodes = cluster_nodes[cluster_label];
       const mean_x = d3.mean(nodes.map((d) => d.coordinates[0]));
       const mean_y = d3.mean(nodes.map((d) => d.coordinates[1]));

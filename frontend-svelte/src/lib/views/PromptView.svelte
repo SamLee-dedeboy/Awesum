@@ -19,7 +19,7 @@
   let prompt_template: tPrompt = {
     persona: "You are a writing assistant.",
     context: "You will be given a news article to summarize.",
-    constraints: "Please make sure the summary is __.",
+    constraints: "Please make sure the summary ",
     // examples: Array.from(Array(30).keys()).map((i) => ({
     //   id: i.toString(),
     //   cluster: "2",
@@ -45,6 +45,7 @@
   }: tPrompt) {
     const instruction = persona + ". " + context + ". " + constraints;
     const url = new URL(server_address + "/executePromptAll/");
+    console.log("test set", $test_set);
     executing_prompt = true;
     fetch(url, {
       method: "POST",
@@ -57,11 +58,13 @@
         examples: examples,
         data_template: data_template,
         data: $test_set,
+        last_data: [],
         // metrics: metrics,
       }),
     })
       .then((response) => response.json())
       .then((res) => {
+        console.log("execute prompt", { res });
         executing_prompt = false;
         dispatch("promptDone", {
           ...res,

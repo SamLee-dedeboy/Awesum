@@ -3,7 +3,7 @@
   import { onMount, tick } from "svelte";
   import { OptScatterplot } from "lib/renderers/opt_scatterplot";
   import { OptimizationStats } from "lib/renderers/optimization_stats";
-  import { recommended_nodes } from "lib/store";
+  import { recommended_nodes, target_ranges } from "lib/store";
   import { metrics } from "lib/constants";
   // import { optimization_colors } from "lib/constants";
 
@@ -16,17 +16,20 @@
   let optimization_stat_instances: OptimizationStats[] = [];
   onMount(() => {
     opt_scatterplot.init();
+    // opt_scatterplot.rotate_gradient();
+    // rotate_gradient();
   });
   $: update(optimizations);
   $: if ($recommended_nodes) {
-    update_recommendations($recommended_nodes);
+    update_recommendations(optimizations, $recommended_nodes);
   }
   async function update(optimizations: tOptimization[]) {
     await tick();
     opt_scatterplot.update(optimizations);
     if (optimizations.length >= 2) {
       opt_scatterplot.update_movement(
-        optimizations
+        optimizations,
+        $recommended_nodes!
         // optimizations.length - 2,
         // optimizations.length - 1
       );
@@ -49,17 +52,60 @@
       optimization_stat.update(optimization);
       optimization_stat_instances.push(optimization_stat);
       if ($recommended_nodes) {
-        optimization_stat.update_recommendations($recommended_nodes);
+        optimization_stat.update_recommendations(
+          $recommended_nodes,
+          $target_ranges
+        );
       }
     });
   }
 
-  async function update_recommendations(nodes) {
+  async function update_recommendations(optimizations, recommended_nodes) {
     await tick();
-    opt_scatterplot.update_recommendations(nodes);
+    opt_scatterplot.update(optimizations);
+    opt_scatterplot.update_recommendations(recommended_nodes);
     optimization_stat_instances.forEach((instance) => {
-      instance.update_recommendations(nodes);
+      instance.update_recommendations(recommended_nodes, $target_ranges);
     });
+  }
+  function rotate_gradient() {
+    let l: any = document.getElementById("l");
+    let x1 = parseFloat(l.getAttribute("x1"));
+    let y1 = parseFloat(l.getAttribute("y1"));
+    let x2 = parseFloat(l.getAttribute("x2"));
+    let y2 = parseFloat(l.getAttribute("y2"));
+    let w = parseFloat(l.getAttribute("stroke-width"));
+    console.log({ x1, y1, x2, y2, w });
+
+    // step 1
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+
+    // step 2
+    const len = Math.sqrt(dx * dx + dy * dy);
+    dx = dx / len;
+    dy = dy / len;
+
+    // step 3
+    let temp = dx;
+    dx = -dy;
+    dy = temp;
+
+    //step 4
+    dx = w * dx;
+    dy = w * dy;
+
+    //step 5
+    let gradient_x1 = x1 + dx * 0.5;
+    let gradient_y1 = y1 + dy * 0.5;
+    let gradient_x2 = x1 - dx * 0.5;
+    let gradient_y2 = y1 - dy * 0.5;
+
+    let e: any = document.getElementById("e");
+    e.setAttribute("x1", gradient_x1);
+    e.setAttribute("y1", gradient_y1);
+    e.setAttribute("x2", gradient_x2);
+    e.setAttribute("y2", gradient_y2);
   }
 </script>
 
@@ -122,9 +168,31 @@
       viewBox={`0 0 ${svgSize.width} ${svgSize.height}`}
     >
       <defs>
-        <!-- <path id="arrowhead" d="M7,0 L-7,-5 L-7,5 Z" /> -->
-        <path id="arrowhead" d="M-7,-5 L7,0 L-7,5" />
+        <path id="arrowhead" d="M7,0 L-7,-5 L-7,5 Z" />
+        <!-- <path id="arrowhead" d="M-7,-5 L7,0 L-7,5" /> -->
       </defs>
+      <!-- <defs>
+        <linearGradient
+          id="e"
+          x1="0"
+          y1="0"
+          x2="1"
+          y2="1"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stop-color="steelblue" offset="0" />
+          <stop stop-color="red" offset="1" />
+        </linearGradient>
+      </defs>
+      <line
+        id="l"
+        x1="40"
+        y1="270"
+        x2="450"
+        y2="210"
+        stroke="url(#e)"
+        stroke-width="30"
+      /> -->
     </svg>
   </div>
 </div>

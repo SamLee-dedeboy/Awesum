@@ -5,6 +5,7 @@ export type tOptimization = {
     // summaries: String[]
     features: any[]
     nodes: tNode[]
+    trajectories: any[]
     prompt: tPrompt
     statistics: tStatistics
 }

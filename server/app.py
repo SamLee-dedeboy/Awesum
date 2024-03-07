@@ -175,6 +175,8 @@ def execute_prompt_all():
     data_template = request.json['data_template']
     prompt_template = gpt.combine_templates(instruction, examples, data_template)
     data = request.json['data']
+    last_data = request.json['last_data']
+    src_features = list(map(lambda x: [x['features'][m] for m in metrics], last_data))
     # metrics = request.json['metrics']
     prompts = []
     for datum in data:
@@ -185,14 +187,19 @@ def execute_prompt_all():
     # save_json(prompts, 'data/debug/prompts.json')
     summaries = gpt.multithread_prompts(openai_client, prompts)
     # save_json(summaries, 'data/debug/summaries.json')
+    dr_estimator = snapshots[data[0]['topic']]['dr_estimator']
+    dr_scaler = snapshots[data[0]['topic']]['dr_scaler']
+    min_coord = snapshots[data[0]['topic']]['min_coord']
+    max_coord = snapshots[data[0]['topic']]['max_coord']
     results = []
     for index, new_summary in enumerate(summaries):
         default_metrics = features.evaluate(evaluator, data[index]['text'], new_summary, metrics)
+        coordinates = dr.reapply_dr([[default_metrics[metric] for metric in metrics]], dr_estimator, dr_scaler, min_coord, max_coord).tolist()[0]
         results.append({
             "id": data[index]['id'],
             "cluster": data[index]['cluster'],
             "features": default_metrics,
-            "coordinates": dr.reapply_dr([[default_metrics[metric] for metric in metrics]], dr_estimator, dr_scaler, min_coord, max_coord).tolist()[0],
+            "coordinates": coordinates,
             "summary": new_summary,
             "text": data[index]['text'],
             "test_case": True
@@ -213,7 +220,8 @@ def execute_prompt_all():
     #         if item['id'] == test_node['id']:
     #             break
     #     test_node['coordinates'] = reapplied_coordinates[coordinate_index].tolist()
-    feature_matrix = np.array(list(map(lambda x: [x['features'][m] for m in metrics], results)))
+    dst_features = list(map(lambda x: [x['features'][m] for m in metrics], results))
+    feature_matrix = np.array(dst_features)
     statistics = []
     for c in range(feature_matrix.shape[1]):
         column = feature_matrix[:, c]
@@ -221,7 +229,8 @@ def execute_prompt_all():
 
     return json.dumps({
         "results": results,
-        "statistics": statistics
+        "statistics": statistics,
+        "trajectories": dr.trajectory(dr_estimator, dr_scaler, min_coord, max_coord, src_features, dst_features),
     })
 
 @app.route("/query_metric/", methods=['POST'])
