@@ -301,7 +301,7 @@ class NaturalnessEvaluator:
             scaled_features.append(self.standardization(feature,tup))
         # inverses = [1.0-feature for feature in scaled_features]
         naturalness_score = np.mean(np.dot(scaled_features, list(self.weights.values())))
-        naturalness_score = self.min_max_scaling(naturalness_score,self.min_max)
+        naturalness_score = 1-self.min_max_scaling(naturalness_score,self.min_max)
         if self.ranges!=[]:
             if self.ranges[0][0]<=naturalness_score<self.ranges[0][1]: naturalness_bin = "bad"
             elif self.ranges[1][0]<=naturalness_score<self.ranges[1][1]: naturalness_bin = "low"
