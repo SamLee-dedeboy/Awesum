@@ -273,16 +273,17 @@ class FaithfulnessEvaluator:
         # return summac_score(self.original_text, self.summary)
 
 class NaturalnessEvaluator:
-    def __init__(self,mean_sd_features,ranges): # Ranges for each feature for min-max scaling
+    def __init__(self,mean_sd_features,ranges,min_max): # Ranges for each feature for min-max scaling
         self.ranges = ranges
         self.mean_sd_features = mean_sd_features
+        self.min_max = min_max
         self.nlp = spacy.load("en_core_web_sm")
         self.nh = NaturalnessHelper()
         self.weights = {
-            'Average Dependency tree heights': 0.2826426317853948,
-            'average_sentence_lengths': 0.2522139996530825,
-            'avg_left_subtree_height': 0.23287886122532872,
-            'avg_right_subtree_height': 0.2458490930520618,
+            "Average Dependency tree heights": 0.20551969186015231,
+            "average_sentence_lengths": 0.23828211739802285,
+            "avg_left_subtree_height": 0.24983966373071514,
+            "avg_right_subtree_height": 0.3063585270111097
         }
 
     def default(self,text):
@@ -300,14 +301,18 @@ class NaturalnessEvaluator:
             scaled_features.append(self.standardization(feature,tup))
         # inverses = [1.0-feature for feature in scaled_features]
         naturalness_score = np.mean(np.dot(scaled_features, list(self.weights.values())))
-        print(naturalness_score)
+        naturalness_score = self.min_max_scaling(naturalness_score,self.min_max)
         if self.ranges!=[]:
-            if self.ranges[0][0]<=naturalness_score<self.ranges[0][1]: naturalness_bin = "good"
-            elif self.ranges[1][0]<=naturalness_score<self.ranges[1][1]: naturalness_bin = "avg"
-            elif self.ranges[2][0]<=naturalness_score<self.ranges[2][1]: naturalness_bin = "low"
-            elif self.ranges[3][0]<=naturalness_score<=self.ranges[3][1]: naturalness_bin = "bad"
-            elif naturalness_score>self.ranges[3][1]: naturalness_bin = "good"
-            elif naturalness_score<self.ranges[0][0]: naturalness_bin = "bad"
+            if self.ranges[0][0]<=naturalness_score<self.ranges[0][1]: naturalness_bin = "bad"
+            elif self.ranges[1][0]<=naturalness_score<self.ranges[1][1]: naturalness_bin = "low"
+            elif self.ranges[2][0]<=naturalness_score<self.ranges[2][1]: naturalness_bin = "avg"
+            elif self.ranges[3][0]<=naturalness_score<=self.ranges[3][1]: naturalness_bin = "good"
+            elif naturalness_score>self.ranges[3][1]: 
+                naturalness_score = 1.0
+                naturalness_bin = "good"
+            elif naturalness_score<self.ranges[0][0]: 
+                naturalness_score = 0.0
+                naturalness_bin = "bad"
             return naturalness_score,naturalness_bin
         else:
             return naturalness_score
