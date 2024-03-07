@@ -162,15 +162,15 @@ export class Statbars {
       const g = d3.select(this.svgId).select("g.inner");
       g.selectAll("line.range").remove();
       const xScale = this.xScales[0];
-      g.selectAll("line.range")
-        .data(selected_range)
-        .join("line")
-        .attr("class", "range")
-        .attr("x1", (d) => d? xScale(d): 0)
-        .attr("y1", -this.svgSize.margin)
-        .attr("x2", (d) => d? xScale(d) : 0)
-        .attr("y2", this.innerSize.height + this.svgSize.margin)
-        .attr("stroke", "lightgreen")
+      // g.selectAll("line.range")
+      //   .data(selected_range)
+      //   .join("line")
+      //   .attr("class", "range")
+      //   .attr("x1", (d) => d? xScale(d): 0)
+      //   .attr("y1", -this.svgSize.margin)
+      //   .attr("x2", (d) => d? xScale(d) : 0)
+      //   .attr("y2", this.innerSize.height + this.svgSize.margin)
+      //   .attr("stroke", "lightgreen")
       g.select("rect.selected-range").remove();
       g.selectAll("rect.selected-range")
         .data([0])

@@ -109,13 +109,15 @@
   }
 </script>
 
-<div class="flex h-full gap-x-2">
-  <div>
+<div class="flex h-full">
+  <div class="">
     <div class="view-header">
       <img src="line_chart.svg" alt="*" class="aspect-square" />
-      Evaluation Tracker
+      Prompt Comparator
     </div>
-    <div class="flex flex-col items-center overflow-y-auto px-1">
+    <div
+      class="flex flex-col h-full items-center overflow-y-auto px-1 border-r border-gray-200"
+    >
       {#each optimizations as optimization, index}
         <div
           class="optimization-container flex text-sm items-center p-1 bg-stone-100 gap-x-1 relative"
@@ -159,9 +161,7 @@
       {/each}
     </div>
   </div>
-  <div
-    class="h-full aspect-square outline outline-1 outline-gray-200 bg-white rounded-lg"
-  >
+  <div class="h-full aspect-square border-t-4 border-[#89d0ff] bg-white">
     <svg
       id={tracking_svgId}
       class="w-full h-full"

@@ -132,7 +132,7 @@
   }
 </script>
 
-<div class="flex flex-col px-2 overflow-y-auto h-full">
+<div class="flex flex-col px-1 overflow-y-auto h-full">
   <div class="flex justify-between border-b border-gray-200"></div>
   <div id="prompt-table" class="flex flex-col max-w-full gap-y-1">
     <!-- <div class="grow flex gap-x-1"> -->
@@ -145,7 +145,7 @@
         />
       </div>
       <div
-        class="prompt-section-content editable"
+        class="prompt-section-content editable min-h-[3rem]"
         contenteditable
         on:input={(e) => (prompt_template.persona = e.target?.textContent)}
       >
@@ -160,7 +160,7 @@
         />
       </div>
       <div
-        class="prompt-section-content editable"
+        class="prompt-section-content editable min-h-[5rem]"
         contenteditable
         on:input={(e) => (prompt_template.context = e.target?.textContent)}
       >
@@ -175,7 +175,7 @@
         />
       </div>
       <div
-        class="prompt-section-content editable"
+        class="prompt-section-content editable min-h-[4rem]"
         contenteditable
         on:input={(e) => (prompt_template.constraints = e.target?.textContent)}
       >

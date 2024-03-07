@@ -176,7 +176,7 @@ def execute_prompt_all():
     prompt_template = gpt.combine_templates(instruction, examples, data_template)
     data = request.json['data']
     last_data = request.json['last_data']
-    src_features = list(map(lambda x: [x['features'][m] for m in metrics], last_data))
+    src_features = list(map(lambda x: [x['features'][m] for m in metrics], data))
     # metrics = request.json['metrics']
     prompts = []
     for datum in data:

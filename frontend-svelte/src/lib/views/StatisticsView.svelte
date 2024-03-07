@@ -402,13 +402,13 @@
 
 <style lang="postcss">
   .tab-start {
-    @apply rounded-tl;
+    /* @apply rounded-tl; */
   }
   .tab-end {
-    @apply rounded-tr;
+    /* @apply rounded-tr; */
   }
   .tab {
-    @apply p-1 cursor-pointer border-t border-x text-sm hover:bg-gray-200;
+    @apply px-1 cursor-pointer border-t border-x text-[0.8rem] hover:bg-gray-200;
   }
   .hoverable {
     @apply cursor-pointer hover:border hover:border-black;

@@ -340,39 +340,41 @@
             on:highlight_recommendation={handleHighlightRecommendation}
           ></MetricSelectionView>
         </div>
-        <div class="flex flex-col h-full p-1 items-center justify-center">
-          <div class="view-header">Example Sourcing</div>
-          <div class="flex-1 h-full w-min aspect-square relative">
-            {#if cluster_loading}
-              <img
-                src="load2.svg"
-                alt="*"
-                class="z-10 absolute center_spin w-[3rem] h-[3rem] bg-white rounded-full"
-              />
-            {/if}
-            <div
-              class="w-full h-full"
-              style={cluster_loading ? `opacity: 0.5` : ""}
-            >
-              <ClusterView
-                bind:this={cluster_view}
-                data={dataset.dataset}
-                centroids={dataset.centroids || {}}
-                statistics={dataset.statistics}
-                highlight_cluster_label={hovered_cluster_label}
-              ></ClusterView>
+        <div class="flex h-full grow p-1">
+          <div class="flex flex-col h-full items-center justify-center">
+            <div class="view-header">Example Sourcing</div>
+            <div class="flex-1 h-full w-min aspect-square relative">
+              {#if cluster_loading}
+                <img
+                  src="load2.svg"
+                  alt="*"
+                  class="z-10 absolute center_spin w-[3rem] h-[3rem] bg-white rounded-full"
+                />
+              {/if}
+              <div
+                class="w-full h-full"
+                style={cluster_loading ? `opacity: 0.5` : ""}
+              >
+                <ClusterView
+                  bind:this={cluster_view}
+                  data={dataset.dataset}
+                  centroids={dataset.centroids || {}}
+                  statistics={dataset.statistics}
+                  highlight_cluster_label={hovered_cluster_label}
+                ></ClusterView>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="grow">
-          <StatisticsView
-            bind:this={statistics_view}
-            stat_data={dataset.statistics}
-            data={dataset.dataset}
-            bind:selected_cluster
-            bind:hovered_cluster_label
-            {optimizations}
-          ></StatisticsView>
+          <div class="grow border-t-4 border-[#89d0ff]">
+            <StatisticsView
+              bind:this={statistics_view}
+              stat_data={dataset.statistics}
+              data={dataset.dataset}
+              bind:selected_cluster
+              bind:hovered_cluster_label
+              {optimizations}
+            ></StatisticsView>
+          </div>
         </div>
       </div>
       <div class="w-full grow flex max-h-[50%] border-black gap-x-1">
