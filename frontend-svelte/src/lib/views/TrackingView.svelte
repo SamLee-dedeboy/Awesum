@@ -15,6 +15,7 @@
   const optimization_stat_svgId_factory = (index) =>
     `optimization-stats-svg-${index}`;
   const svgSize = { width: 500, height: 500, margin: 0 };
+  const stat_svgSize = { width: 750, height: 500, margin: 0 };
   const opt_scatterplot = new OptScatterplot(tracking_svgId, svgSize);
   let optimization_stat_instances: OptimizationStats[] = [];
   onMount(() => {
@@ -53,7 +54,7 @@
       const svgId = optimization_stat_svgId_factory(index);
       const optimization_stat = new OptimizationStats(
         svgId,
-        svgSize,
+        stat_svgSize,
         metrics,
         global_mins,
         global_means,
@@ -183,11 +184,13 @@
               </div>
             </div>
           </div>
-          <div class="w-[8rem] h-[8rem] outline outline-1 outline-gray-300 p-1">
+          <div
+            class="w-[12rem] h-[8rem] outline outline-1 outline-gray-300 p-1 bg-white"
+          >
             <svg
               id={optimization_stat_svgId_factory(index)}
               class="w-full h-full overflow-visible"
-              viewBox={`0 0 ${svgSize.width} ${svgSize.height}`}
+              viewBox={`0 0 ${stat_svgSize.width} ${stat_svgSize.height}`}
             ></svg>
           </div>
         </div>
