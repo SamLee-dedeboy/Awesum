@@ -1,14 +1,16 @@
 <script lang="ts">
   import type { tOptimization, tStatistics } from "lib/types";
+  import * as d3 from "d3";
   import { onMount, tick } from "svelte";
   import { OptScatterplot } from "lib/renderers/opt_scatterplot";
   import { OptimizationStats } from "lib/renderers/optimization_stats";
   import { recommended_nodes, target_ranges } from "lib/store";
-  import { metrics } from "lib/constants";
-  // import { optimization_colors } from "lib/constants";
+  import { metrics, optimization_colors } from "lib/constants";
 
   export let optimizations: tOptimization[];
   export let statistics: tStatistics;
+  let src_index = -1;
+  let dst_index = 0;
   const tracking_svgId = "tracking-scatterplot-svg";
   const optimization_stat_svgId_factory = (index) =>
     `optimization-stats-svg-${index}`;
@@ -27,19 +29,18 @@
   async function update(optimizations: tOptimization[]) {
     await tick();
     if (optimizations.length === 1) {
-      opt_scatterplot.update(optimizations[0], undefined);
+      opt_scatterplot.update(undefined, optimizations[dst_index]);
     } else {
-      const length = optimizations.length;
+      src_index = optimizations.length - 2;
+      dst_index = optimizations.length - 1;
       opt_scatterplot.update(
-        optimizations[length - 2],
-        optimizations[length - 1]
+        optimizations[src_index],
+        optimizations[dst_index]
       );
       opt_scatterplot.update_movement(
-        optimizations[length - 2],
-        optimizations[length - 1],
+        optimizations[src_index],
+        optimizations[dst_index],
         statistics
-        // optimizations.length - 2,
-        // optimizations.length - 1
       );
     }
 
@@ -72,12 +73,12 @@
   async function update_recommendations(optimizations, recommended_nodes) {
     await tick();
     if (optimizations.length === 1) {
-      opt_scatterplot.update(optimizations[0], undefined);
+      opt_scatterplot.update(undefined, optimizations[dst_index]);
     } else {
       const length = optimizations.length;
       opt_scatterplot.update(
-        optimizations[length - 2],
-        optimizations[length - 1]
+        optimizations[src_index],
+        optimizations[dst_index]
       );
     }
     opt_scatterplot.update_recommendations(recommended_nodes);
@@ -124,6 +125,25 @@
     e.setAttribute("x2", gradient_x2);
     e.setAttribute("y2", gradient_y2);
   }
+
+  function get_opt_color(
+    opt_index: number,
+    total_length: number,
+    src_index: number,
+    dst_index: number
+  ) {
+    if (total_length === 1) {
+      return d3.color(optimization_colors[1]).brighter(0.2);
+    } else {
+      if (opt_index === src_index) {
+        return optimization_colors[0];
+      } else if (opt_index === dst_index) {
+        return optimization_colors[1];
+      } else {
+        return "white";
+      }
+    }
+  }
 </script>
 
 <div class="flex h-full">
@@ -137,7 +157,8 @@
     >
       {#each optimizations as optimization, index}
         <div
-          class="optimization-container flex text-sm items-center p-1 bg-stone-100 gap-x-1 relative"
+          class="optimization-container flex text-sm items-center p-1 gap-x-1 relative"
+          style={`background-color: ${get_opt_color(index, optimizations.length, src_index, dst_index)}`}
         >
           <div class="flex flex-col flex-1">
             <div class="optimization-title w-fit underline text-semibold">

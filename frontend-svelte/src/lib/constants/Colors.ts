@@ -50,11 +50,12 @@ export const metric_colors = Array(100).fill("#8dd3c7");
 //     "#3b9ab2",
 //   ];
 
-export const optimization_colors = [
-    "#ccebc5",
-    "#cab2d6",
-    "#ffff99",
-    "#2ca02c",
-    "#3b9ab2",
-  ];
+// export const optimization_colors = [
+//     "#ccebc5",
+//     "#cab2d6",
+//     "#ffff99",
+//     "#2ca02c",
+//     "#3b9ab2",
+//   ];
 export const optimization_opacities = [0.2, 0.8]
+export const optimization_colors = ["#f6f6f6", "#dbdbdb"]
