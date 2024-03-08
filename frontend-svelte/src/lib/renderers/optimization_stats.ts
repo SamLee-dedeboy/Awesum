@@ -76,7 +76,7 @@ export class OptimizationStats {
                 .attr("width", 100)
                 .attr("height", self.yScale.bandwidth()/1.5)
                 .attr("fill", "#c7f0a5")
-                .attr("stroke", "black")
+                // .attr("stroke", "black")
                 .attr("stroke-width", 1)
                 // .attr("rx", "2%")
             group.append("text")

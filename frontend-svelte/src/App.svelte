@@ -338,7 +338,7 @@
     <div class="basis-1/2 h-1/2">Loading...</div>
   {:else}
     <div id="left" class="flex flex-col w-[75%] h-full shrink-0">
-      <div class="flex w-full h-[50%] gap-x-1">
+      <div class="flex w-full h-[50%] gap-x-0.5">
         <div class="min-w-[20rem] max-w-[25%] p-1 flex flex-col">
           <MetricSelectionView
             {metric_metadata}
@@ -346,7 +346,7 @@
             on:highlight_recommendation={handleHighlightRecommendation}
           ></MetricSelectionView>
         </div>
-        <div class="flex h-full grow p-1">
+        <div class="flex h-full grow py-1">
           <div class="flex flex-col h-full items-center justify-center">
             <div class="view-header">Example Sourcing</div>
             <div class="flex-1 h-full w-min aspect-square relative">

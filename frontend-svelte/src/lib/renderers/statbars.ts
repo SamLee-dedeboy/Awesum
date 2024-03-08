@@ -5,6 +5,7 @@ export class Statbars {
     svgId: string
     svgSize: any
     innerSize: any
+    tag_width: number
     metric_index: number
     barColor: string | undefined
     barMouseover: any | undefined
@@ -21,6 +22,7 @@ export class Statbars {
         this.svgId = svgId;
         this.svgSize = svgSize;
         this.innerSize = innerSize;
+        this.tag_width = 10
         this.metric_index = metric_index;
         this.barColor = barColor
         this.barMouseover = barMouseover

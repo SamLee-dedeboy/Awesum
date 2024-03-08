@@ -2,7 +2,7 @@
   import { onMount, tick } from "svelte";
   import ClusterProfile from "lib/components/ClusterProfile.svelte";
   import { Statbars } from "lib/renderers/statbars";
-  import { cluster_colors, metrics } from "lib/constants";
+  import { cluster_colors, metrics, metric_abbrs } from "lib/constants";
 
   import {
     target_ranges,
@@ -281,18 +281,34 @@
         </div>
       </div>
       {#if mode === tMode.All_Cluster}
-        <div class="flex flex-wrap">
-          {#each Object.keys(stat_data.cluster_statistics) as cluster_label, index}
-            <ClusterProfile
-              {cluster_label}
-              {index}
-              {svgSize}
-              {hovered_cluster_label}
-              on:click={(e) => handleClusterClicked(e.detail)}
-              on:mouseout={() => handleClusterMouseout()}
-              on:mouseover={(e) => handleClusterHovered(e.detail)}
-            ></ClusterProfile>
-          {/each}
+        <div class="flex gap-x-1 h-full">
+          <div class="w-[4rem] h-[7rem] relative flex flex-col justify-around">
+            {#each metrics as metric}
+              <svg viewBox="0 0 40 30">
+                <rect x="0" y="0" width="40" height="24" fill="#c7f0a5"></rect>
+                <text
+                  x="20"
+                  y="14"
+                  font-size="1.1rem"
+                  dominant-baseline="middle"
+                  text-anchor="middle">{metric_abbrs[metric]}</text
+                >
+              </svg>
+            {/each}
+          </div>
+          <div class="flex flex-wrap">
+            {#each Object.keys(stat_data.cluster_statistics) as cluster_label, index}
+              <ClusterProfile
+                {cluster_label}
+                {index}
+                {svgSize}
+                {hovered_cluster_label}
+                on:click={(e) => handleClusterClicked(e.detail)}
+                on:mouseout={() => handleClusterMouseout()}
+                on:mouseover={(e) => handleClusterHovered(e.detail)}
+              ></ClusterProfile>
+            {/each}
+          </div>
         </div>
       {:else if mode === tMode.All_Metric}
         <div
