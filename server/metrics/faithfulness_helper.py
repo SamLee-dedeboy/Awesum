@@ -21,16 +21,16 @@ class FaithfulnessHelper:
                 if fuzz.token_set_ratio(ent1.lower(), ent2.lower()) >=70 and ent1 != ent2:
                     entity_frequencies[ent1]+=entity_frequencies[ent2]
                     entity_frequencies[ent2] = 0
-        entity_frequencies = {entity: freq for entity, freq in entity_frequencies.items() if freq > 0}        
+        entity_frequencies = {entity: freq for entity, freq in entity_frequencies.items() if freq > 0} 
         top_source_entities = []
-        sorted_entities = sorted(entity_frequencies.items(), key=lambda x: x[1], reverse=True)
+        sorted_entities = sorted(entity_frequencies.items(), key=lambda x: x[1], reverse=True)      
         max_entities = len(generated_entities)
 
         if max_entities<3 and len(sorted_entities)>4:
             max_entities = 5
             top_source_entities = sorted_entities[0:max_entities]  
             
-        elif len(sorted_entities)<max_entities:
+        elif len(sorted_entities)<max_entities or max_entities==0:
             top_source_entities = sorted_entities        
 
         else:
