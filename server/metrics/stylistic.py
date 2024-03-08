@@ -8,9 +8,17 @@ import numpy as np
 from summac.model_guardrails import NERInaccuracyPenalty
 import nltk
 import spacy
-from .naturalness import get_ranges, NaturalnessHelper
+from server.metrics.naturalness import get_ranges, NaturalnessHelper
 import json
 import pandas as pd
+import tfidf_matcher as tm
+from tfidf_matcher import ngrams, matcher
+from fuzzywuzzy import fuzz
+from itertools import combinations
+import collections
+from sklearn.preprocessing import StandardScaler
+import string
+from server.metrics.faithfulness_helper import FaithfulnessHelper 
 
 class StyleEvaluator:
     def __init__(self, naturalness_range_path=r'metrics/tmp/final_metrics_naturalness.json'):
@@ -170,8 +178,10 @@ class SentimentEvaluator:
         return self.sst
 
 class FaithfulnessEvaluator:
-    def __init__(self):
+    def __init__(self,ranges):
         self.model_ner = NERInaccuracyPenalty()
+        self.ranges = ranges
+        self.fh = FaithfulnessHelper()
         # model_zs = SummaCZS(granularity="sentence", model_name="vitc", device="cpu") # If you have a GPU: switch to: device="cuda"
         # model_conv = SummaCConv(models=["vitc"], bins='percentile', granularity="sentence", nli_labels="e", device="cpu", start_file="default", agg="mean")
     # def __init__(self, original_text, summary):
@@ -179,20 +189,28 @@ class FaithfulnessEvaluator:
     #     self.summary = summary
 
     def default(self, original_text, summary):
-        return self.ner_overlap([original_text], [summary])[0]
-        # return self.model_ner.score([original_text], [summary])
+        return self.ner_overlap([original_text], [summary])
 
     def ner_overlap(self, sources, generateds):
-        source_ents = [self.model_ner.extract_entities(text) for text in sources]
-        generated_ents = [self.model_ner.extract_entities(text) for text in generateds]
-
-        scores = []
-        for source_ent, generated_ent, source in zip(source_ents, generated_ents, sources):
-            overlaps = self.find_overlaps(source_ent, generated_ent, source)
-            # print(len(overlaps), len(source_ent))
-            score = len(overlaps)/len(source_ent)
-            scores.append(score)
-        return scores
+        source_ents = [self.model_ner.extract_entities(self.fh.replace_punctuation_with_whitespace(text)) for text in sources]
+        generated_ents = [self.model_ner.extract_entities(self.fh.replace_punctuation_with_whitespace(text)) for text in generateds]
+        # similar_source_ents = self.get_similar_entities(source_ents)
+        similar_generated_ents = self.fh.get_similar_entities(generated_ents)
+        # reduced_source_ents = self.replace_similar_entities(similar_source_ents,source_ents)
+        reduced_generated_ents = self.fh.replace_similar_entities(similar_generated_ents,generated_ents)
+        match_count,top_source_entities = self.fh.top_entities_match(source_ents,reduced_generated_ents,str(sources))
+        # for source_ent, generated_ent, source in zip(source_ents, generated_ents, sources):
+        #     overlaps = self.find_overlaps(source_ent, generated_ent, source)
+        #     score = len(overlaps)/len(source_ents) 
+        #     scores.append(score)
+        score = match_count/len(top_source_entities)
+        if self.ranges!=[]:
+            if self.ranges[0][0]<=score<=self.ranges[0][1]: faithfulness_bin = "bad"
+            elif self.ranges[1][0]<=score<self.ranges[1][1]: faithfulness_bin = "low"
+            elif self.ranges[2][0]<=score<self.ranges[2][1]: faithfulness_bin = "avg"
+            else: faithfulness_bin = "good"
+            return score,faithfulness_bin
+        else: return score
         # return {"scores": scores, "source_ents": source_ents, "gen_ents": generated_ents, "new_ents": all_new_ents}
 
     def find_overlaps(self, ent_list_old, ent_list_new, source_text):
@@ -248,22 +266,24 @@ class FaithfulnessEvaluator:
                     overlaps.append(ent_new)
                     continue
         return overlaps
-        return {"score": score, "new_ents": new_ents2, "gen_entities": ents2, "source_entities": ents1}
+        # return {"score": score, "new_ents": new_ents2, "gen_entities": ents2, "source_entities": ents1}
 
     def summac(self):
         return 0
         # return summac_score(self.original_text, self.summary)
 
 class NaturalnessEvaluator:
-    def __init__(self,ranges): # Ranges for each feature for min-max scaling
+    def __init__(self,mean_sd_features,ranges,min_max): # Ranges for each feature for min-max scaling
         self.ranges = ranges
+        self.mean_sd_features = mean_sd_features
+        self.min_max = min_max
         self.nlp = spacy.load("en_core_web_sm")
         self.nh = NaturalnessHelper()
         self.weights = {
-            'Average Dependency tree heights': 0.2826426317853948,
-            'average_sentence_lengths': 0.2522139996530825,
-            'avg_left_subtree_height': 0.23287886122532872,
-            'avg_right_subtree_height': 0.2458490930520618,
+            "Average Dependency tree heights": 0.20551969186015231,
+            "average_sentence_lengths": 0.23828211739802285,
+            "avg_left_subtree_height": 0.24983966373071514,
+            "avg_right_subtree_height": 0.3063585270111097
         }
 
     def default(self,text):
@@ -275,15 +295,31 @@ class NaturalnessEvaluator:
         avg_dep_tree_ht = self.nh.calculate_average_tree_height([text])
         avg_left_subtree_height, avg_right_subtree_height = self.nh.calculate_subtree_features(text)
         features = np.array([avg_dep_tree_ht,avg_sentence_length,avg_left_subtree_height,avg_right_subtree_height])
-        zipped_features = list(zip(features,self.ranges))
+        zipped_features = list(zip(features,self.mean_sd_features))
         scaled_features = []
         for feature,tup in zipped_features:
-            scaled_features.append(self.min_max_scaling(feature,tup))
-        inverses = [1.0-feature for feature in scaled_features]
-        naturalness_score = np.mean(np.dot(inverses, list(self.weights.values())))
-        return naturalness_score
+            scaled_features.append(self.standardization(feature,tup))
+        # inverses = [1.0-feature for feature in scaled_features]
+        naturalness_score = np.mean(np.dot(scaled_features, list(self.weights.values())))
+        naturalness_score = 1-self.min_max_scaling(naturalness_score,self.min_max)
+        if self.ranges!=[]:
+            if self.ranges[0][0]<=naturalness_score<self.ranges[0][1]: naturalness_bin = "bad"
+            elif self.ranges[1][0]<=naturalness_score<self.ranges[1][1]: naturalness_bin = "low"
+            elif self.ranges[2][0]<=naturalness_score<self.ranges[2][1]: naturalness_bin = "avg"
+            elif self.ranges[3][0]<=naturalness_score<=self.ranges[3][1]: naturalness_bin = "good"
+            elif naturalness_score>self.ranges[3][1]: 
+                naturalness_score = 1.0
+                naturalness_bin = "good"
+            elif naturalness_score<self.ranges[0][0]: 
+                naturalness_score = 0.0
+                naturalness_bin = "bad"
+            return naturalness_score,naturalness_bin
+        else:
+            return naturalness_score
 
     def min_max_scaling(self,feature,range):
         scaled_feature = (feature-range[0])/(range[1]-range[0])
         return scaled_feature
     
+    def standardization(self,feature,mean_sd):
+        return (feature-mean_sd[1])/mean_sd[0]
