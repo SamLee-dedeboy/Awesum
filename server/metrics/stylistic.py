@@ -194,7 +194,7 @@ class FaithfulnessEvaluator:
     def ner_overlap(self, sources, generateds):
         source_ents = [self.model_ner.extract_entities(self.fh.replace_punctuation_with_whitespace(text)) for text in sources]
         generated_ents = [self.model_ner.extract_entities(self.fh.replace_punctuation_with_whitespace(text)) for text in generateds]
-        # similar_source_ents = self.get_similar_entities(source_ents)
+        # similar_source_ents = self.fh.get_similar_entities(source_ents)
         similar_generated_ents = self.fh.get_similar_entities(generated_ents)
         # reduced_source_ents = self.replace_similar_entities(similar_source_ents,source_ents)
         reduced_generated_ents = self.fh.replace_similar_entities(similar_generated_ents,generated_ents)
@@ -203,9 +203,9 @@ class FaithfulnessEvaluator:
         #     overlaps = self.find_overlaps(source_ent, generated_ent, source)
         #     score = len(overlaps)/len(source_ents) 
         #     scores.append(score)
-        score = match_count/len(top_source_entities)
+        score = match_count/len(top_source_entities) if len(top_source_entities) > 0 else 0
         if self.ranges!=[]:
-            if self.ranges[0][0]<=score<=self.ranges[0][1]: faithfulness_bin = "bad"
+            if score<=self.ranges[0][1]: faithfulness_bin = "bad"
             elif self.ranges[1][0]<=score<self.ranges[1][1]: faithfulness_bin = "low"
             elif self.ranges[2][0]<=score<self.ranges[2][1]: faithfulness_bin = "avg"
             else: faithfulness_bin = "good"
