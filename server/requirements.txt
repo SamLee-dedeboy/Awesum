@@ -4,3 +4,4 @@ openai
 numpy
 scipy
 pandas
+fuzzywuzzy

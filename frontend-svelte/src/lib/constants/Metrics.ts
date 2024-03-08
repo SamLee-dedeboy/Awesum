@@ -1,14 +1,15 @@
 import type { tMetricStep } from "lib/types"
 // export const metrics = ["flesch_kincard", "dale_chall", "gunning_fog", "mtld", "formality", "hdd", "sentiment"]
-export const metrics = ["complexity", "formality", "sentiment", "faithfulness", "length"]
+export const metrics = ["complexity", "formality", "sentiment", "faithfulness", "naturalness", "length"]
 export let metric_abbrs = {
     "complexity": "cpx",
     "formality": "fml",
     "sentiment": "sst",
     "faithfulness": "fth",
+    "naturalness": "ntr",
     "length": "len",
 }
-export const metric_category_rotates = [true, true, false, false, false]
+export const metric_category_rotates = [true, true, false, false, false, false]
 export const metric_categories: {[key:string]: tMetricStep[]} = {
     "complexity": [
         {
@@ -94,19 +95,57 @@ export const metric_categories: {[key:string]: tMetricStep[]} = {
             "note": "positive sentiment."
         }
     ],
+    "naturalness": [
+        {
+            start: 0,
+            end: 0.4352518900573824,
+            "label": "Bad",
+            "note": "Summary is not natural or human-like"
+        },
+        {
+            start: 0.4352518900573824,
+            end: 0.607625718803343,
+            "label": "Low",
+            "note": "summary is somewhat natural and human-like"
+        },
+        {
+            start: 0.607625718803343,
+            end: 0.7156745588358897,
+            "label": "Avg",
+            "note": "Summary is mostly natural and human-like"
+        },
+        {
+            start: 0.7156745588358897,
+            end: 1.0,
+            "label": "Good",
+            "note": "Summary is natural and human-like"
+        },
+    ],
     "faithfulness": [
         {
             start: 0,
-            end: 0.2,
-            "label": "Unfaithful",
-            "note": "Very unfaithful to the original text."
+            end: 0.25,
+            "label": "Bad",
+            "note": "All or Almost all of the important entities from the article are missing in the generated summary"
         },
         {
-            start: 0.2,
-            end: 1,
-            "label": "Faithful",
-            "note": "Very faithful to the original text."
-        }
+            start: 0.25,
+            end: 0.4,
+            "label": "Low",
+            "note": "Very few of the important entities from the article are present in the generated summary"
+        },
+        {
+            start: 0.4,
+            end: 0.6,
+            "label": "Avg",
+            "note": "Few of the important entities from the article are missing in the generated summary"
+        },
+        {
+            start: 0.6,
+            end: 1.0,
+            "label": "Good",
+            "note": "All or almost all of the important entities from the article are present in the generated summary"
+        },
     ],
     "length": [
         {
@@ -140,6 +179,7 @@ export const metric_steps: {[key:string]: number} = {
     "formality": 1,
     "sentiment": 0.1,
     "faithfulness": 0.1,
+    "naturalness": 0.1,
     "length": 10
 }
 export const categorize_metric = ( metric: string, value: number ): string => {
@@ -167,5 +207,6 @@ export const feature_descriptions = {
     "formality": `<span class="highlight">Formality</span> measures how formal a piece of writing is. It is based on the frequencies of different word classes in the corpus. <span> Nouns, adjectives, articles and prepositions </span> are more frequent in formal styles; <span>pronouns, adverbs, verbs and interjections </span> are more frequent in informal styles.`,
     "sentiment": `<span class="highlight">Sentiment</span> aims to determine the attitude of a writer with respect to the overall contextual polarity.`,
     "faithfulness": `<span class="highlight">Faithfulness</span> measures how broad and accurate are the generated summary using the <span>name entity overlap</span> between the summary and the article. Common named entities include <span>persons, organizations, locations, or dates</span>.`,
+    "naturalness": `<span class="highlight">Naturalness</span> measures how human-like the summary is. It is based on the <span>grammaticality, fluency, and coherence</span> of the summary.`,
     "length": `<span class="highlight"> Length</span> measures the <span>number of words</span> in the summary.`,
 }

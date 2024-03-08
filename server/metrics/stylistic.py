@@ -8,37 +8,34 @@ import numpy as np
 from summac.model_guardrails import NERInaccuracyPenalty
 import nltk
 import spacy
-from server.metrics.naturalness import get_ranges, NaturalnessHelper
+from .naturalness import get_ranges, NaturalnessHelper
 import json
 import pandas as pd
-import tfidf_matcher as tm
-from tfidf_matcher import ngrams, matcher
-from fuzzywuzzy import fuzz
 from itertools import combinations
 import collections
 from sklearn.preprocessing import StandardScaler
 import string
-from server.metrics.faithfulness_helper import FaithfulnessHelper 
+from .faithfulness_helper import FaithfulnessHelper 
 
 class StyleEvaluator:
-    def __init__(self, naturalness_range_path=r'metrics/tmp/final_metrics_naturalness.json'):
+    def __init__(self, metadata_path=r'metrics/meta_data.json'):
         self.sentiment_scorer = SentimentEvaluator()
         self.faithfulness_scorer = FaithfulnessEvaluator()
-        # self.naturalness_scorer = NaturalnessEvaluator(self.load_naturalness_ranges(naturalness_range_path))
+        self.naturalness_scorer = NaturalnessEvaluator(metadata_path)
 
     def default(self, original_text, summary):
         complexity_score = ComplexityEvaluator(summary).default()
         formality_score = FormalityEvaluator(summary).default()
         sentiment_score = self.sentiment_scorer.default(summary) 
         faithfulness_score = self.faithfulness_scorer.default(original_text, summary)
-        # naturalness_score = self.naturalness_scorer.default(summary)
+        naturalness_score = self.naturalness_scorer.default(summary)
         length_score = len(summary)
         return {
             "complexity": complexity_score,
             "formality": formality_score,
             "sentiment": sentiment_score,
             "faithfulness": faithfulness_score,
-            # "naturalness": naturalness_score,
+            "naturalness": naturalness_score,
             "length": length_score,
         }
 
@@ -178,9 +175,9 @@ class SentimentEvaluator:
         return self.sst
 
 class FaithfulnessEvaluator:
-    def __init__(self,ranges):
+    def __init__(self):
         self.model_ner = NERInaccuracyPenalty()
-        self.ranges = ranges
+        # self.ranges = ranges
         self.fh = FaithfulnessHelper()
         # model_zs = SummaCZS(granularity="sentence", model_name="vitc", device="cpu") # If you have a GPU: switch to: device="cuda"
         # model_conv = SummaCConv(models=["vitc"], bins='percentile', granularity="sentence", nli_labels="e", device="cpu", start_file="default", agg="mean")
@@ -199,18 +196,22 @@ class FaithfulnessEvaluator:
         # reduced_source_ents = self.replace_similar_entities(similar_source_ents,source_ents)
         reduced_generated_ents = self.fh.replace_similar_entities(similar_generated_ents,generated_ents)
         match_count,top_source_entities = self.fh.top_entities_match(source_ents,reduced_generated_ents,str(sources))
+        # print(source_ents)
+        # print(generated_ents)
+        # print("+=====================")
         # for source_ent, generated_ent, source in zip(source_ents, generated_ents, sources):
         #     overlaps = self.find_overlaps(source_ent, generated_ent, source)
         #     score = len(overlaps)/len(source_ents) 
         #     scores.append(score)
         score = match_count/len(top_source_entities)
-        if self.ranges!=[]:
-            if self.ranges[0][0]<=score<=self.ranges[0][1]: faithfulness_bin = "bad"
-            elif self.ranges[1][0]<=score<self.ranges[1][1]: faithfulness_bin = "low"
-            elif self.ranges[2][0]<=score<self.ranges[2][1]: faithfulness_bin = "avg"
-            else: faithfulness_bin = "good"
-            return score,faithfulness_bin
-        else: return score
+        # if self.ranges!=[]:
+        #     if self.ranges[0][0]<=score<=self.ranges[0][1]: faithfulness_bin = "bad"
+        #     elif self.ranges[1][0]<=score<self.ranges[1][1]: faithfulness_bin = "low"
+        #     elif self.ranges[2][0]<=score<self.ranges[2][1]: faithfulness_bin = "avg"
+        #     else: faithfulness_bin = "good"
+        #     return score,faithfulness_bin
+        # else: return score
+        return score
         # return {"scores": scores, "source_ents": source_ents, "gen_ents": generated_ents, "new_ents": all_new_ents}
 
     def find_overlaps(self, ent_list_old, ent_list_new, source_text):
@@ -273,9 +274,19 @@ class FaithfulnessEvaluator:
         # return summac_score(self.original_text, self.summary)
 
 class NaturalnessEvaluator:
-    def __init__(self,mean_sd_features,ranges,min_max): # Ranges for each feature for min-max scaling
+    def __init__(self, metadata_path): # Ranges for each feature for min-max scaling
+        meta_data = json.load(open(metadata_path))
+        mean_sd = []
+        for range in meta_data["naturalness"]["mean_sd"]:
+            mean_sd.append([range[0],range[1]])
+
+        ranges=[]
+        for cl in meta_data["naturalness"]["ranges"]:
+            ranges.append([cl[0],cl[1]])
+
+        min_max = meta_data["naturalness"]["naturalness_min_max"]
         self.ranges = ranges
-        self.mean_sd_features = mean_sd_features
+        self.mean_sd_features = mean_sd
         self.min_max = min_max
         self.nlp = spacy.load("en_core_web_sm")
         self.nh = NaturalnessHelper()
@@ -287,8 +298,8 @@ class NaturalnessEvaluator:
         }
 
     def default(self,text):
-        naturalness = self.calculate_naturalness(text)
-        return naturalness
+        naturalness_score, _ = self.calculate_naturalness(text)
+        return naturalness_score
 
     def calculate_naturalness(self,text):
         avg_sentence_length = self.nh.avg_sentence_length(text)

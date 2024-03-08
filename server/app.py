@@ -18,7 +18,7 @@ openai_client=OpenAI(api_key=openai_api_key)
 # document_controller = DocumentController(r'../data/result/chunk_embeddings/1103/all_chunks.json', openai_api_key)
 prompt_block_definitions = json.load(open('data/prompt_block_definitions.json'))
 evaluator = features.StyleEvaluator()
-metrics = ["complexity", "formality", "sentiment", "faithfulness", "length"]
+metrics = ["complexity", "formality", "sentiment", "faithfulness", "naturalness", "length"]
 correlations = json.load(open('data/tmp/pearson_r.json'))
 feature_descriptions = json.load(open('data/tmp/feature_descriptions.json'))
 dataset = json.load(open('data/tmp/df_summaries_features_w_topics.json'))
