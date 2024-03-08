@@ -3,12 +3,18 @@
   import { categorize_metric } from "lib/constants/Metrics";
   import { cluster_colors } from "lib/constants";
   import * as helpers from "lib/helpers";
+  import { createAccordion, melt } from "@melt-ui/svelte";
+  import { slide } from "svelte/transition";
+
   const dispatch = createEventDispatcher();
   export let summary: String = "";
   export let color: string;
   export let statistics: { [key: string]: number };
   export let in_example: boolean = false;
 
+  let short_summary = summary.length > 100 ? summary.slice(0, 100) : summary;
+  let rest_summary = summary.length > 100 ? summary.slice(100) : "";
+  let show_short_summary = true;
   function toggleExample() {
     if (in_example) {
       dispatch("remove_example", { summary });
@@ -45,13 +51,14 @@
   }
 </script>
 
-<!-- "rgb(187 247 208)" -->
 <div
-  class="card bg-stone-50 shadow-lg outline outline-2"
+  class="card bg-stone-50 shadow-lg outline outline-2 relative rounded-sm"
   style={`outline-color: ${color}`}
 >
-  <div class="font-light text-xs text-gray-500">Summary:</div>
-  <div>{summary}</div>
+  <div
+    class="absolute w-[0.8rem] h-[0.8rem] top-[-0.4rem] left-[-0.4rem] rounded-full outline outline-1 outline-black"
+    style="{`background-color: ${color}`};"
+  ></div>
   <div
     class="flex justify-between divide-x divide-stone-400 text-xs whitespace-nowrap outline outline-1 outline-stone-400"
   >
@@ -61,21 +68,105 @@
       >
     {/each}
   </div>
-  <div class="flex items-center mt-2 gap-x-2">
+
+  <div class="flex items-center mt-2 gap-x-2 ml-auto right-0">
     <div
       role="button"
       tabindex="0"
-      class="add_button whitespace-nowrap p-1 outline outline-1 outline-gray-400 text-xs !rounded hover:bg-gray-100 cursor-pointer shadow-[0_0_1px_1px_gray]"
-      style={`background-color: ${in_example ? "#f0f0f0" : color}; color: ${contrast_color(
-        in_example ? "#f0f0f0" : color
-      )}`}
+      class="add_button whitespace-nowrap text-xs !rounded hover:bg-green-200 cursor-pointer"
       on:click={toggleExample}
       on:keyup={() => {}}
     >
-      {in_example ? "Remove example" : "Add example"}
+      <img
+        src={in_example ? "star_filled.svg" : "star_empty.svg"}
+        alt="*"
+        class="w-4 h-4"
+      />
+    </div>
+  </div>
+  <div class="text-left text-xs">
+    <div
+      role="button"
+      tabindex="0"
+      class="p-0.5 rounded outline-1 outline-gray-200 hover:bg-slate-100 hover:outline"
+      transition:slide
+      on:click={() => (show_short_summary = !show_short_summary)}
+      on:keyup={() => {}}
+    >
+      {#if show_short_summary}
+        {short_summary} ...
+      {:else}
+        <div transition:slide>
+          {summary}
+        </div>
+      {/if}
+      <!-- <span>{short_summary}</span>
+      {#if show_short_summary}
+        <span> ... </span>
+      {:else}
+        <span transition:slide>{rest_summary}</span>
+      {/if} -->
     </div>
   </div>
 </div>
+
+<!-- <div
+  class="card bg-stone-50 shadow-lg outline outline-2 relative rounded-sm"
+  style={`outline-color: ${color}`}
+>
+  <div
+    class="absolute w-[0.8rem] h-[0.8rem] top-[-0.4rem] left-[-0.4rem] rounded-full outline outline-1 outline-black"
+    style="{`background-color: ${color}`};"
+  ></div>
+  <div
+    class="flex justify-between divide-x divide-stone-400 text-xs whitespace-nowrap outline outline-1 outline-stone-400"
+  >
+    {#each Object.keys(statistics) as metric}
+      <span class="px-1 w-full text-center"
+        >{categorize_metric(metric, statistics[metric])}</span
+      >
+    {/each}
+  </div>
+  <div class=" text-xs text-gray-500 flex items-center">
+    <div use:melt={$item(id)}>
+      <h2 class="flex">
+        <div
+          use:melt={$trigger(id)}
+          class="
+          
+            flex flex-1 cursor-pointer items-center justify-between
+            bg-white p-0.5 text-xs font-light leading-none
+            text-black transition-colors hover:bg-neutral-200 focus:!ring-0
+            focus-visible:text-magnum-800
+            border border-neutral-300
+             "
+        >
+          Summary
+        </div>
+      </h2>
+    </div>
+    <div class="flex items-center mt-2 gap-x-2 ml-auto right-0">
+      <div
+        role="button"
+        tabindex="0"
+        class="add_button whitespace-nowrap text-xs !rounded hover:bg-green-200 cursor-pointer"
+        on:click={toggleExample}
+        on:keyup={() => {}}
+      >
+        <img
+          src={in_example ? "star_filled.svg" : "star_empty.svg"}
+          alt="*"
+          class="w-4 h-4"
+        />
+      </div>
+    </div>
+  </div>
+  {#if $isSelected(id)}
+    <div class="text-left text-xs" use:melt={$content(id)} transition:slide>
+      {summary}
+    </div>
+  {/if}
+</div> -->
 
 <style>
   .card {

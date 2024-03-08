@@ -16,7 +16,7 @@
     {title}
   </div> -->
   {#if $recommended_nodes}
-    <div class="flex flex-col divide-black gap-y-4 px-1 py-0.5">
+    <div class="flex flex-col divide-black gap-y-4 px-[0.5rem] py-1">
       {#each $recommended_nodes as datum}
         <SummaryCard
           statistics={datum.features}
