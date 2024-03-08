@@ -19,14 +19,14 @@ class StyleEvaluator:
         # self.naturalness_scorer = NaturalnessEvaluator(self.load_naturalness_ranges(naturalness_range_path))
 
     def default(self, original_text, summary):
-        readability_score = ReadabilityEvaluator(summary).default()
+        complexity_score = ComplexityEvaluator(summary).default()
         formality_score = FormalityEvaluator(summary).default()
         sentiment_score = self.sentiment_scorer.default(summary) 
         faithfulness_score = self.faithfulness_scorer.default(original_text, summary)
         # naturalness_score = self.naturalness_scorer.default(summary)
         length_score = len(summary)
         return {
-            "readability": readability_score,
+            "complexity": complexity_score,
             "formality": formality_score,
             "sentiment": sentiment_score,
             "faithfulness": faithfulness_score,
@@ -40,13 +40,13 @@ class StyleEvaluator:
         ranges = get_ranges(df)
         return ranges
 
-class ReadabilityEvaluator:
+class ComplexityEvaluator:
     def __init__(self, text):
         self.text = text
         # self.scorer = Readability(text)
     
     def default(self):
-        return self.flesch()
+        return 100 - self.flesch()
     
     def flesch_kincaid(self): # lower = more readable
         # fk = self.scorer.flesch_kincaid()

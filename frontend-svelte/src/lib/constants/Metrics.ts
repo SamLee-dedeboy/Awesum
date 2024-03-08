@@ -1,8 +1,8 @@
 import type { tMetricStep } from "lib/types"
 // export const metrics = ["flesch_kincard", "dale_chall", "gunning_fog", "mtld", "formality", "hdd", "sentiment"]
-export const metrics = ["readability", "formality", "sentiment", "faithfulness", "length"]
+export const metrics = ["complexity", "formality", "sentiment", "faithfulness", "length"]
 export let metric_abbrs = {
-    "readability": "read",
+    "complexity": "cpx",
     "formality": "fml",
     "sentiment": "sst",
     "faithfulness": "fth",
@@ -10,55 +10,37 @@ export let metric_abbrs = {
 }
 export const metric_category_rotates = [true, true, false, false, false]
 export const metric_categories: {[key:string]: tMetricStep[]} = {
-    "readability": [
+    "complexity": [
         {
             start: 0,
             end: 10,
-            "label": "Professional",
-            "note": "Extremely difficult to read. Best understood by university graduates."
+            "label": "Elementary",
+            "note": "Very easy to read. Easily understood by an 11-year-old student."
         },
         {
             start: 10,
-            end: 30,
-            "label": "College graduate",
-            "note": "Very difficult to read. Best understood by university graduates."
+            end: 40,
+            "label": "Middle School",
+            "note": "Plain English. Easily understood by middle school students."
         },
         {
-            start: 30,
+            start: 40,
             end: 50,
-            "label": "College",
-            "note": "Difficult to read."
+            "label": "High School",
+            "note": "Fairly difficult to read. Best understood by high school students."
         },
         {
             start: 50,
-            end: 60,
-            "label": "10-12 grade",
-            "note": "Fairly difficult to read."
-        },
-        {
-            start: 60,
-            end: 70,
-            "label": "8-9 grade",
-            "note": "Plain English. Easily understood by 13- to 15-year-old students."
-        },
-        {
-            start: 70,
-            end: 80,
-            "label": "7 grade",
-            "note": "Fairly easy to read."
-        },
-        {
-            start: 80,
             end: 90,
-            "label": "6 grade",
-            "note": "Easy to read. Conversational English for consumers."
+            "label": "College",
+            "note": "Difficult to read. Best understood by college students."
         },
         {
             start: 90,
             end: 100,
-            "label": "5 grade",
-            "note": "Very easy to read. Easily understood by an 11-year-old student."
-        }
+            "label": "Professional",
+            "note": "Extremely difficult to read. Best understood by university graduates."
+        },
     ],
     "formality": [
         {
@@ -154,7 +136,7 @@ export const metric_categories: {[key:string]: tMetricStep[]} = {
     ]
 }
 export const metric_steps: {[key:string]: number} = {
-    "readability": 1,
+    "complexity": 1,
     "formality": 1,
     "sentiment": 0.1,
     "faithfulness": 0.1,
@@ -181,7 +163,7 @@ export const range_to_categories = (metric: string, range: [number, number]): st
 }
 
 export const feature_descriptions = {
-    "readability": `<span class="highlight">Readability</span> metrics aim to quantify the readability of a piece of writing by considering various linguistic features, such as <span> sentence length, word length, syllable count or semantic difficulty</span>.`,
+    "complexity": `<span class="highlight">Complexity</span> metrics aim to quantify the readability of a piece of writing by considering various linguistic features, such as <span> sentence length, word length, syllable count or semantic difficulty</span>.`,
     "formality": `<span class="highlight">Formality</span> measures how formal a piece of writing is. It is based on the frequencies of different word classes in the corpus. <span> Nouns, adjectives, articles and prepositions </span> are more frequent in formal styles; <span>pronouns, adverbs, verbs and interjections </span> are more frequent in informal styles.`,
     "sentiment": `<span class="highlight">Sentiment</span> aims to determine the attitude of a writer with respect to the overall contextual polarity.`,
     "faithfulness": `<span class="highlight">Faithfulness</span> measures how broad and accurate are the generated summary using the <span>name entity overlap</span> between the summary and the article. Common named entities include <span>persons, organizations, locations, or dates</span>.`,
