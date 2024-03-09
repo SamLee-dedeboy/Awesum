@@ -31,9 +31,8 @@
   let correlation_matrix = new CorrelationMatrix(
     "metric-correlations-svg",
     {
-      width: 100,
+      width: 120,
       height: 100,
-      center: [50, 50],
     },
     show_description,
     toggle_metric

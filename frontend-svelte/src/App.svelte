@@ -327,7 +327,7 @@
   }
 </script>
 
-<div class="h-screen w-screen p-1 flex gap-x-1">
+<div class="h-screen w-screen p-1 flex gap-x-1 overflow-hidden">
   {#if !$selected_topic}
     <div class="flex w-full items-center justify-center gap-x-2">
       <div>Choose a topic</div>

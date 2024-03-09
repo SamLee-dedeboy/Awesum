@@ -52,8 +52,8 @@ export class CorrelationMatrix {
     updateAxis(metrics: string[], correlations: any[]) {
         const cells = generate_cells(metrics.length) 
         const nums = [...Array(metrics.length-1).keys()]
-        const row_bands = d3.scaleBand().domain([...Array(metrics.length).keys()]).range([0, this.svgSize.width]);
-        const col_bands = d3.scaleBand().domain([...Array(metrics.length).keys()]).range([0, this.svgSize.height]);
+        const row_bands = d3.scaleBand().domain([...Array(metrics.length).keys()]).range([0, this.svgSize.height]);
+        const col_bands = d3.scaleBand().domain([...Array(metrics.length).keys()]).range([0, this.svgSize.width]);
         this.row_bands = row_bands
         this.col_bands = col_bands
         const axis_group = d3.select("#" + this.svgId).select("g.axis-group");
@@ -100,7 +100,7 @@ export class CorrelationMatrix {
           .join("text")
           .classed("axis-label", true)
           .attr("x", (_, i) => (i+0.5) * col_bands.bandwidth() + 3)
-          .attr("y", (_, i) => (i+0.5) * row_bands.bandwidth())
+          .attr("y", (_, i) => (i+0.5) * row_bands.bandwidth() + 1.5)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
           .attr("font-size", "0.6rem")

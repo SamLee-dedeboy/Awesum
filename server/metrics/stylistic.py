@@ -204,6 +204,7 @@ class FaithfulnessEvaluator:
         #     score = len(overlaps)/len(source_ents) 
         #     scores.append(score)
         score = match_count/len(top_source_entities) if len(top_source_entities) > 0 else 0
+        return score
         if self.ranges!=[]:
             if score<=self.ranges[0][1]: faithfulness_bin = "bad"
             elif self.ranges[1][0]<=score<self.ranges[1][1]: faithfulness_bin = "low"
