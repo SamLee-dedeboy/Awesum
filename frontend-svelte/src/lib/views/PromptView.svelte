@@ -144,12 +144,14 @@
           prompt_content={prompt_template.persona}
         />
       </div>
-      <div
-        class="prompt-section-content editable min-h-[3rem]"
-        contenteditable
-        on:input={(e) => (prompt_template.persona = e.target?.textContent)}
-      >
-        {prompt_template.persona}
+      <div class="prompt-section-content min-h-[3rem] relative">
+        <div
+          class="absolute left-0 top-0 bottom-0 right-0 editable"
+          contenteditable
+          on:input={(e) => (prompt_template.persona = e.target?.textContent)}
+        >
+          {prompt_template.persona}
+        </div>
       </div>
     </div>
     <div class="prompt-section flex flex-col flex-1">
@@ -159,12 +161,14 @@
           prompt_content={prompt_template.context}
         />
       </div>
-      <div
-        class="prompt-section-content editable min-h-[5rem]"
-        contenteditable
-        on:input={(e) => (prompt_template.context = e.target?.textContent)}
-      >
-        {prompt_template.context}
+      <div class="prompt-section-content min-h-[5rem] relative">
+        <div
+          class="absolute left-0 top-0 bottom-0 right-0 editable"
+          contenteditable
+          on:input={(e) => (prompt_template.context = e.target?.textContent)}
+        >
+          {prompt_template.context}
+        </div>
       </div>
     </div>
     <div class="prompt-section flex flex-col flex-1">
@@ -174,12 +178,15 @@
           prompt_content={prompt_template.constraints}
         />
       </div>
-      <div
-        class="prompt-section-content editable min-h-[4rem]"
-        contenteditable
-        on:input={(e) => (prompt_template.constraints = e.target?.textContent)}
-      >
-        {prompt_template.constraints}
+      <div class="prompt-section-content min-h-[4rem] relative">
+        <div
+          class="absolute left-0 top-0 bottom-0 right-0 editable"
+          contenteditable
+          on:input={(e) =>
+            (prompt_template.constraints = e.target?.textContent)}
+        >
+          {prompt_template.constraints}
+        </div>
       </div>
     </div>
     <!-- </div> -->
