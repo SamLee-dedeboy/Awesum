@@ -28,7 +28,7 @@ export class OptScatterplot  {
         const bubble_group = svg.append("g").attr("class", "bubbles");
         const line_group = svg.append("g").attr("class", "lines");
         const ideal_group = svg.append("g").attr("class", "ideal");
-        const node_group = svg.append("g").attr("class", "nodes");
+    const node_group = svg.append("g").attr("class", "nodes");
         const src_node_group = node_group.append("g").attr("class", "src");
         const dst_node_group = node_group.append("g").attr("class", "dst");
         const arrow_group = svg.append("g").attr("class", "arrows");

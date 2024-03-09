@@ -322,6 +322,7 @@
               <div class="h-[1.5rem] w-full">
                 <MetricSlider
                   {metric}
+                  {data}
                   start_value={$default_ranges[metric][0]}
                   end_value={$default_ranges[metric][1]}
                 ></MetricSlider>

@@ -63,10 +63,7 @@
       optimization_stat.update(optimization);
       optimization_stat_instances.push(optimization_stat);
       if ($recommended_nodes) {
-        optimization_stat.update_recommendations(
-          $recommended_nodes,
-          $target_ranges
-        );
+        optimization_stat.update_recommendations($target_ranges);
       }
     });
   }
@@ -84,7 +81,7 @@
     }
     opt_scatterplot.update_recommendations(recommended_nodes);
     optimization_stat_instances.forEach((instance) => {
-      instance.update_recommendations(recommended_nodes, $target_ranges);
+      instance.update_recommendations($target_ranges);
     });
   }
   function rotate_gradient() {

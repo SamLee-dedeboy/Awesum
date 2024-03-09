@@ -38,18 +38,18 @@ export class OptimizationStats {
         ); 
         this.xScales = []
         metrics.forEach((metric, index) => {
-            const half_width = Math.max(Math.abs(global_maxes[index] - global_means[index]), Math.abs(global_means[index] - global_mins[index]))
-            this.xScales.push(d3.scaleLinear().domain([-half_width, half_width]).range([this.tag_width, this.svgSize.width]))
-            // const ranges = metric_categories[metric]
-            // const xMax =
-            // ranges[ranges.length - 1].end === -1
-            //     ? global_maxes[index]
-            //     : ranges[ranges.length - 1].end;
-            // console.log(metric, [ranges[0].start, xMax])
-            // this.xScales.push(d3
-            // .scaleLinear()
-            // .domain([ranges[0].start, xMax])
-            // .range([0, this.svgSize.width]))
+            // const half_width = Math.max(Math.abs(global_maxes[index] - global_means[index]), Math.abs(global_means[index] - global_mins[index]))
+            // this.xScales.push(d3.scaleLinear().domain([-half_width, half_width]).range([this.tag_width, this.svgSize.width]))
+            const ranges = metric_categories[metric]
+            const xMax =
+            ranges[ranges.length - 1].end === -1
+                ? global_maxes[index]
+                : ranges[ranges.length - 1].end;
+            console.log(metric, [ranges[0].start, xMax])
+            this.xScales.push(d3
+            .scaleLinear()
+            .domain([ranges[0].start, xMax])
+            .range([this.tag_width+5, this.svgSize.width]))
         })
     }
 
@@ -122,7 +122,8 @@ export class OptimizationStats {
                 .data(testset_nodes)
                 .join("circle")
                 .attr("class", "test_case")
-                .attr("cx", (node: tNode) => this.xScales[i](node.features[metric] - this.global_means[i]))
+                // .attr("cx", (node: tNode) => this.xScales[i](node.features[metric] - this.global_means[i]))
+                .attr("cx", (node: tNode) => this.xScales[i](node.features[metric]))
                 .attr("cy", this.yScale(i) + this.yScale.bandwidth() / 2)
                 .attr("r", (node: tNode) => nodeRadiusScale(node.intra_cluster_distance!))
                 .attr("fill", "#fafafa")
@@ -130,22 +131,24 @@ export class OptimizationStats {
                 .attr("stroke-width", 2.5)
         })
     } 
-    update_recommendations(ideal_nodes: tNode[], target_ranges: {[key:string]:[number|undefined, number|undefined]}) {
+    update_recommendations(target_ranges: {[key:string]:[number|undefined, number|undefined]}) {
         const svg = d3.select(`#${this.svgId}`)
-        const features = ideal_nodes.map(node => node.features)
         const target_features = Object.keys(target_ranges).filter(metric => target_ranges[metric][0] !== undefined && target_ranges[metric][1] !== undefined)
         this.metrics.forEach((metric, i) => {
+            if(target_ranges[metric] === undefined) return
             const metric_group = svg.select("g." + metric)
             metric_group.selectAll("rect.recommendation").remove()
-            const metric_values = features.map(feature => feature[metric])
-            const min = Math.min(...metric_values)
-            const max = Math.max(...metric_values)
+            const min = target_ranges[metric][0]!
+            const max = target_ranges[metric][1]!
+            console.log({min, max, target_ranges})
             metric_group.append("rect")
                 .attr("class", "recommendation")
-                .attr("x", this.xScales[i](min - this.global_means[i]))    
+                // .attr("x", this.xScales[i](min - this.global_means[i]))    
+                .attr("x", this.xScales[i](min))    
                 .attr("y", this.yScale(i) + this.yScale.bandwidth()/4)
                 // .attr("width", this.xScales[i](max) - this.xScales[i](min))
-                .attr("width", this.xScales[i](max - this.global_means[i]) - this.xScales[i](min - this.global_means[i]))
+                // .attr("width", this.xScales[i](max - this.global_means[i]) - this.xScales[i](min - this.global_means[i]))
+                .attr("width", this.xScales[i](max) - this.xScales[i](min))
                 .attr("height", this.yScale.bandwidth()/2)
                 .attr("fill", "#90ee9090") // lightgreen
                 // .attr("stroke", "gray")

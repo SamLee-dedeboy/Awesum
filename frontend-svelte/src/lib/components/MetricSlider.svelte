@@ -1,7 +1,9 @@
 <script lang="ts">
   import { metric_categories, metric_steps } from "lib/constants";
-  import { target_ranges } from "lib/store";
+  import { target_ranges, recommended_nodes } from "lib/store";
+  import type { tNode } from "lib/types";
   export let metric: string;
+  export let data: tNode[];
   export let start_value: number = 0;
   export let end_value: number = 100;
   import { createSlider, melt } from "@melt-ui/svelte";
@@ -28,7 +30,29 @@
       $target_ranges[metric][1] !== v[1]
     )
       $target_ranges[metric] = [v[0], v[1]];
+    const in_range_nodes = data?.filter(
+      (d) => d.cluster !== "-1" && inAllRange(d.features, $target_ranges)
+    );
+    recommended_nodes.set(in_range_nodes);
   });
+  function inAllRange(
+    features: { [key: string]: number },
+    ranges: { [key: string]: [number | undefined, number | undefined] }
+  ) {
+    if (
+      Object.values(ranges).every(
+        ([min, max]) => min === undefined && max === undefined
+      )
+    )
+      return false;
+    let inRange = true;
+    Object.entries(ranges).forEach(([metric, range]) => {
+      if (range[0] === undefined || range[1] === undefined) return;
+      const value = features[metric];
+      if (value < range[0] || value > range[1]) return (inRange = false);
+    });
+    return inRange;
+  }
 </script>
 
 <div class="w-full h-full px-0.5">
