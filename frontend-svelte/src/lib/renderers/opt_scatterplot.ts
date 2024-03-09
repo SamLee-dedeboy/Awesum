@@ -17,10 +17,12 @@ export class OptScatterplot  {
     svgSize: any
     xScale: any
     yScale: any
+    show_trajectory: boolean = true
     constructor(svgId: string, svgSize: any) {
         this.svgId = svgId;
         this.svgSize = svgSize
     }
+
     init() {
         const svg = d3.select(`#${this.svgId}`);
         const bubble_group = svg.append("g").attr("class", "bubbles");
@@ -30,8 +32,27 @@ export class OptScatterplot  {
         const src_node_group = node_group.append("g").attr("class", "src");
         const dst_node_group = node_group.append("g").attr("class", "dst");
         const arrow_group = svg.append("g").attr("class", "arrows");
+        const utility_group = svg.append("g").attr("class", "utilities");
         this.xScale = d3.scaleLinear().domain([0, 1]).range([0, this.svgSize.width]);
         this.yScale = d3.scaleLinear().domain([0, 1]).range([0, this.svgSize.height]);
+        add_utility_button({
+            parent: utility_group,
+            class_name: "show-trajectory",
+            activated_color: "rgb(187 247 208)",
+            deactivated_color: "white",
+            activated_text_color: "black",
+            deactivated_text_color: "#aaaaaa",
+            text: "trajectories",
+            x: -3,
+            y: 0,
+            width: 80,
+            height: 18,
+            onClick: () => {
+                this.show_trajectory = !this.show_trajectory;
+                const svg = d3.select(`#${this.svgId}`);
+                svg.selectAll("circle.interpolation_point").attr("opacity", this.show_trajectory ? 1 : 0)
+            }
+        })
     }
     update_recommendations(recommendation_nodes: tNode[]) {
         console.log(recommendation_nodes)
@@ -101,6 +122,7 @@ export class OptScatterplot  {
     }
 
     update_movement(src_optimization: tOptimization, dst_optimization: tOptimization, statistics: tStatistics) {
+        if(!this.show_trajectory) return;
         const self = this
         const svg = d3.select(`#${this.svgId}`);
         const line_group = svg.select("g.lines");
@@ -291,4 +313,87 @@ function distance_to_range(value, range, min, max) {
 
 function filter_by_indices(arr, indices) {
     return arr.filter((_, i) => indices.includes(i))
+}
+function add_utility_button({
+    parent,
+    class_name,
+    activated_color,
+    deactivated_color,
+    activated_text_color,
+    deactivated_text_color,
+    text,
+    x,
+    y,
+    width,
+    height,
+    onClick,
+    stateless = false,
+}) {
+    const utility_button = parent.append("g").attr("class", class_name);
+    const animation_scale_factor = 1.1;
+    utility_button
+        .append("rect")
+        .classed("utility-button", true)
+        .attr("x", x)
+        .attr("y", y)
+        .attr("width", width)
+        .attr("height", height)
+        .attr("fill", activated_color)
+        .attr("cursor", "pointer")
+        .attr("stroke", "gray")
+        .attr("rx", "1%")
+        .on("mouseover", function () {
+            d3.select(this).attr("stroke-width", 2);
+        })
+        .on("mouseout", function () {
+            d3.select(this).attr("stroke-width", 1);
+        })
+        .on("click", function () {
+            onClick();
+            const button = d3.select(this);
+            const activated = button.attr("fill") === activated_color;
+            button.attr("fill", activated ? deactivated_color : activated_color);
+            button
+                .transition()
+                .duration(200)
+                .attr("x", function () {
+                return x - (width * (animation_scale_factor - 1)) / 2;
+                })
+                .attr("y", function () {
+                return y - (height * (animation_scale_factor - 1)) / 2;
+                })
+                .attr("width", function () {
+                return width * animation_scale_factor;
+                })
+                .attr("height", function () {
+                return height * animation_scale_factor;
+                })
+                .transition()
+                .duration(100)
+                .attr("x", x)
+                .attr("y", y)
+                .attr("width", width)
+                .attr("height", height)
+                .on("end", () => {
+                if (stateless) button.attr("fill", deactivated_color);
+                });
+            if (!stateless) {
+                d3.select(this.parentNode)
+                .select("text")
+                .attr(
+                    "fill",
+                    activated ? deactivated_text_color : activated_text_color
+                );
+            }
+        });
+    utility_button
+        .append("text")
+        .attr("x", x + width / 2)
+        .attr("y", y + height / 2)
+        .attr("pointer-events", "none")
+        .text(text)
+        .attr("fill", activated_text_color)
+        .attr("font-size", "0.8rem")
+        .attr("dominant-baseline", "middle")
+        .attr("text-anchor", "middle");
 }

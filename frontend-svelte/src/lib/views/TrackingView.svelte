@@ -202,10 +202,10 @@
       {/each}
     </div>
   </div>
-  <div class="h-full aspect-square border-t-4 border-[#89d0ff] bg-white">
+  <div class="h-full aspect-square border-t-4 border-[#89d0ff] bg-white p-1">
     <svg
       id={tracking_svgId}
-      class="w-full h-full"
+      class="w-full h-full overflow-visible"
       viewBox={`0 0 ${svgSize.width} ${svgSize.height}`}
     >
       <defs>

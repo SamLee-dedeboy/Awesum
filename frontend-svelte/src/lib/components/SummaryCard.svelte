@@ -84,7 +84,7 @@
       />
     </div>
   </div>
-  <div class="text-left text-xs">
+  <div class="text-left text-xs mt-1">
     <div
       role="button"
       tabindex="0"
