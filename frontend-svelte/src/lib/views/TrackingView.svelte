@@ -26,6 +26,7 @@
   $: update(optimizations);
   $: if ($recommended_nodes) {
     update_recommendations(optimizations, $recommended_nodes);
+    update(optimizations);
   }
   async function update(optimizations: tOptimization[]) {
     await tick();
@@ -73,7 +74,6 @@
     if (optimizations.length === 1) {
       opt_scatterplot.update(undefined, optimizations[dst_index]);
     } else {
-      const length = optimizations.length;
       opt_scatterplot.update(
         optimizations[src_index],
         optimizations[dst_index]

@@ -4,9 +4,15 @@
   import { createEventDispatcher } from "svelte";
   import { recommended_nodes, example_nodes } from "lib/store";
   import { cluster_colors } from "lib/constants";
-  const dispatch = createEventDispatcher();
 
   $: example_nodes_ids = $example_nodes.map((node) => node.id);
+  $: nodes = merge_nodes($recommended_nodes || [], $example_nodes);
+  function merge_nodes(recommended_nodes: tNode[], example_nodes: tNode[]) {
+    const example_node_ids = example_nodes.map((node) => node.id);
+    return example_nodes.concat(
+      recommended_nodes.filter((node) => !example_node_ids.includes(node.id))
+    );
+  }
 </script>
 
 <div class="flex flex-col">
@@ -15,9 +21,9 @@
   >
     {title}
   </div> -->
-  {#if $recommended_nodes}
-    <div class="flex flex-col divide-black gap-y-4 px-[0.5rem] py-1">
-      {#each $recommended_nodes as datum}
+  {#if nodes}
+    <div class="flex flex-col divide-black gap-y-4 px-[0.75rem] py-1">
+      {#each nodes as datum}
         <SummaryCard
           statistics={datum.features}
           color={cluster_colors(datum.cluster)}

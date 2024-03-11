@@ -5,6 +5,7 @@
   import * as helpers from "lib/helpers";
   import { createAccordion, melt } from "@melt-ui/svelte";
   import { slide } from "svelte/transition";
+  import * as d3 from "d3";
 
   const dispatch = createEventDispatcher();
   export let summary: String = "";
@@ -51,29 +52,20 @@
   }
 </script>
 
+<!-- class={`card outline outline-2 relative rounded-sm ${in_example ? "bg-[#ddf7e5]" : "bg-stone-50"}`} -->
 <div
-  class="card bg-stone-50 shadow-lg outline outline-2 relative rounded-sm"
-  style={`outline-color: ${color}`}
+  class={`card outline outline-2 relative rounded-sm ${in_example ? "bg-stone-50" : "bg-stone-50"}`}
+  style={`outline-color: ${d3.color(color).darker(0.15)}; box-shadow: 0px 2px 1.5px 1px ${color};`}
 >
-  <div
-    class="absolute w-[0.8rem] h-[0.8rem] top-[-0.4rem] left-[-0.4rem] rounded-full outline outline-1 outline-black"
+  <!-- <div
+    class="absolute w-[0.8rem] h-[0.8rem] top-[-0.5rem] left-[-0.5rem] rounded-full outline outline-1 outline-black"
     style="{`background-color: ${color}`};"
-  ></div>
-  <div
-    class="flex justify-between divide-x divide-stone-400 text-xs whitespace-nowrap outline outline-1 outline-stone-400"
-  >
-    {#each Object.keys(statistics) as metric}
-      <span class="px-1 w-full text-center"
-        >{categorize_metric(metric, statistics[metric])}</span
-      >
-    {/each}
-  </div>
-
-  <div class="flex items-center mt-2 gap-x-2 ml-auto right-0">
+  ></div> -->
+  <div class="flex text-xs whitespace-nowrap">
     <div
       role="button"
       tabindex="0"
-      class="add_button whitespace-nowrap text-xs !rounded hover:bg-green-200 cursor-pointer"
+      class="add_button w-4 hover:bg-green-200 cursor-pointer"
       on:click={toggleExample}
       on:keyup={() => {}}
     >
@@ -83,7 +75,18 @@
         class="w-4 h-4"
       />
     </div>
+    <div
+      class="flex ml-2 grow justify-between divide-x divide-stone-400 border-b border-stone-400"
+    >
+      {#each Object.keys(statistics) as metric}
+        <span class="w-full text-center"
+          >{categorize_metric(metric, statistics[metric])}</span
+        >
+      {/each}
+    </div>
   </div>
+
+  <div class="flex items-center mt-2 gap-x-2 ml-auto right-0"></div>
   <div class="text-left text-xs mt-1">
     <div
       role="button"

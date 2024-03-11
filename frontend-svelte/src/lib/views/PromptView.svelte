@@ -257,10 +257,10 @@
         {/if}
       </button>
       <span class="text-gray-500">
-        to
-        <span class="underline">
+        to dev set
+        <!-- <span class="underline">
           {$test_set.length}
-        </span> articles
+        </span> articles -->
       </span>
     </div>
     <!-- <div

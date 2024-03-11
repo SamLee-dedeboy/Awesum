@@ -45,7 +45,6 @@ export class OptimizationStats {
             ranges[ranges.length - 1].end === -1
                 ? global_maxes[index]
                 : ranges[ranges.length - 1].end;
-            console.log(metric, [ranges[0].start, xMax])
             this.xScales.push(d3
             .scaleLinear()
             .domain([ranges[0].start, xMax])
@@ -140,7 +139,6 @@ export class OptimizationStats {
             metric_group.selectAll("rect.recommendation").remove()
             const min = target_ranges[metric][0]!
             const max = target_ranges[metric][1]!
-            console.log({min, max, target_ranges})
             metric_group.append("rect")
                 .attr("class", "recommendation")
                 // .attr("x", this.xScales[i](min - this.global_means[i]))    

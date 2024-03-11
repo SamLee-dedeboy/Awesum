@@ -185,10 +185,11 @@ export const metric_steps: {[key:string]: number} = {
 export const categorize_metric = ( metric: string, value: number ): string => {
     const ranges = metric_categories[metric]
     for (let i = 0; i < ranges.length; i++) {
-        if (value >= ranges[i].start && (value < ranges[i].end || ranges[i].end === -1)) {
+        if (value >= ranges[i].start && (value <= ranges[i].end || ranges[i].end === -1)) {
             return ranges[i].label
         }
     }
+    console.log(metric, value, ranges)
     return "error"
 }
 export const range_to_categories = (metric: string, range: [number, number]): string[] => {
