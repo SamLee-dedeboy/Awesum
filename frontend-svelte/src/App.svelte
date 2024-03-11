@@ -391,9 +391,7 @@
             Prompt Editor
           </div>
           <div class="grow">
-            <PromptView
-              bind:this={prompt_view}
-              on:promptDone={(e) => setNewOptimization(e.detail)}
+            <PromptView on:promptDone={(e) => setNewOptimization(e.detail)}
             ></PromptView>
           </div>
         </div>

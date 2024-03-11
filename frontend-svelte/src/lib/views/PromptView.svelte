@@ -8,13 +8,17 @@
   } from "lib/types";
   import { createEventDispatcher } from "svelte";
   import { cluster_colors, metrics } from "lib/constants";
-  import { selected_metrics, test_set, example_nodes } from "lib/store";
+  import {
+    selected_metrics,
+    test_set,
+    example_nodes,
+    executing_prompt,
+  } from "lib/store";
   import PromptBlockHeader from "lib/components/PromptBlockHeader.svelte";
 
   const server_address = "http://localhost:5000";
   const dispatch = createEventDispatcher();
 
-  let executing_prompt = false;
   // let prompts_by_metric = initPrompts(metrics);
   let prompt_template: tPrompt = {
     persona: "You are a writing assistant.",
@@ -46,7 +50,7 @@
     const instruction = persona + ". " + context + ". " + constraints;
     const url = new URL(server_address + "/executePromptAll/");
     console.log("test set", $test_set);
-    executing_prompt = true;
+    $executing_prompt = true;
     fetch(url, {
       method: "POST",
       headers: {
@@ -65,7 +69,7 @@
       .then((response) => response.json())
       .then((res) => {
         console.log("execute prompt", { res });
-        executing_prompt = false;
+        $executing_prompt = false;
         dispatch("promptDone", {
           ...res,
           prompt: { persona, context, constraints, examples, data_template },
@@ -241,37 +245,18 @@
         class="w-[4rem] h-[2.5rem] text-sm bg-green-50 flex items-center justify-center gap-x-1 !shadow-[0px_0px_1px_1px_#87ee93] text-slate-500"
         on:click={() => start_all(prompt_template)}
       >
-        {#if executing_prompt}
+        {#if $executing_prompt}
           <img
             src="load2.svg"
             class="w-4 h-4 animate-[spin_2s_linear_infinite]"
             alt="*"
           />
         {:else}
-          <!-- <img
-            src="clipboard_checked.svg"
-            alt="*"
-            class="aspect-square text-gray-500"
-          /> -->
           Apply
         {/if}
       </button>
-      <span class="text-gray-500">
-        to dev set
-        <!-- <span class="underline">
-          {$test_set.length}
-        </span> articles -->
-      </span>
+      <span class="text-gray-500"> to dev set </span>
     </div>
-    <!-- <div
-      class="flex flex-col justify-start items-start ml-auto right-0 text-gray-500 px-1 bg-yellow-50 outline outline-1 outline-gray-200"
-    >
-      <div class="italic">Codes:</div>
-      <div class="text-sm">{`Full Article: $\{text\}`}</div>
-      <div class="text-sm">{`Summary: $\{summary\}`}</div>
-    </div> -->
-    <!-- <button class="w-fit m-1" on:click={start_sequential}> Start </button>
-    <button class="w-fit m-1" on:click={() => (pause = true)}>Pause </button> -->
   </div>
 </div>
 

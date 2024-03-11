@@ -141,16 +141,22 @@ export class OptScatterplot  {
         const nodeRadiusScale = d3.scaleLinear().domain([min_intra_cluster_distance, max_intra_cluster_distance]).range([3, 10])
         // trajectory_colors 
         const movement_srcs = src_optimization.nodes
-        // const movement_dsts = dst_optimization.nodes
-        // const one_iteration_lines: [tNode, tNode][] = movement_srcs.map((_, i) => [movement_srcs[i], movement_dsts[i]])
+        const movement_dsts = dst_optimization.nodes
+        const one_iteration_lines: [tNode, tNode][] = movement_srcs.map((_, i) => [movement_srcs[i], movement_dsts[i]])
         // const global_mins = statistics.global_mins
         // const global_maxes = statistics.global_maxes
         // const direction_colors = one_iteration_lines.map((d) => categorize_distance(d, get(selected_metrics), get(target_ranges), global_mins, global_maxes))
-        // const trajectory_colors = filter_by_indices(direction_colors, recommended_node_indices)
-        // const end_trajectory_colors = trajectory_colors.map(color => d3.color(color).darker(1.5).formatHex())
-        // const colorScales = trajectory_colors.map((color, i) => d3.scaleLinear().domain([0, dst_optimization.trajectories![0].length]).range([color, end_trajectory_colors[i]]))
-        const samples = dst_optimization.trajectories![0].length
-        const colorScale = d3.scaleLinear().domain([0, samples]).range(["#fafafa", "#ababab"])
+        let colorScales: any[] = []
+        if(recommendation_nodes) {
+            const ideal_centroid: [number, number] = compute_centroid(recommendation_nodes.map(node => node.coordinates))
+            const direction_colors = one_iteration_lines.map((d) => categorize_distance(d, ideal_centroid))
+            const trajectory_colors = kept_indices(direction_colors, kept_node_indices)
+            const end_trajectory_colors = trajectory_colors.map(color => d3.color(color).darker(0.7).formatHex())
+            colorScales = trajectory_colors.map((color, i) => d3.scaleLinear().domain([0, dst_optimization.trajectories![0].length]).range([color, end_trajectory_colors[i]]))
+        } else {
+            const samples = dst_optimization.trajectories![0].length
+            colorScales = [d3.scaleLinear().domain([0, samples]).range(["#fafafa", "#ababab"])]
+        }
         // bind
         const target_trajectories = kept_indices(dst_optimization.trajectories, kept_node_indices)
         line_group.selectAll("g.trajectory")
@@ -158,6 +164,7 @@ export class OptScatterplot  {
             .join("g")
             .attr("class", "trajectory")
             .each(function(trajectory, node_index) {
+                const colorScale = recommendation_nodes? colorScales[node_index] : colorScales[0]
                 // const opacityScale = d3.scaleLinear().domain([0, trajectory.length]).range([1, 0.2])
                 // const colorScale = d3.scaleLinear().domain([0, trajectory.length]).range(["green", "lightgreen"])
                 const trajectory_group = d3.select(this)
@@ -235,7 +242,7 @@ function compute_centroid(points: number[][]) {
     const centroid = points.reduce((acc, point) => {
         return [acc[0] + point[0], acc[1] + point[1]]
     }, [0, 0])
-    return [centroid[0]/points.length, centroid[1]/points.length]
+    return [centroid[0]/points.length, centroid[1]/points.length] as [number, number]
 }
 
 function categorize_direction(d: [tNode, tNode], ideal_node_centroid: number[]) {
@@ -252,7 +259,16 @@ function categorize_direction(d: [tNode, tNode], ideal_node_centroid: number[]) 
     return "gray"
 }
 
-function categorize_distance(d: [tNode, tNode], selected_metrics: string[], target_ranges: any, global_mins: number[], global_maxes: number[]) {
+function categorize_distance(d: [tNode, tNode], centroid: [number, number]) {
+    const src_distance: number = Math.sqrt((d[0].coordinates[0] - centroid[0])**2 + (d[0].coordinates[1] - centroid[1])**2)
+    const dst_distance: number = Math.sqrt((d[1].coordinates[0] - centroid[0])**2 + (d[1].coordinates[1] - centroid[1])**2)
+    if (Math.abs(src_distance - dst_distance) < 0.15) return "#f0f0f0"
+    else if(src_distance > dst_distance) return "#A88CFD"
+    else return "#FFEA93"
+}
+
+
+function _categorize_distance(d: [tNode, tNode], selected_metrics: string[], target_ranges: any, global_mins: number[], global_maxes: number[]) {
     const src_distance: number = compute_distance(d[0], selected_metrics, target_ranges, global_mins, global_maxes)
     const dst_distance: number = compute_distance(d[1], selected_metrics, target_ranges, global_mins, global_maxes)
     console.log(src_distance, dst_distance, src_distance - dst_distance, d[0].cluster)

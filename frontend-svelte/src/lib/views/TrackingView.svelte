@@ -4,7 +4,11 @@
   import { onMount, tick } from "svelte";
   import { OptScatterplot } from "lib/renderers/opt_scatterplot";
   import { OptimizationStats } from "lib/renderers/optimization_stats";
-  import { recommended_nodes, target_ranges } from "lib/store";
+  import {
+    recommended_nodes,
+    target_ranges,
+    executing_prompt,
+  } from "lib/store";
   import { metrics, optimization_colors, cluster_colors } from "lib/constants";
 
   export let optimizations: tOptimization[];
@@ -211,6 +215,12 @@
           </div>
         {/if}
       {/each}
+      {#if $executing_prompt}
+        <div class="w-[2rem] h-[2rem] mt-2 animate-bounce">
+          <img class="w-full h-full" src="arrow_down.svg" alt="*" />
+        </div>
+        <div class="w-full h-[10rem] pulse bg-gray-100"></div>
+      {/if}
     </div>
   </div>
   <div class="h-full aspect-square border-t-4 border-[#89d0ff] bg-white p-1">
@@ -260,6 +270,22 @@
     }
     to {
       stroke-dashoffset: 0;
+    }
+  }
+
+  .pulse {
+    animation: pulse 1.8s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      background-color: #fafafa;
+    }
+    50% {
+      background-color: #e0e0e0;
+    }
+    100% {
+      background-color: #fafafa;
     }
   }
 </style>
