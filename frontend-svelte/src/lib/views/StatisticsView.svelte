@@ -13,7 +13,7 @@
     // recommended_cluster,
     recommended_nodes,
   } from "lib/store";
-  import { categorize_metric, metric_categories } from "lib/constants/Metrics";
+  import { categorize_metric, metric_categories } from "lib/constants/metrics";
   import type {
     tNode,
     tStatBarData,

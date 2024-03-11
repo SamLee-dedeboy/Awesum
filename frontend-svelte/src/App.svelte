@@ -12,7 +12,6 @@
     // recommended_cluster,
     selected_topic,
     feature_target_levels,
-    selected_metrics,
     test_set,
     example_nodes,
     recommended_nodes,
@@ -67,13 +66,13 @@
     },
   };
 
-  selected_metrics.subscribe((value) => {
-    if (firstSubscribe) {
-      firstSubscribe = false;
-      return;
-    }
-    adjustMetrics(dataset?.dataset, cluster_params, value);
-  });
+  // selected_metrics.subscribe((value) => {
+  //   if (firstSubscribe) {
+  //     firstSubscribe = false;
+  //     return;
+  //   }
+  //   adjustMetrics(dataset?.dataset, cluster_params, value);
+  // });
 
   $: if ($selected_topic) fetch_data($selected_topic);
   function fetch_data(topic) {
@@ -98,40 +97,40 @@
       });
   }
 
-  function adjustMetrics(p_dataset, p_cluster_params, p_selected_metrics) {
-    console.assert(p_dataset !== undefined);
-    if (!dataset) return;
-    const feature_recommendations = Object.entries($feature_target_levels)
-      .filter((f) => f[1])
-      .map((f) => {
-        return { feature_name: f[0], level: f[1] };
-      });
-    console.log({ feature_recommendations });
-    const parameters = {
-      dataset: p_dataset,
-      recommended_features: {
-        features: feature_recommendations,
-        feature_pool: $selected_metrics,
-      },
-    };
-    cluster_loading = true;
-    fetch(server_address + "/data/query_closest_cluster/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ ...parameters }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        // recommended_cluster.set(data.closest_cluster);
-        const closest_cluster = data.closest_cluster;
-        recommended_nodes.set(
-          dataset?.dataset.filter((d) => d.cluster === closest_cluster)
-        );
-        cluster_loading = false;
-      });
-  }
+  // function adjustMetrics(p_dataset, p_cluster_params, p_selected_metrics) {
+  //   console.assert(p_dataset !== undefined);
+  //   if (!dataset) return;
+  //   const feature_recommendations = Object.entries($feature_target_levels)
+  //     .filter((f) => f[1])
+  //     .map((f) => {
+  //       return { feature_name: f[0], level: f[1] };
+  //     });
+  //   console.log({ feature_recommendations });
+  //   const parameters = {
+  //     dataset: p_dataset,
+  //     recommended_features: {
+  //       features: feature_recommendations,
+  //       feature_pool: $selected_metrics,
+  //     },
+  //   };
+  //   cluster_loading = true;
+  //   fetch(server_address + "/data/query_closest_cluster/", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({ ...parameters }),
+  //   })
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       // recommended_cluster.set(data.closest_cluster);
+  //       const closest_cluster = data.closest_cluster;
+  //       recommended_nodes.set(
+  //         dataset?.dataset.filter((d) => d.cluster === closest_cluster)
+  //       );
+  //       cluster_loading = false;
+  //     });
+  // }
 
   // function _adjustMetrics(p_dataset, p_cluster_params, p_selected_metrics) {
   //   console.assert(p_dataset !== undefined);
@@ -341,6 +340,7 @@
       <div class="flex w-full h-[50%] gap-x-0.5">
         <div class="min-w-[20rem] max-w-[25%] p-1 flex flex-col">
           <MetricSelectionView
+            stat_data={dataset.global_statistics}
             {metric_metadata}
             data={dataset.dataset}
             on:highlight_recommendation={handleHighlightRecommendation}
@@ -426,12 +426,9 @@
             class="flex px-1 gap-y-2 gap-x-2 items-center sticky top-6 z-20 bg-gray-50"
           >
             {#if $recommended_nodes}
-              <!-- <span>
-                Examples: {$example_nodes?.length} / {$recommended_nodes.length}</span
-              > -->
               Examples:
               {@const nodes = $example_nodes || []}
-              <div class="flex gap-x-0.5">
+              <div class="flex gap-x-0.5 items-center">
                 {#each nodes as example}
                   <div class="w-fit">
                     <!-- <div class="">{example.id}</div> -->
@@ -448,9 +445,10 @@
                     >
                   </div>
                 {/each}
+                {nodes.length > 0 ? "-" : ""}
               </div>
               <span class="text-xs font-mono">
-                - {nodes.length} / {$recommended_nodes.length}
+                {nodes.length} / {$recommended_nodes.length}
               </span>
             {/if}
           </div>

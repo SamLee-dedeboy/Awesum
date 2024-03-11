@@ -54,10 +54,13 @@
   function make_delay(text) {
     delayed_user_question_response = "";
     const steps = generate_steps(text);
-    console.log(steps);
+    let messageBody = document.querySelector(".bot-response");
     steps.forEach((step, i) => {
       setTimeout(function () {
         delayed_user_question_response += step;
+        if (messageBody)
+          messageBody.scrollTop =
+            messageBody.scrollHeight - messageBody.clientHeight;
       }, i * 30);
     });
     function generate_steps(text: string) {
@@ -83,6 +86,10 @@
     responses: tMetricRecommendationResponse[],
     correlations
   ) {
+    responses = responses.sort(
+      (a, b) =>
+        metrics.indexOf(a.feature_name) - metrics.indexOf(b.feature_name)
+    );
     let p = "";
     // feature descriptions
     responses.forEach((response) => {
@@ -169,7 +176,7 @@
     >
       <div class="grow bg-stone text-xs relative rounded">
         <span
-          class="bot-response absolute left-0 right-0 top-0 bottom-0 overflow-y-auto p-1 font-mono text-[0.75rem] text-left"
+          class="bot-response absolute left-0 right-0 top-0 bottom-0 overflow-y-auto p-1 pr-2 font-mono text-[0.75rem] text-left"
         >
           {@html delayed_user_question_response}
         </span>
