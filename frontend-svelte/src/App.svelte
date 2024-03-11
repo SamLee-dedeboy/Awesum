@@ -412,7 +412,7 @@
           class="absolute overflow-y-auto top-0 bottom-0 w-full outline outline-1 outline-gray-100"
         >
           <div
-            class="sticky top-0 view-header"
+            class="sticky top-0 view-header z-10"
             style={`background-color: ${
               selected_cluster
                 ? cluster_colors(selected_cluster.cluster_label)
@@ -424,15 +424,36 @@
               ? `Cluster #${selected_cluster.cluster_label}, Prompt #${selected_cluster.prompt_version} Summaries`
               : "Recommendations"}
           </div>
-          <!-- <SummaryView
-            data={selected_cluster?.cluster_nodes || []}
-            on:add_example={handleAddExample}
-          ></SummaryView> -->
-          <div class="flex px-1 gap-y-2 justify-between">
+          <div
+            class="flex px-1 gap-y-2 gap-x-2 items-center sticky top-6 z-20 bg-gray-50"
+          >
             {#if $recommended_nodes}
-              <span>
+              <!-- <span>
                 Examples: {$example_nodes?.length} / {$recommended_nodes.length}</span
-              >
+              > -->
+              Examples:
+              {@const nodes = $example_nodes || []}
+              <div class="flex gap-x-0.5">
+                {#each nodes as example}
+                  <div class="w-fit">
+                    <!-- <div class="">{example.id}</div> -->
+                    <svg class="w-[1rem] h-[1rem]" viewBox="0 0 10 10">
+                      <circle
+                        fill={cluster_colors(example.cluster)}
+                        stroke="black"
+                        stroke-width="0.5"
+                        r="4"
+                        cx="5"
+                        cy="5"
+                      >
+                      </circle></svg
+                    >
+                  </div>
+                {/each}
+              </div>
+              <span class="text-xs font-mono">
+                - {nodes.length} / {$recommended_nodes.length}
+              </span>
             {/if}
           </div>
           <SummaryView></SummaryView>

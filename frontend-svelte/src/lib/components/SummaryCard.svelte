@@ -1,20 +1,22 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from "svelte";
+  import { afterUpdate, createEventDispatcher, onMount } from "svelte";
   import { categorize_metric } from "lib/constants/Metrics";
-  import { cluster_colors } from "lib/constants";
+  import { cluster_colors, metrics } from "lib/constants";
   import * as helpers from "lib/helpers";
   import { createAccordion, melt } from "@melt-ui/svelte";
   import { slide } from "svelte/transition";
   import * as d3 from "d3";
+  import { default_ranges } from "lib/store";
 
   const dispatch = createEventDispatcher();
+  export let id: string;
   export let summary: String = "";
   export let color: string;
   export let statistics: { [key: string]: number };
   export let in_example: boolean = false;
 
-  let short_summary = summary.length > 100 ? summary.slice(0, 100) : summary;
-  let rest_summary = summary.length > 100 ? summary.slice(100) : "";
+  $: short_summary = summary.length > 100 ? summary.slice(0, 100) : summary;
+  // let rest_summary = summary.length > 100 ? summary.slice(100) : "";
   let show_short_summary = true;
   function toggleExample() {
     if (in_example) {
@@ -22,6 +24,49 @@
     } else {
       dispatch("add_example", { summary });
     }
+  }
+
+  onMount(() => {
+    update_metric_tags();
+  });
+
+  afterUpdate(() => {
+    update_metric_tags();
+  });
+  function update_metric_tags() {
+    const width = document.querySelector(".metric-tag")?.clientWidth || 100;
+    const height = document.querySelector(".metric-tag")?.clientHeight || 16;
+    const container = d3.select(`#card-${id}`);
+    container
+      .selectAll(".metric-svg")
+      .attr("viewBox", `0 0 ${width} ${height}`)
+      .each(function () {
+        const svg = d3.select(this);
+        const metric = svg.attr("id");
+        const xScale = d3
+          .scaleLinear()
+          .domain($default_ranges[metric])
+          .range([0, width]);
+        if (metric === "sentiment") {
+          console.log(
+            id,
+            metric,
+            statistics[metric],
+            $default_ranges[metric],
+            xScale(statistics[metric]),
+            summary.slice(0, 10)
+          );
+        }
+        svg.selectAll("*").remove();
+        svg
+          .append("rect")
+          .attr("x", 0)
+          .attr("y", 0)
+          .attr("width", xScale(statistics[metric]))
+          .attr("height", height)
+          .attr("fill", "lightgreen")
+          .attr("opacity", "0.3");
+      });
   }
 
   /**
@@ -76,12 +121,18 @@
       />
     </div>
     <div
+      id={`card-${id}`}
       class="flex ml-2 grow justify-between divide-x divide-stone-400 border-b border-stone-400"
     >
       {#each Object.keys(statistics) as metric}
-        <span class="w-full text-center"
-          >{categorize_metric(metric, statistics[metric])}</span
-        >
+        <span class="metric-tag w-full h-full text-center relative"
+          >{categorize_metric(metric, statistics[metric])}
+          <svg
+            id={metric}
+            class="metric-svg absolute left-0 top-0 right-0 bottom-0"
+          >
+          </svg>
+        </span>
       {/each}
     </div>
   </div>

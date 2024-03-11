@@ -415,7 +415,6 @@ function too_close(node: tNode, recommendation_nodes: tNode[] | undefined) {
     const recommendation_node_ids = recommendation_nodes.map(node => node.id)
     if(recommendation_node_ids.includes(node.id)) return true;
     const distances = recommendation_nodes.map(recommendation_node => Math.sqrt((node.coordinates[0] - recommendation_node.coordinates[0])**2 + (node.coordinates[1] - recommendation_node.coordinates[1])**2))
-    console.log(distances)
     const threshold = 0.1
     if(distances.filter(distance => distance < threshold).length > 0) return true;
     return false
