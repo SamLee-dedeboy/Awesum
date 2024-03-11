@@ -279,6 +279,9 @@
     overflow-wrap: break-word;
     padding-left: 0.5rem;
   }
+  .editable:focus {
+    outline: none;
+  }
 
   /* :global(.loader) {
     animation: rotation 2s infinite linear;

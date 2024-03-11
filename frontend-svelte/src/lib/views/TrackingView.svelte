@@ -9,7 +9,12 @@
     target_ranges,
     executing_prompt,
   } from "lib/store";
-  import { metrics, optimization_colors, cluster_colors } from "lib/constants";
+  import {
+    metrics,
+    optimization_colors,
+    cluster_colors,
+    optimization_opacities,
+  } from "lib/constants";
 
   export let optimizations: tOptimization[];
   export let statistics: tStatistics;
@@ -27,7 +32,13 @@
     // opt_scatterplot.rotate_gradient();
     // rotate_gradient();
   });
-  $: update(optimizations);
+  $: if (optimizations.length > 1) {
+    src_index = optimizations.length - 2;
+    dst_index = optimizations.length - 1;
+    update(optimizations);
+  } else {
+    update(optimizations);
+  }
   $: if ($recommended_nodes) {
     update_recommendations(optimizations, $recommended_nodes);
     update(optimizations);
@@ -37,8 +48,6 @@
     if (optimizations.length === 1) {
       opt_scatterplot.update(undefined, optimizations[dst_index]);
     } else {
-      src_index = optimizations.length - 2;
-      dst_index = optimizations.length - 1;
       opt_scatterplot.update(
         optimizations[src_index],
         optimizations[dst_index]
@@ -149,18 +158,18 @@
 </script>
 
 <div class="flex h-full">
-  <div class="">
+  <div class="flex flex-col">
     <div class="view-header">
       <img src="line_chart.svg" alt="*" class="aspect-square" />
       Prompt Comparator
     </div>
     <div
-      class="flex flex-col h-full items-center overflow-y-auto px-1 border-r border-gray-200"
+      class="flex flex-col grow items-center overflow-y-auto px-1 border-r border-gray-200"
     >
       {#each optimizations as optimization, index}
         <div
           class="optimization-container flex text-sm items-center p-1 gap-x-1 relative"
-          style={`background-color: ${get_opt_color(index, optimizations.length, src_index, dst_index)}`}
+          style={`background-color: ${get_opt_color(index, optimizations.length, src_index, dst_index)}; opacity: ${src_index === index || dst_index === index ? 1 : 0.5}`}
         >
           <div class="flex flex-col flex-1">
             <div class="optimization-title w-fit underline text-semibold">
@@ -210,8 +219,23 @@
           </div>
         </div>
         {#if index !== optimizations.length - 1}
-          <div class="w-[2rem] h-[2rem]">
-            <img class="w-full h-full" src="arrow_down.svg" alt="*" />
+          <div
+            role="button"
+            tabindex={index}
+            class="w-[2rem] h-[2rem] hover:bg-gray-200"
+            on:click={() => {
+              src_index = index;
+              dst_index = index + 1;
+              update(optimizations);
+            }}
+            on:keyup={() => {}}
+          >
+            <img
+              class="w-full h-full"
+              src="arrow_down.svg"
+              alt="*"
+              style={`opacity: ${src_index === index ? 1 : 0.3}`}
+            />
           </div>
         {/if}
       {/each}
@@ -233,28 +257,6 @@
         <path id="arrowhead" d="M7,0 L-7,-5 L-7,5 Z" />
         <!-- <path id="arrowhead" d="M-7,-5 L7,0 L-7,5" /> -->
       </defs>
-      <!-- <defs>
-        <linearGradient
-          id="e"
-          x1="0"
-          y1="0"
-          x2="1"
-          y2="1"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop stop-color="steelblue" offset="0" />
-          <stop stop-color="red" offset="1" />
-        </linearGradient>
-      </defs>
-      <line
-        id="l"
-        x1="40"
-        y1="270"
-        x2="450"
-        y2="210"
-        stroke="url(#e)"
-        stroke-width="30"
-      /> -->
     </svg>
   </div>
 </div>
