@@ -127,20 +127,22 @@
       <img src="user.svg" alt="*" class="w-[100%] h-[100%]" />
     </div>
     <div class="min-h-[4rem] max-h-[4rem] w-full ml-3 mt-3 relative bg-stone">
-      <div
-        bind:this={query_area}
-        class="h-full grow textarea-border pr-[1.5rem] pl-2 bg-stone text-area-border text-sm text-left placeholder empty:before:content-['Ask_any_question_here...']"
-        contenteditable
-        role="form"
-      ></div>
-      <div
-        role="button"
-        tabindex="0"
-        class="absolute right-0 top-0 h-full w-[1.5rem] flex items-center justify-center cursor-pointer rounded-r border-l border-gray-200 hover:bg-gray-200"
-        on:click={handleQuery}
-        on:keyup={() => {}}
-      >
-        <img src="send.svg" alt="*" class="w-[1.1rem] h-[1.1rem]" />
+      <div class="absolute left-0 top-0 bottom-0 right-0">
+        <div
+          bind:this={query_area}
+          class="h-full grow textarea-border pr-[1.5rem] pl-3 bg-stone text-area-border text-sm text-left placeholder empty:before:content-['Ask_any_question_here...']"
+          contenteditable
+          role="form"
+        ></div>
+        <div
+          role="button"
+          tabindex="0"
+          class="absolute right-0 top-0 h-full w-[1.5rem] flex items-center justify-center cursor-pointer rounded-r border-l border-gray-200 hover:bg-gray-200"
+          on:click={handleQuery}
+          on:keyup={() => {}}
+        >
+          <img src="send.svg" alt="*" class="w-[1.1rem] h-[1.1rem]" />
+        </div>
       </div>
     </div>
   </div>
