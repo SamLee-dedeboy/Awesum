@@ -5,7 +5,7 @@
   import { OptScatterplot } from "lib/renderers/opt_scatterplot";
   import { OptimizationStats } from "lib/renderers/optimization_stats";
   import { recommended_nodes, target_ranges } from "lib/store";
-  import { metrics, optimization_colors } from "lib/constants";
+  import { metrics, optimization_colors, cluster_colors } from "lib/constants";
 
   export let optimizations: tOptimization[];
   export let statistics: tStatistics;
@@ -171,11 +171,25 @@
                 <div class="flex">
                   <span> Examples: </span>
                   <!-- To be replaced with svg -->
-                  <div>
-                    <!-- {optimization.prompt.examples.length === 0
-                      ? "None"
-                      : optimization.prompt.examples.map((e) => e.id)} -->
-                    "None"
+                  <div class="flex items-center">
+                    {#if optimization.prompt.examples.length === 0}
+                      None
+                    {:else}
+                      {#each optimization.prompt.examples as example}
+                        <div class="w-fit">
+                          <svg class="w-[1rem] h-[1rem]" viewBox="0 0 10 10">
+                            <circle
+                              fill={cluster_colors(example.cluster)}
+                              stroke="black"
+                              stroke-width="0.5"
+                              r="4"
+                              cx="5"
+                              cy="5"
+                            ></circle>
+                          </svg>
+                        </div>
+                      {/each}
+                    {/if}
                   </div>
                 </div>
               </div>
