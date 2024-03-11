@@ -428,7 +428,7 @@
             {#if $recommended_nodes}
               Examples:
               {@const nodes = $example_nodes || []}
-              <div class="flex gap-x-0.5 items-center">
+              <div class="flex gap-x-0.5 items-center flex-wrap">
                 {#each nodes as example}
                   <div class="w-fit">
                     <!-- <div class="">{example.id}</div> -->
@@ -445,11 +445,30 @@
                     >
                   </div>
                 {/each}
-                {nodes.length > 0 ? "-" : ""}
+                <!-- <span class="ml-1">
+                  {nodes.length > 0 ? "-" : ""}
+                </span> -->
               </div>
-              <span class="text-xs font-mono">
+              <span class="text-xs font-mono flex-1 flex-nowrap min-w-[4rem]">
                 {nodes.length} / {$recommended_nodes.length}
               </span>
+              <div
+                role="button"
+                tabindex="0"
+                class="flex shrink-0 items-center font-mono text-[0.6rem] h-fit outline outline-1 outline-green-400 hover:bg-green-100 rounded-sm px-1 shadow-lg ml-auto right-0"
+                on:click={() => {
+                  const example_node_ids = nodes.map((n) => n.id);
+                  const not_example_nodes =
+                    $recommended_nodes?.filter(
+                      (node) => !example_node_ids.includes(node.id)
+                    ) || [];
+                  $example_nodes = [...nodes, ...not_example_nodes];
+                }}
+                on:keyup={() => {}}
+              >
+                <img src="star_filled.svg" alt="Add" class="mr-0.5 h-[1rem]" />
+                <span> all </span>
+              </div>
             {/if}
           </div>
           <SummaryView></SummaryView>
