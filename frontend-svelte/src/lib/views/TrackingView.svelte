@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { tOptimization, tStatistics } from "lib/types";
+  import type { tNode, tOptimization, tStatistics } from "lib/types";
   import * as d3 from "d3";
   import { onMount, tick } from "svelte";
   import { OptScatterplot } from "lib/renderers/opt_scatterplot";
@@ -25,7 +25,12 @@
     `optimization-stats-svg-${index}`;
   const svgSize = { width: 500, height: 500, margin: 0 };
   const stat_svgSize = { width: 750, height: 500, margin: 0 };
-  const opt_scatterplot = new OptScatterplot(tracking_svgId, svgSize);
+  const opt_scatterplot = new OptScatterplot(
+    tracking_svgId,
+    svgSize,
+    handleNodeClicked,
+    handleNodeUnClicked
+  );
   let optimization_stat_instances: OptimizationStats[] = [];
   onMount(() => {
     opt_scatterplot.init();
@@ -97,6 +102,25 @@
       instance.update_recommendations($target_ranges);
     });
   }
+
+  function handleNodeClicked(d: tNode, node_type: string) {
+    console.log("click", d, node_type);
+    if (node_type === "dst") {
+      const opt_stat_instance = optimization_stat_instances[dst_index];
+      opt_stat_instance.highlightNode(d);
+    } else {
+    }
+  }
+
+  function handleNodeUnClicked(d: tNode, node_type: string) {
+    console.log("unclick", d, node_type);
+    if (node_type === "dst") {
+      const opt_stat_instance = optimization_stat_instances[dst_index];
+      opt_stat_instance.dehighlightAll(d);
+    } else {
+    }
+  }
+
   function rotate_gradient() {
     let l: any = document.getElementById("l");
     let x1 = parseFloat(l.getAttribute("x1"));
@@ -213,7 +237,7 @@
           >
             <svg
               id={optimization_stat_svgId_factory(index)}
-              class="w-full h-full overflow-visible"
+              class="opt-stats w-full h-full overflow-visible"
               viewBox={`0 0 ${stat_svgSize.width} ${stat_svgSize.height}`}
             ></svg>
           </div>
@@ -250,7 +274,7 @@
   <div class="h-full aspect-square border-t-4 border-[#89d0ff] bg-white p-1">
     <svg
       id={tracking_svgId}
-      class="w-full h-full overflow-visible"
+      class="tracking-scatterplot w-full h-full overflow-visible"
       viewBox={`0 0 ${svgSize.width} ${svgSize.height}`}
     >
       <defs>
@@ -262,6 +286,22 @@
 </div>
 
 <style lang="postcss">
+  .tracking-scatterplot {
+    & .node:hover {
+      stroke: black;
+      stroke-width: 2.5;
+    }
+  }
+
+  .opt-stats {
+    & .highlight {
+      fill: red;
+    }
+    & .dismissed {
+      fill: white;
+      opacity: 0.5;
+    }
+  }
   :global(.movement) {
     animation: moving 4s linear infinite;
   }

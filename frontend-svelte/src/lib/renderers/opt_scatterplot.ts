@@ -18,9 +18,13 @@ export class OptScatterplot  {
     xScale: any
     yScale: any
     show_trajectory: boolean = true
-    constructor(svgId: string, svgSize: any) {
+    handleNodeClicked: any
+    handleNodeUnclicked: any
+    constructor(svgId: string, svgSize: any, handleNodeClicked: any, handleNodeUnclicked: any) {
         this.svgId = svgId;
         this.svgSize = svgSize
+        this.handleNodeClicked = handleNodeClicked
+        this.handleNodeUnclicked = handleNodeUnclicked
     }
 
     init() {
@@ -28,7 +32,7 @@ export class OptScatterplot  {
         const bubble_group = svg.append("g").attr("class", "bubbles");
         const line_group = svg.append("g").attr("class", "lines");
         const ideal_group = svg.append("g").attr("class", "ideal");
-    const node_group = svg.append("g").attr("class", "nodes");
+        const node_group = svg.append("g").attr("class", "nodes");
         const src_node_group = node_group.append("g").attr("class", "src");
         const dst_node_group = node_group.append("g").attr("class", "dst");
         const arrow_group = svg.append("g").attr("class", "arrows");
@@ -96,7 +100,7 @@ export class OptScatterplot  {
             src_group.selectAll("*").remove()
             // const src_nodes = src_optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id))
             const src_nodes = src_optimization.nodes.filter(node => !too_close(node, recommendation_nodes))
-            this.update_optimization_snapshot(src_nodes, src_group, bubble_group, nodeRadiusScale, optimization_colors[0], optimization_opacities[0])
+            this.update_optimization_snapshot(src_nodes, src_group, bubble_group, nodeRadiusScale, optimization_colors[0], optimization_opacities[0], "src")
         }
         // dst
         const dst_group = node_group.select("g.dst")
@@ -104,10 +108,16 @@ export class OptScatterplot  {
         // const dst_nodes = dst_optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id))
         const dst_nodes = dst_optimization.nodes.filter(node => !too_close(node, recommendation_nodes))
         // const dst_nodes = dst_optimization.nodes
-        this.update_optimization_snapshot(dst_nodes, dst_group, bubble_group, nodeRadiusScale, optimization_colors[1], optimization_opacities[1])
+        this.update_optimization_snapshot(dst_nodes, dst_group, bubble_group, nodeRadiusScale, optimization_colors[1], optimization_opacities[1], "dst")
     }
 
-    update_optimization_snapshot(nodes: tNode[], node_parent: any, bubble_parent: any, nodeRadiusScale: any, color: string, opacity: number) {
+    update_optimization_snapshot(nodes: tNode[], 
+        node_parent: any, 
+        bubble_parent: any, 
+        nodeRadiusScale: any, 
+        color: string, opacity: number,
+        snapshot_type: string,
+    ) {
         const self = this
         node_parent.selectAll("circle.node").data(nodes)
             .join("circle")
@@ -119,6 +129,10 @@ export class OptScatterplot  {
             .attr("stroke", "black")
             .attr("opacity", opacity)
             .attr("stroke-width", 1)
+            .attr("cursor", "pointer")
+            .on("mouseover", (_, d) => this.handleNodeClicked(d, snapshot_type))
+            .on("mouseout", (_, d) => this.handleNodeUnclicked(d, snapshot_type))
+            // .on("click", (_, d) => this.handleNodeClicked(d, snapshot_type))
         const testset_bubble = create_bubble_path(nodes.map(node => [self.xScale(node.coordinates[0]), self.yScale(node.coordinates[1])]), 10)
         bubble_parent.append("path")
             .attr("class", "bubble_contour").attr("d", testset_bubble)

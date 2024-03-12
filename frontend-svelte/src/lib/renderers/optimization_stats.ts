@@ -163,7 +163,24 @@ export class OptimizationStats {
         //     .attr("r", 10)
         //     .attr("fill", "red")
         //     .attr("stroke", "black")
-    })
+        })
+    }
 
+    highlightNode(node: tNode) {
+        console.log("highlight node", node.id, this.svgId)
+        const svg = d3.select(`#${this.svgId}`)
+        svg.selectAll("circle.test_case")
+            .classed("dismissed", true)
+            .classed("highlight", false)
+            .filter((d: tNode) => d.id === node.id)
+            .classed("dismissed", false)
+            .classed("highlight", true)
+    }
+
+    dehighlightAll() {
+        const svg = d3.select(`#${this.svgId}`)
+        svg.selectAll("circle.test_case")
+            .classed("dismissed", false)
+            .classed("highlight", false)
     }
 }
