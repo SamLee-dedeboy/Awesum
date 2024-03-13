@@ -102,7 +102,7 @@
   $: update_noise(show_noise, data);
   async function update_noise(show_noise, data) {
     await tick();
-    console.log("show_noise", show_noise, data);
+    // console.log("show_noise", show_noise, data);
     d3.select("#cluster-svg")
       .select("g.noise-group")
       .selectAll("circle.noise")

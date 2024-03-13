@@ -21,6 +21,9 @@
   export let statistics: tStatistics;
   let src_index = -1;
   let dst_index = 0;
+  let tmp_src_index = -1;
+  let tmp_dst_index = -1;
+  let select_mode = false;
   const tracking_svgId = "tracking-scatterplot-svg";
   const optimization_stat_svgId_factory = (index) =>
     `optimization-stats-svg-${index}`;
@@ -203,15 +206,62 @@
       Prompt Comparator
     </div>
     <div
-      class="flex flex-col grow items-center overflow-y-auto px-1 border-r border-gray-200"
+      role="button"
+      tabindex="0"
+      class="w-fit px-1 my-1 ml-1 font-mono text-[0.8rem] outline outline-1 outline-gray-400 rounded select-none"
+      style={`background-color: ${select_mode ? "#89d0ff" : "white"}`}
+      on:click={() => {
+        select_mode = !select_mode;
+        tmp_src_index = -1;
+        tmp_dst_index = -1;
+      }}
+      on:keyup={() => {}}
+    >
+      Select Comparison
+    </div>
+    <div
+      class="flex flex-col grow items-center overflow-y-auto px-1 py-0.5 border-r border-gray-200"
     >
       {#each optimizations as optimization, index}
         <div
           class="optimization-container flex text-sm items-center p-1 gap-x-1 relative"
-          style={`background-color: ${get_opt_color(index, optimizations.length, src_index, dst_index)}; opacity: ${src_index === index || dst_index === index ? 1 : 0.5}`}
+          class:to-be-selected={select_mode}
+          class:selected={select_mode &&
+            (tmp_src_index === index || tmp_dst_index === index)}
+          style={`
+          background-color: ${get_opt_color(index, optimizations.length, src_index, dst_index)};
+          opacity: ${src_index === index || dst_index === index ? 1 : 0.5};
+          `}
+          on:click={() => {
+            if (select_mode) {
+              if (tmp_src_index === index) {
+                tmp_src_index = -1;
+              } else if (tmp_dst_index === index) {
+                tmp_dst_index = -1;
+              } else if (tmp_src_index === -1) {
+                tmp_src_index = index;
+              } else if (tmp_dst_index === -1) {
+                tmp_dst_index = index;
+                src_index = tmp_src_index;
+                dst_index = tmp_dst_index;
+                tmp_src_index = -1;
+                tmp_dst_index = -1;
+                select_mode = false;
+              } else {
+                tmp_src_index = index;
+                tmp_dst_index = -1;
+              }
+            }
+          }}
         >
           <div class="flex flex-col flex-1">
-            <div class="optimization-title w-fit underline text-semibold">
+            <!-- {#if index === tmp_src_index}
+              <span class="comparison-tag"> from </span>
+            {/if}
+            {#if index === tmp_dst_index}
+              <span class="comparison-tag"> to </span>
+            {/if} -->
+            <div class="optimization-title flex underline text-semibold">
               Prompt #{index}
             </div>
             <div class="prompt text-start">
@@ -301,6 +351,47 @@
 </div>
 
 <style lang="postcss">
+  .selected {
+    @apply !bg-none !outline;
+  }
+  .to-be-selected {
+    @apply cursor-pointer outline-2 outline-black hover:bg-none hover:outline;
+    background-image: linear-gradient(90deg, black 50%, transparent 50%),
+      linear-gradient(90deg, black 50%, transparent 50%),
+      linear-gradient(0deg, black 50%, transparent 50%),
+      linear-gradient(0deg, black 50%, transparent 50%);
+    background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+    background-size:
+      15px 2px,
+      15px 2px,
+      2px 15px,
+      2px 15px;
+    background-position:
+      left top,
+      right bottom,
+      left bottom,
+      right top;
+    animation: border-dance 1s infinite linear;
+  }
+  @keyframes border-dance {
+    0% {
+      background-position:
+        left top,
+        right bottom,
+        left bottom,
+        right top;
+    }
+    100% {
+      background-position:
+        left 15px top,
+        right 15px bottom,
+        left bottom 15px,
+        right top 15px;
+    }
+  }
+  .comparison-tag {
+    @apply flex w-fit px-1  outline outline-1 outline-gray-300 rounded bg-amber-200 text-[0.7rem] font-mono;
+  }
   .tracking-scatterplot {
     & .node:hover {
       stroke: black;
