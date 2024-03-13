@@ -47,16 +47,6 @@
           .scaleLinear()
           .domain($default_ranges[metric])
           .range([0, width]);
-        if (metric === "sentiment") {
-          console.log(
-            id,
-            metric,
-            statistics[metric],
-            $default_ranges[metric],
-            xScale(statistics[metric]),
-            summary.slice(0, 10)
-          );
-        }
         svg.selectAll("*").remove();
         svg
           .append("rect")

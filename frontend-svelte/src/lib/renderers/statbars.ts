@@ -36,7 +36,6 @@ export class Statbars {
       colors: string[]=[], 
       cluster_labels: string[]|undefined=undefined,
       ) {
-        console.log("update")
       let self = this; 
       let xScales;
       const g = d3.select(this.svgId).select("g.inner");

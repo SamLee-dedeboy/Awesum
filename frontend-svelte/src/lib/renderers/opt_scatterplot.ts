@@ -59,7 +59,6 @@ export class OptScatterplot  {
         })
     }
     update_recommendations(recommendation_nodes: tNode[]) {
-        console.log(recommendation_nodes)
         const svg = d3.select(`#${this.svgId}`);
         const ideal_group = svg.select("g.ideal");
         const bubble_group = svg.select("g.bubbles");
@@ -82,7 +81,6 @@ export class OptScatterplot  {
             .attr("stroke-width", 1.2)
     }
     update(src_optimization: tOptimization | undefined, dst_optimization: tOptimization ) {
-        console.log("opt scatterplot update")
         const self = this
         const svg = d3.select(`#${this.svgId}`);
         const node_group = svg.select("g.nodes");
@@ -94,19 +92,23 @@ export class OptScatterplot  {
         const min_intra_cluster_distance = Math.min(...intra_cluster_distances)
         const max_intra_cluster_distance = Math.max(...intra_cluster_distances)
         const nodeRadiusScale = d3.scaleLinear().domain([min_intra_cluster_distance, max_intra_cluster_distance]).range([3, 10])
+        let dst_nodes: tNode[] = []
         // src
         if(src_optimization) {
             const src_group = node_group.select("g.src")
             src_group.selectAll("*").remove()
             // const src_nodes = src_optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id))
             const src_nodes = src_optimization.nodes.filter(node => !too_close(node, recommendation_nodes))
+            const src_node_ids = src_nodes.map(node => node.id)
+            dst_nodes = dst_optimization.nodes.filter(node => src_node_ids.includes(node.id))
             this.update_optimization_snapshot(src_nodes, src_group, bubble_group, nodeRadiusScale, optimization_colors[0], optimization_opacities[0], "src")
+        } else {
+            dst_nodes = dst_optimization.nodes.filter(node => !too_close(node, recommendation_nodes))
         }
         // dst
         const dst_group = node_group.select("g.dst")
         dst_group.selectAll("*").remove()
         // const dst_nodes = dst_optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id))
-        const dst_nodes = dst_optimization.nodes.filter(node => !too_close(node, recommendation_nodes))
         // const dst_nodes = dst_optimization.nodes
         this.update_optimization_snapshot(dst_nodes, dst_group, bubble_group, nodeRadiusScale, optimization_colors[1], optimization_opacities[1], "dst")
     }
@@ -140,7 +142,7 @@ export class OptScatterplot  {
             // .attr("opacity", opacity)
     }
 
-    update_movement(src_optimization: tOptimization, dst_optimization: tOptimization, statistics: tStatistics) {
+    update_movement(src_optimization: tOptimization, dst_optimization: tOptimization, trajectories: any[]) {
         if(!this.show_trajectory) return;
         const self = this
         const svg = d3.select(`#${this.svgId}`);
@@ -166,13 +168,13 @@ export class OptScatterplot  {
             const direction_colors = one_iteration_lines.map((d) => categorize_distance(d, ideal_centroid))
             const trajectory_colors = kept_indices(direction_colors, kept_node_indices)
             const end_trajectory_colors = trajectory_colors.map(color => d3.color(color).darker(0.7).formatHex())
-            colorScales = trajectory_colors.map((color, i) => d3.scaleLinear().domain([0, dst_optimization.trajectories![0].length]).range([color, end_trajectory_colors[i]]))
+            colorScales = trajectory_colors.map((color, i) => d3.scaleLinear().domain([0, trajectories![0].length]).range([color, end_trajectory_colors[i]]))
         } else {
-            const samples = dst_optimization.trajectories![0].length
+            const samples = trajectories![0].length
             colorScales = [d3.scaleLinear().domain([0, samples]).range(["#fafafa", "#ababab"])]
         }
         // bind
-        const target_trajectories = kept_indices(dst_optimization.trajectories, kept_node_indices)
+        const target_trajectories = kept_indices(trajectories, kept_node_indices)
         line_group.selectAll("g.trajectory")
             .data(target_trajectories)
             .join("g")
@@ -277,8 +279,8 @@ function categorize_distance(d: [tNode, tNode], centroid: [number, number]) {
     const src_distance: number = Math.sqrt((d[0].coordinates[0] - centroid[0])**2 + (d[0].coordinates[1] - centroid[1])**2)
     const dst_distance: number = Math.sqrt((d[1].coordinates[0] - centroid[0])**2 + (d[1].coordinates[1] - centroid[1])**2)
     if (Math.abs(src_distance - dst_distance) < 0.15) return "#f0f0f0"
-    else if(src_distance > dst_distance) return "#A88CFD"
-    else return "#FFEA93"
+    else if(src_distance > dst_distance) return "#FFEA93" // better
+    else return "#A88CFD" // worse
 }
 
 
@@ -445,7 +447,7 @@ function too_close(node: tNode, recommendation_nodes: tNode[] | undefined) {
     const recommendation_node_ids = recommendation_nodes.map(node => node.id)
     if(recommendation_node_ids.includes(node.id)) return true;
     const distances = recommendation_nodes.map(recommendation_node => Math.sqrt((node.coordinates[0] - recommendation_node.coordinates[0])**2 + (node.coordinates[1] - recommendation_node.coordinates[1])**2))
-    const threshold = 0.1
+    const threshold = 0.15
     if(distances.filter(distance => distance < threshold).length > 0) return true;
     return false
 }

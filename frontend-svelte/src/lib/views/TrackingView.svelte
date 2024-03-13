@@ -14,6 +14,7 @@
     optimization_colors,
     cluster_colors,
     optimization_opacities,
+    server_address,
   } from "lib/constants";
 
   export let optimizations: tOptimization[];
@@ -57,10 +58,15 @@
         optimizations[src_index],
         optimizations[dst_index]
       );
+      const trajectories = await get_trajectories(
+        optimizations[src_index],
+        optimizations[dst_index]
+      );
+      console.log({ trajectories });
       opt_scatterplot.update_movement(
         optimizations[src_index],
         optimizations[dst_index],
-        statistics
+        trajectories
       );
     }
 
@@ -68,8 +74,8 @@
     const global_maxes = statistics.global_maxes;
     const global_means = statistics.global_means;
 
+    optimization_stat_instances = [];
     optimizations.forEach((optimization, index) => {
-      optimization_stat_instances = [];
       const svgId = optimization_stat_svgId_factory(index);
       const optimization_stat = new OptimizationStats(
         svgId,
@@ -103,22 +109,32 @@
     });
   }
 
+  async function get_trajectories(
+    src_opt: tOptimization,
+    dst_opt: tOptimization
+  ) {
+    const response = await fetch(server_address + "/compute_trajectory/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        src_nodes: src_opt.nodes,
+        dst_nodes: dst_opt.nodes,
+      }),
+    });
+    const data = await response.json();
+    return data.trajectories;
+  }
+
   function handleNodeClicked(d: tNode, node_type: string) {
-    console.log("click", d, node_type);
-    if (node_type === "dst") {
-      const opt_stat_instance = optimization_stat_instances[dst_index];
-      opt_stat_instance.highlightNode(d);
-    } else {
-    }
+    optimization_stat_instances[src_index].highlightNode(d);
+    optimization_stat_instances[dst_index].highlightNode(d);
   }
 
   function handleNodeUnClicked(d: tNode, node_type: string) {
-    console.log("unclick", d, node_type);
-    if (node_type === "dst") {
-      const opt_stat_instance = optimization_stat_instances[dst_index];
-      opt_stat_instance.dehighlightAll(d);
-    } else {
-    }
+    optimization_stat_instances[src_index].dehighlightAll();
+    optimization_stat_instances[dst_index].dehighlightAll();
   }
 
   function rotate_gradient() {
@@ -128,7 +144,6 @@
     let x2 = parseFloat(l.getAttribute("x2"));
     let y2 = parseFloat(l.getAttribute("y2"));
     let w = parseFloat(l.getAttribute("stroke-width"));
-    console.log({ x1, y1, x2, y2, w });
 
     // step 1
     let dx = x2 - x1;

@@ -12,6 +12,7 @@
     feature_target_levels,
     // recommended_cluster,
     recommended_nodes,
+    inAllRange,
   } from "lib/store";
   import { categorize_metric, metric_categories } from "lib/constants/metrics";
   import type {
@@ -110,7 +111,6 @@
         update_all_cluster(stat_data);
         // detail_statbars = initDetailStatbars(stat_data.cluster_statistics);
       } else {
-        console.log("update_all_metric");
         update_all_metric(stat_data);
       }
     }
@@ -136,13 +136,16 @@
     await tick();
     $selected_metrics.forEach((metric, index) => {
       const statbars = metric_statbar_instances[index];
-      const stats = Object.keys(data.metric_statistics[metric])
-        .map((cluster_label) => [
+      const stats = Object.keys(data.metric_statistics[metric]).map(
+        (cluster_label) => [
           data.metric_statistics[metric][cluster_label],
           cluster_label,
-        ])
-        .filter((stat_w_label) => stat_w_label[1] !== "-1");
-      const sorted_stats_w_label = stats.sort((a, b) => a[0].mean - b[0].mean);
+        ]
+      );
+      const sorted_stats_w_label = stats
+        .filter((stat_w_label) => stat_w_label[1] !== "-1")
+        .sort((a, b) => a[0].mean - b[0].mean)
+        .concat(stats.filter((stat_w_label) => stat_w_label[1] === "-1"));
       const sorted_stats = sorted_stats_w_label.map((stat) => stat[0]);
       const sorted_cluster_labels = sorted_stats_w_label.map((stat) => stat[1]);
       const sorted_cluster_colors = sorted_cluster_labels.map((cluster_label) =>
@@ -179,24 +182,36 @@
 
   function handleClusterClicked(cluster_label: string) {
     const cluster_stat = stat_data?.cluster_statistics[cluster_label];
+    const feature_target_all_undefined = Object.keys(
+      $feature_target_levels
+    ).every((feature) => $feature_target_levels[feature] === null);
     cluster_stat?.forEach((stat, index) => {
       if (!$selected_metrics.includes(metrics[index])) return;
-      // $target_ranges[metrics[index]] = [stat.min, stat.max];
+      if (
+        !feature_target_all_undefined &&
+        $feature_target_levels[metrics[index]] === null
+      )
+        return;
       $feature_target_levels[metrics[index]] = categorize_metric(
         metrics[index],
         stat.mean
       );
       $target_ranges[metrics[index]] = [stat.min, stat.max];
-      // recommended_cluster.set(cluster_label);
       recommended_nodes.set(
         data?.filter((datum) => datum.cluster === cluster_label)
       );
+      // $recommended_nodes?.forEach((node) => {
+      //   const in_range = inAllRange(
+      //     node.features,
+      //     $target_ranges,
+      //     "cluster clicked"
+      //   );
+      //   if (!in_range) console.log(node.features, $target_ranges);
+      // });
     });
-    // cluster_mode.set("metric");
   }
 
   function handleMetricRangeSelected(d: tStatBarData, metric_index: number) {
-    console.log("handleMetricRangeSelected", d, metric_index);
     if (
       $target_ranges[metrics[metric_index]][0] === d.min &&
       $target_ranges[metrics[metric_index]][1] === d.max
@@ -233,24 +248,6 @@
 
   function handleMetricRangeMouseout(cluster_label: string) {
     handleClusterMouseout();
-  }
-  function inAllRange(
-    features: { [key: string]: number },
-    ranges: { [key: string]: [number | undefined, number | undefined] }
-  ) {
-    if (
-      Object.values(ranges).every(
-        ([min, max]) => min === undefined && max === undefined
-      )
-    )
-      return false;
-    let inRange = true;
-    Object.entries(ranges).forEach(([metric, range]) => {
-      if (range[0] === undefined || range[1] === undefined) return;
-      const value = features[metric];
-      if (value < range[0] || value > range[1]) return (inRange = false);
-    });
-    return inRange;
   }
 </script>
 
@@ -303,6 +300,7 @@
                 {index}
                 {svgSize}
                 {hovered_cluster_label}
+                stat_data={stat_data.cluster_statistics[cluster_label]}
                 on:click={(e) => handleClusterClicked(e.detail)}
                 on:mouseout={() => handleClusterMouseout()}
                 on:mouseover={(e) => handleClusterHovered(e.detail)}
@@ -315,7 +313,30 @@
           class="flex flex-wrap outline outline-1 outline-gray-100 justify-between"
         >
           {#each $selected_metrics as metric, index}
-            <div class="flex flex-col w-[49%]">
+            {@const target_level = $feature_target_levels[metric]}
+            {@const target_range = $target_ranges[metric]}
+            {@const default_range = $default_ranges[metric]}
+            <div
+              class="metric-container flex flex-col w-[49%] relative"
+              style={`opacity: ${target_level ? 1 : 0.5}`}
+            >
+              <div
+                role="button"
+                tabindex={index}
+                class="hide-button absolute top-0 right-0 p-0.5 w-7 h-5 hover:bg-gray-300 hidden"
+                on:click={() => {
+                  $feature_target_levels[metric] = target_level
+                    ? null
+                    : categorize_metric(
+                        metric,
+                        ((target_range[0] || default_range[0]) +
+                          (target_range[1] || default_range[1])) /
+                          2
+                      );
+                }}
+              >
+                <img src="eye_off.svg" alt="hide" class="w-full h-full" />
+              </div>
               <p class="text-sm text-center font-semibold bg-cyan-100">
                 {metric}
               </p>
@@ -418,6 +439,9 @@
 </div>
 
 <style lang="postcss">
+  .metric-container:hover .hide-button {
+    display: block;
+  }
   .tab-start {
     /* @apply rounded-tl; */
   }

@@ -30,7 +30,6 @@ export class CorrelationMatrix {
     }
 
     init() {
-        console.log("init")
         const svg = d3.select("#" + this.svgId).attr("viewBox", `0 0 ${this.svgSize.width} ${this.svgSize.height}`);
         const node_group = svg.append("g").classed("node-group", true);
         const node_connector_group = node_group.append("g").classed("node-connector-group", true);
@@ -40,7 +39,6 @@ export class CorrelationMatrix {
     }
 
     update(metrics: string[], correlations: any[]) {
-        console.log(metrics, correlations)
         this.metrics_toggled = metrics.map(() => true)
         this.updateAxis(metrics, correlations)
         this.update_cells(metrics, correlations)
@@ -141,10 +139,8 @@ export class CorrelationMatrix {
     }
 
     update_cells(metrics, correlations) {
-      console.log({metrics, correlations})
         const row_bands = this.row_bands
         const col_bands = this.col_bands
-        console.log({correlations})
         const scaleSize = d3.scalePow().exponent(1).domain([0, 1]).range([0, row_bands.bandwidth() ]);
         const threshold = 0.2
         const scaleColor = (weight) => weight < 0? "red": "green"
@@ -197,7 +193,6 @@ export class CorrelationMatrix {
                     .attr("opacity", (d) => d.over_threshold? 0:1)
                     .text(d => d.weight.toFixed(2))
                 if(d.over_threshold) {
-                    console.log("over_threshold", d)
                     cell.append("line")
                         .attr("class", "vertical")
                         .attr("x1", (d) => col_bands(d.source) + col_bands.bandwidth()/2)

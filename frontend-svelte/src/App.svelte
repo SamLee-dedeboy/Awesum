@@ -17,6 +17,7 @@
     recommended_nodes,
     target_ranges,
     default_ranges,
+    data,
   } from "lib/store";
   import {
     cluster_colors,
@@ -89,6 +90,7 @@
         if (dataset) {
           cluster_loading = false;
           console.log(dataset);
+          data.set(dataset.dataset);
           metric_metadata = dataset.metric_metadata;
           dataset.centroids = generate_centroids(dataset.dataset);
           initOptimizations($test_set, dataset.statistics);
@@ -96,85 +98,6 @@
         }
       });
   }
-
-  // function adjustMetrics(p_dataset, p_cluster_params, p_selected_metrics) {
-  //   console.assert(p_dataset !== undefined);
-  //   if (!dataset) return;
-  //   const feature_recommendations = Object.entries($feature_target_levels)
-  //     .filter((f) => f[1])
-  //     .map((f) => {
-  //       return { feature_name: f[0], level: f[1] };
-  //     });
-  //   console.log({ feature_recommendations });
-  //   const parameters = {
-  //     dataset: p_dataset,
-  //     recommended_features: {
-  //       features: feature_recommendations,
-  //       feature_pool: $selected_metrics,
-  //     },
-  //   };
-  //   cluster_loading = true;
-  //   fetch(server_address + "/data/query_closest_cluster/", {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({ ...parameters }),
-  //   })
-  //     .then((response) => response.json())
-  //     .then((data) => {
-  //       // recommended_cluster.set(data.closest_cluster);
-  //       const closest_cluster = data.closest_cluster;
-  //       recommended_nodes.set(
-  //         dataset?.dataset.filter((d) => d.cluster === closest_cluster)
-  //       );
-  //       cluster_loading = false;
-  //     });
-  // }
-
-  // function _adjustMetrics(p_dataset, p_cluster_params, p_selected_metrics) {
-  //   console.assert(p_dataset !== undefined);
-  //   if (!dataset) return;
-  //   const feature_recommendations = Object.entries($feature_target_levels)
-  //     .filter((f) => f[1])
-  //     .map((f) => {
-  //       return { feature_name: f[0], level: f[1] };
-  //     });
-  //   console.log({ feature_recommendations }, $feature_target_levels);
-  //   const parameters = {
-  //     method: p_cluster_params.name,
-  //     // parameters: p_cluster_params.params,
-  //     dataset: p_dataset,
-  //     metrics: p_selected_metrics,
-  //     recommended_features: {
-  //       features: feature_recommendations,
-  //       feature_pool: $selected_metrics,
-  //     },
-  //   };
-  //   cluster_loading = true;
-  //   fetch(server_address + "/data/metrics/", {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({ ...parameters }),
-  //   })
-  //     .then((response) => response.json())
-  //     .then((data) => {
-  //       console.assert(dataset !== undefined);
-  //       if (!dataset) return;
-  //       console.log("Success:", data);
-  //       dataset.cluster_labels = data.cluster_labels;
-  //       dataset.dataset = data.dataset;
-  //       dataset.statistics = data.statistics;
-  //       dataset.metric_data = data.metric_data;
-  //       dataset = dataset;
-  //       cluster_loading = false;
-  //       initOptimizations($test_set, dataset.statistics);
-
-  //       // recommended_cluster.set(data.closest_cluster);
-  //     });
-  // }
 
   function setNewOptimization({
     results,
@@ -193,7 +116,6 @@
       {
         // summaries: cluster_nodes.map((node) => node.summary),
         nodes: results,
-        trajectories: trajectories,
         features: results.map((node) => node.features),
         prompt: prompt,
         statistics: statistics,

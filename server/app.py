@@ -179,8 +179,6 @@ def execute_prompt_all():
     data_template = request.json['data_template']
     prompt_template = gpt.combine_templates(instruction, examples, data_template)
     data = request.json['data']
-    last_data = request.json['last_data']
-    src_features = list(map(lambda x: [x['features'][m] for m in metrics], data))
     # metrics = request.json['metrics']
     prompts = []
     for datum in data:
@@ -207,6 +205,7 @@ def execute_prompt_all():
             "summary": new_summary,
             "text": data[index]['text'],
             "test_case": True,
+            "topic": data[index]['topic'],
             "intra_cluster_distance": data[index]['intra_cluster_distance']
         })
     # # reapply tsne 
@@ -225,6 +224,7 @@ def execute_prompt_all():
     #         if item['id'] == test_node['id']:
     #             break
     #     test_node['coordinates'] = reapplied_coordinates[coordinate_index].tolist()
+    src_features = list(map(lambda x: [x['features'][m] for m in metrics], data))
     dst_features = list(map(lambda x: [x['features'][m] for m in metrics], results))
     feature_matrix = np.array(dst_features)
     statistics = []
@@ -235,8 +235,24 @@ def execute_prompt_all():
     return json.dumps({
         "results": results,
         "statistics": statistics,
+        # "trajectories": dr.trajectory(dr_estimator, dr_scaler, min_coord, max_coord, src_features, dst_features),
+    })
+@app.route("/compute_trajectory/", methods=['POST'])
+def compute_trajectory():
+    src_nodes = request.json['src_nodes']
+    dst_nodes = request.json['dst_nodes']
+    src_features = list(map(lambda x: [x['features'][m] for m in metrics], src_nodes))
+    dst_features = list(map(lambda x: [x['features'][m] for m in metrics], dst_nodes))
+    topic = src_nodes[0]['topic']
+    dr_estimator = snapshots[topic]['dr_estimator']
+    dr_scaler = snapshots[topic]['dr_scaler']
+    min_coord = snapshots[topic]['min_coord']
+    max_coord = snapshots[topic]['max_coord']
+
+    return json.dumps({
         "trajectories": dr.trajectory(dr_estimator, dr_scaler, min_coord, max_coord, src_features, dst_features),
     })
+
 
 @app.route("/query_metric/", methods=['POST'])
 def query_metric():
@@ -261,8 +277,7 @@ def prompt_recommendation():
     goal = request.json['goal']
     current_prompt = request.json['current_prompt']
     prompt_block_suggestion_prompt = gpt.formulate_prompt_block_suggestion_prompt(block, prompt_block_definitions[block], current_prompt, goal)
-    response = json.loads(gpt.request_chatgpt_gpt4(openai_client, prompt_block_suggestion_prompt, format='json'))
-    response = response['improved_version']
+    response = gpt.request_chatgpt_gpt4(openai_client, prompt_block_suggestion_prompt)
     return {
         "recommendation": response
     }

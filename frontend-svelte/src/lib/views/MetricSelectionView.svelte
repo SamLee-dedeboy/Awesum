@@ -48,6 +48,7 @@
   export let data: tNode[];
   export let stat_data: tStatistics;
   export let local_selected_metrics: string[] = $selected_metrics;
+  export let local_feature_level: { [key: string]: string | null } = {};
   let hovered_metric: string | undefined = undefined;
 
   onMount(() => {
@@ -68,7 +69,7 @@
       correlation_matrix.update_cell_disability(metrics, features);
       correlation_matrix.update_cells(metrics, metric_metadata.correlations);
       value.forEach((f) => {
-        $feature_target_levels[f.feature_name] = f.level;
+        local_feature_level[f.feature_name] = f.level;
       });
     }
   });
@@ -94,6 +95,7 @@
       .map((f) => {
         return { feature_name: f[0], level: f[1] };
       });
+    console.log({ feature_recommendations });
     const parameters = {
       dataset: data,
       recommended_features: {
@@ -115,11 +117,12 @@
         const cluster_stat = stat_data.cluster_statistics[closest_cluster];
         cluster_stat?.forEach((stat, index) => {
           if (!$selected_metrics.includes(metrics[index])) return;
-          // $target_ranges[metrics[index]] = [stat.min, stat.max];
+          if (!local_feature_level[metrics[index]]) return;
           $feature_target_levels[metrics[index]] = categorize_metric(
             metrics[index],
             stat.mean
           );
+          console.log("queried", local_feature_level, $feature_target_levels);
           $target_ranges[metrics[index]] = [stat.min, stat.max];
         });
         recommended_nodes.set(
@@ -167,9 +170,9 @@
         role="button"
         tabindex="0"
         class=" bg-green-100 border-green-200 py-0 px-[0.09rem] h-[1.1rem] w-[1.7rem] flex justify-center"
-        class:disabled={Object.keys($feature_target_levels).length === 0 ||
-          Object.values($feature_target_levels).every((v) => !v)}
-        on:click={() => queryMetricRecommendation($feature_target_levels)}
+        class:disabled={Object.keys(local_feature_level).length === 0 ||
+          Object.values(local_feature_level).every((v) => !v)}
+        on:click={() => queryMetricRecommendation(local_feature_level)}
         on:keyup={() => {}}
       >
         <img src="forward.svg" alt="*" class="h-full" />
@@ -208,7 +211,7 @@
             options={metric_categories[metric].map((c) => c.label)}
             tw_font_size="text-[0.55rem]"
             tw_font_family="font-mono"
-            bind:selected_label={$feature_target_levels[metric]}
+            bind:selected_label={local_feature_level[metric]}
           />
         </div>
       {/each}

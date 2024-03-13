@@ -1,6 +1,11 @@
 <script lang="ts">
   import { metric_categories, metric_steps } from "lib/constants";
-  import { target_ranges, recommended_nodes } from "lib/store";
+  import {
+    target_ranges,
+    recommended_nodes,
+    inAllRange,
+    feature_target_levels,
+  } from "lib/store";
   import type { tNode } from "lib/types";
   export let metric: string;
   export let data: tNode[];
@@ -24,7 +29,13 @@
       value.set([v[metric][0]!, v[metric][1]!]);
     }
   });
+  let first_time = true;
   value.subscribe((v) => {
+    if (first_time) {
+      first_time = false;
+      return;
+    }
+    if ($feature_target_levels[metric] === null) return;
     if (
       $target_ranges[metric][0] !== v[0] ||
       $target_ranges[metric][1] !== v[1]
@@ -35,24 +46,6 @@
     );
     recommended_nodes.set(in_range_nodes);
   });
-  function inAllRange(
-    features: { [key: string]: number },
-    ranges: { [key: string]: [number | undefined, number | undefined] }
-  ) {
-    if (
-      Object.values(ranges).every(
-        ([min, max]) => min === undefined && max === undefined
-      )
-    )
-      return false;
-    let inRange = true;
-    Object.entries(ranges).forEach(([metric, range]) => {
-      if (range[0] === undefined || range[1] === undefined) return;
-      const value = features[metric];
-      if (value < range[0] || value > range[1]) return (inRange = false);
-    });
-    return inRange;
-  }
 </script>
 
 <div class="w-full h-full px-0.5">

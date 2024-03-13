@@ -1,12 +1,17 @@
 <script lang="ts">
-  import { createTooltip, melt } from "@melt-ui/svelte";
+  import { createPopover, createTooltip, melt } from "@melt-ui/svelte";
   import { fade } from "svelte/transition";
   import {
     server_address,
     prompt_block_explanations,
     range_to_categories,
   } from "lib/constants";
-  import { selected_topic, target_ranges } from "lib/store";
+  import {
+    selected_topic,
+    target_ranges,
+    feature_target_levels,
+    default_ranges,
+  } from "lib/store";
   import { categorize_metric, topic_dict } from "lib/constants";
   export let title: string;
   export let prompt_content: string = "";
@@ -14,19 +19,35 @@
   let get_recommendation_clicked = false;
   let recommendation: string | undefined = undefined;
   let recommendation_loading = false;
-  $: goal = generate_goal(topic_dict[$selected_topic!], $target_ranges);
+  $: goal = generate_goal(
+    topic_dict[$selected_topic!],
+    $target_ranges,
+    $default_ranges,
+    $feature_target_levels
+  );
+  // const {
+  //   elements: { trigger, content, arrow },
+  //   states: { open },
+  // } = createTooltip({
+  //   positioning: {
+  //     placement: "right-start",
+  //     gutter: 0,
+  //   },
+  //   openDelay: 0,
+  //   closeDelay: 0,
+  //   closeOnPointerDown: false,
+  //   forceVisible: true,
+  // });
   const {
-    elements: { trigger, content, arrow },
+    elements: { trigger, content, arrow, close },
     states: { open },
-  } = createTooltip({
+  } = createPopover({
     positioning: {
       placement: "right-start",
-      gutter: 5,
+      gutter: 0,
     },
-    openDelay: 0,
-    closeDelay: 0,
-    closeOnPointerDown: false,
     forceVisible: true,
+    closeOnOutsideClick: false,
   });
 
   async function getSuggestions(block, current_prompt, goal) {
@@ -53,30 +74,61 @@
 
   function generate_goal(
     selected_topic: string,
-    target_ranges: { [key: string]: [number | undefined, number | undefined] }
+    target_ranges: { [key: string]: [number | undefined, number | undefined] },
+    default_ranges: { [key: string]: [number, number] },
+    feature_target_levels: { [key: string]: string | null }
   ) {
     let goal = `I am writing a prompt to summarize news articles about ${selected_topic}. `;
     Object.entries(target_ranges).forEach(([metric, range]) => {
+      if (!feature_target_levels[metric]) return;
       if (range[0] === undefined || range[1] === undefined) return;
+      if (
+        range[0] === default_ranges[metric][0] &&
+        range[1] === default_ranges[metric][1]
+      )
+        return;
       goal += `The ${metric} should be ${make_categories_string(range_to_categories(metric, range as any))}. `;
     });
     return goal;
   }
 
   function make_categories_string(categories: string[]) {
-    return categories.slice(0, -1).join(", ") + "and " + categories.slice(-1);
+    if (categories.length === 1) return categories[0];
+    return categories.slice(0, -1).join(", ") + " and " + categories.slice(-1);
   }
 </script>
 
-<span class="rounded !outline-none cursor-help" use:melt={$trigger}>
-  {title}
-</span>
+<div
+  class="w-full cursor-auto"
+  use:melt={$trigger}
+  on:m-click={(e) => e.preventDefault()}
+>
+  <span
+    role="button"
+    tabindex="0"
+    class="rounded !outline-none cursor-help"
+    on:click={() => open.set(true)}
+    on:keyup={() => {}}
+  >
+    {title}
+  </span>
+</div>
+
 {#if $open}
   <div
     use:melt={$content}
-    transition:fade={{ duration: 100 }}
+    transition:fade={{ duration: 50 }}
     class="z-10 rounded-lg bg-amber-50 shadow p-2 text-sm font-mono"
   >
+    <div
+      role="button"
+      tabindex="0"
+      class="absolute top-0 right-0 w-6 h-6 p-1 hover:bg-gray-200"
+      on:click={() => open.set(false)}
+      on:keyup={() => {}}
+    >
+      <img src="close.svg" alt="close" class="w-full h-full" />
+    </div>
     <div class="underline font-semibold">{title} Block:</div>
     <div class="text-xs max-w-[20rem]">
       {prompt_block_explanations[title.toLowerCase()]}
@@ -111,7 +163,7 @@
           <img src="bot.svg" alt="*" class="absolute w-[90%] h-[90%]" />
         </div>
         <div
-          class="min-h-[4rem] max-h-[6rem] grow ml-3 textarea-border pl-2 flex overflow-y-auto flex-none gap-x-1 p-1"
+          class="min-h-[8rem] max-h-[8rem] grow ml-3 textarea-border pl-2 flex overflow-y-auto flex-none gap-x-1 p-1"
         >
           <div class="grow bg-stone text-xs relative">
             <span

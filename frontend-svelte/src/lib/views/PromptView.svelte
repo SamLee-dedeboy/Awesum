@@ -24,14 +24,6 @@
     persona: "You are a writing assistant.",
     context: "You will be given a news article to summarize.",
     constraints: "Please make sure the summary",
-    // examples: Array.from(Array(30).keys()).map((i) => ({
-    //   id: i.toString(),
-    //   cluster: "2",
-    //   summary: "summary",
-    //   text: "text",
-    //   coordinates: [0, 0],
-    //   features: {},
-    // })),
     examples: [],
     data_template: "${article}",
   };
@@ -62,8 +54,6 @@
         examples: examples,
         data_template: data_template,
         data: $test_set,
-        last_data: [],
-        // metrics: metrics,
       }),
     })
       .then((response) => response.json())
@@ -77,62 +67,38 @@
       });
   }
 
-  // function generate_prompt_promises(messages, summaries, selected_metrics) {
-  //   let prompt_promises: any[] = [];
-  //   summaries?.forEach((summary) => {
-  //     let prompt = [
-  //       ...messages,
-  //       { role: "user", content: "Paragraph: " + summary },
-  //     ];
-  //     // let prompt = messages[0].content + "\nParagraph: \n" + summary;
-  //     const url = new URL(server_address + "/executePrompt/");
-  //     const promise = () =>
-  //       prompt_promise_factory(url, prompt, selected_metrics);
-  //     prompt_promises.push(promise);
-  //   });
-  //   return prompt_promises;
-  // }
-
-  // function prompt_promise_factory(url, prompt, selected_metrics) {
-  //   return new Promise((resolve) => {
-  //     fetch(url, {
-  //       method: "POST",
-  //       headers: {
-  //         Accept: "application/json",
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ prompt: prompt, metrics: selected_metrics }),
-  //     })
-  //       .then((response) => response.json())
-  //       .then((data) => resolve(data));
-  //   });
-  // }
-
-  // function combine_messages(
-  //   instruction: string,
-  //   examples: tExampleData[],
-  //   user_input_data: string
-  // ) {
-  //   console.log({ instruction, user_input_data });
-  //   if (examples.length === 0) {
-  //     const messages: tMessage[] = [
-  //       { role: "system", content: instruction },
-  //       { role: "system", content: user_input_data },
-  //     ];
-  //     return messages;
-  //   } else {
-  //     let messages: tMessage[] = [{ role: "system", content: instruction }];
-  //     examples.forEach((example) => {
-  //       messages.push({ role: "user", content: instruction });
-  //       messages.push({ role: "assistant", content: example.example_output });
-  //     });
-  //     messages.push({ role: "user", content: user_input_data });
-  //     return messages;
-  //   }
-  // }
-
   export function add_example(example: tNode) {
     prompt_template.examples = [...prompt_template.examples, example];
+  }
+
+  function handlePaste(e) {
+    // Prevent the default action
+    e.preventDefault();
+
+    // Get the copied text from the clipboard
+    const text = e.clipboardData
+      ? (e.originalEvent || e).clipboardData.getData("text/plain")
+      : // For IE
+        window.clipboardData
+        ? window.clipboardData.getData("Text")
+        : "";
+
+    if (document.queryCommandSupported("insertText")) {
+      document.execCommand("insertText", false, text);
+    } else {
+      // Insert text at the current position of caret
+      const range = document.getSelection().getRangeAt(0);
+      range.deleteContents();
+
+      const textNode = document.createTextNode(text);
+      range.insertNode(textNode);
+      range.selectNodeContents(textNode);
+      range.collapse(false);
+
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
   }
 </script>
 
@@ -150,8 +116,9 @@
       </div>
       <div class="prompt-section-content min-h-[3rem] relative">
         <div
-          class="absolute left-0 top-0 bottom-0 right-0 editable"
+          class="absolute left-0 top-0 bottom-0 right-0 editable overflow-y-auto pr-3"
           contenteditable
+          on:paste={handlePaste}
           on:input={(e) => (prompt_template.persona = e.target?.textContent)}
         >
           {prompt_template.persona}
@@ -167,8 +134,9 @@
       </div>
       <div class="prompt-section-content min-h-[5rem] relative">
         <div
-          class="absolute left-0 top-0 bottom-0 right-0 editable"
+          class="absolute left-0 top-0 bottom-0 right-0 editable overflow-y-auto pr-3"
           contenteditable
+          on:paste={handlePaste}
           on:input={(e) => (prompt_template.context = e.target?.textContent)}
         >
           {prompt_template.context}
@@ -184,8 +152,9 @@
       </div>
       <div class="prompt-section-content min-h-[4rem] relative">
         <div
-          class="absolute left-0 top-0 bottom-0 right-0 editable"
+          class="absolute left-0 top-0 bottom-0 right-0 pr-3 editable overflow-y-auto"
           contenteditable
+          on:paste={handlePaste}
           on:input={(e) =>
             (prompt_template.constraints = e.target?.textContent)}
         >
@@ -201,7 +170,6 @@
         </div>
         <div
           class="prompt-section-content flex flex-wrap overflow-y-auto max-h-[10rem] items-center px-1"
-          on:input={(e) => e.target?.textContent}
         >
           {#each prompt_template.examples as example}
             <div class="w-fit">
@@ -223,14 +191,12 @@
       </div>
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header">
-          <PromptBlockHeader
-            title="Data"
-            prompt_content={prompt_template.data_template}
-          />
+          <PromptBlockHeader title="Data" enable_suggestions={false} />
         </div>
         <div
           class="prompt-section-content editable"
           contenteditable
+          on:paste={handlePaste}
           on:input={(e) =>
             (prompt_template.data_template = e.target?.textContent)}
         >

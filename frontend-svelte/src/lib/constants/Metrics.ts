@@ -47,7 +47,7 @@ export const metric_categories: {[key:string]: tMetricStep[]} = {
         {
             start: 0,
             end: 30,
-            "label": "Very informal",
+            "label": "Very Informal",
             "note": "Casual, conversational language."
         },
         {
@@ -71,7 +71,7 @@ export const metric_categories: {[key:string]: tMetricStep[]} = {
         {
             start: 200,
             end: -1,
-            "label": "Very formal",
+            "label": "Very Formal",
             "note": "Highly technical or legal language."
         }
     ],

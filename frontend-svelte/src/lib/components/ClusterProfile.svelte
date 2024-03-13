@@ -1,24 +1,29 @@
 <script lang="ts">
   import { createTooltip, melt } from "@melt-ui/svelte";
   import { createEventDispatcher } from "svelte";
+  import { selected_metrics } from "lib/store";
+  import { categorize_metric } from "lib/constants";
   import { fade } from "svelte/transition";
+  import type { tStatBarData } from "lib/types";
   const dispatch = createEventDispatcher();
   export let index: number;
   export let cluster_label: string;
   export let svgSize: { width: number; height: number; margin: number };
   export let hovered_cluster_label: string | undefined;
+  export let stat_data: tStatBarData[];
   const {
     elements: { trigger, content, arrow },
     states: { open },
   } = createTooltip({
     positioning: {
-      placement: "right",
-      gutter: 0,
+      placement: "right-start",
+      gutter: 1.5,
     },
     openDelay: 0,
     closeDelay: 0,
     closeOnPointerDown: false,
     forceVisible: true,
+    disableHoverableContent: true,
   });
 </script>
 
@@ -56,10 +61,25 @@
   <div
     use:melt={$content}
     transition:fade={{ duration: 100 }}
-    class="z-10 rounded-lg bg-white shadow pointer-events-none"
+    class="z-10 p-1 rounded-lg bg-amber-50 outline outline-1 outline-gray-400 shadow pointer-events-none text-[0.6rem] font-mono"
   >
-    <div use:melt={$arrow} />
-    <p class="px-4 py-1 text-magnum-700">{hovered_cluster_label}</p>
+    <p class="w-full text-center border-b border-gray-300 text-[0.7rem]">
+      Cluster Label:{hovered_cluster_label}
+    </p>
+    {#each $selected_metrics as metric, index}
+      <div class="flex">
+        <span class="w-[5rem]">{metric}:</span>
+        <span>
+          {stat_data[index].min.toFixed(2)} ({categorize_metric(
+            metric,
+            stat_data[index].min
+          )}) - {stat_data[index].max.toFixed(2)} ({categorize_metric(
+            metric,
+            stat_data[index].max
+          )})
+        </span>
+      </div>
+    {/each}
   </div>
 {/if}
 

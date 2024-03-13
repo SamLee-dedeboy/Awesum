@@ -62,7 +62,7 @@
             data-[disabled]:opacity-50"
           class:checked={$isSelected(item)}
           use:melt={$option({
-            value: item === "None" ? undefined : item,
+            value: item === "None" ? null : item,
             label: item,
           })}
         >

@@ -93,7 +93,6 @@ export class OptimizationStats {
         const svg = d3.select(`#${this.svgId}`)
         svg.selectAll("g").remove();
         this.update_tags()
-        console.log("optimization", optimization, svg.node(), this.svgId)
         const features = optimization.nodes.map(node => node.features)
         const recommendation_node_ids = get(recommended_nodes)?.map(node => node.id) || []
         const intra_cluster_distances = optimization.nodes.map(node => node.intra_cluster_distance!)
@@ -167,7 +166,6 @@ export class OptimizationStats {
     }
 
     highlightNode(node: tNode) {
-        console.log("highlight node", node.id, this.svgId)
         const svg = d3.select(`#${this.svgId}`)
         svg.selectAll("circle.test_case")
             .classed("dismissed", true)

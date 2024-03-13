@@ -1,6 +1,7 @@
 import concurrent
 from tqdm import tqdm
 import copy
+from pprint import pprint
 
 def request_chatgpt_gpt4(client, messages, format=None):
     model = 'gpt-3.5-turbo-0125'
@@ -122,14 +123,12 @@ def formulate_prompt_block_suggestion_prompt(block_name, block_definition, curre
             "role": "system",
             "content": """You are a block recommendation assistant. 
             You are given a {block_name} block.
-            The definition of the block is: {block_definition}
-            The user needs you to improve the prompts to be written in the block.
+            Block definition: {block_definition}
+            The user has a simple version of {block_name} block content. He wants to know how to improve it.
             Please give suggestions specific to their current prompt and intended goal.
+            Point out what is missing or what can be improved according to the {block_name} block definition.
             Be concise and reply with no more than 50 words.
-            Reply with the following JSON format:
-            {{ 
-                "improved_version": (string, less than 50 words),
-            }}
+            Respond with a coherent paragraph. Do not use bullet points or lists.
             """.format(block_name=block_name, block_definition=block_definition)
         },
         {
@@ -138,5 +137,5 @@ def formulate_prompt_block_suggestion_prompt(block_name, block_definition, curre
             Intended Goal: {goal}""".format(current_prompt=current_prompt, goal=goal)
         }
     ]
-
+    pprint(messages)
     return messages
