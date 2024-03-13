@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createPopover, createTooltip, melt } from "@melt-ui/svelte";
+  import { createPopover, melt } from "@melt-ui/svelte";
   import { fade } from "svelte/transition";
   import {
     server_address,
@@ -12,7 +12,7 @@
     feature_target_levels,
     default_ranges,
   } from "lib/store";
-  import { categorize_metric, topic_dict } from "lib/constants";
+  import { topic_dict } from "lib/constants";
   export let title: string;
   export let prompt_content: string = "";
   export let enable_suggestions: boolean = true;
@@ -25,21 +25,9 @@
     $default_ranges,
     $feature_target_levels
   );
-  // const {
-  //   elements: { trigger, content, arrow },
-  //   states: { open },
-  // } = createTooltip({
-  //   positioning: {
-  //     placement: "right-start",
-  //     gutter: 0,
-  //   },
-  //   openDelay: 0,
-  //   closeDelay: 0,
-  //   closeOnPointerDown: false,
-  //   forceVisible: true,
-  // });
+
   const {
-    elements: { trigger, content, arrow, close },
+    elements: { trigger, content },
     states: { open },
   } = createPopover({
     positioning: {

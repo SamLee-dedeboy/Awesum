@@ -1,24 +1,17 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount, tick } from "svelte";
+  import { onMount, tick } from "svelte";
   import { selected_metrics, selected_topic } from "lib/store";
-  import {
-    createPopover,
-    createSelect,
-    createTooltip,
-    melt,
-  } from "@melt-ui/svelte";
+  import { createTooltip, melt } from "@melt-ui/svelte";
   import SelectLevel from "lib/components/SelectLevel.svelte";
   import {
     server_address,
     topic_options,
-    cluster_colors,
     metrics,
     feature_descriptions,
     categorize_metric,
     metric_categories,
   } from "lib/constants";
   import { fade } from "svelte/transition";
-  // import { CorrelationGraph } from "lib/renderers/correlation_graph";
   import { CorrelationMatrix } from "lib/renderers/correlation_matrix";
   import MetricRecommendation from "lib/components/MetricRecommendation.svelte";
   import {
@@ -28,13 +21,7 @@
     feature_target_levels,
   } from "lib/store";
   import type { tNode, tStatistics } from "lib/types";
-  const dispatch = createEventDispatcher();
 
-  // let correlation_graph = new CorrelationGraph(
-  //   "metric-correlations-svg",
-  //   { width: 100, height: 100, center: [50, 50] },
-  //   9
-  // );
   let correlation_matrix = new CorrelationMatrix(
     "metric-correlations-svg",
     {
@@ -112,7 +99,6 @@
     })
       .then((response) => response.json())
       .then((res) => {
-        // recommended_cluster.set(data.closest_cluster);
         const closest_cluster = res.closest_cluster;
         const cluster_stat = stat_data.cluster_statistics[closest_cluster];
         cluster_stat?.forEach((stat, index) => {
@@ -218,12 +204,7 @@
     </div>
   </div>
   <div class="flex w-full flex-1">
-    <MetricRecommendation
-      {data}
-      {metric_metadata}
-      on:highlight_recommendation={(e) =>
-        dispatch("highlight_recommendation", e.detail)}
-    ></MetricRecommendation>
+    <MetricRecommendation {data} {metric_metadata}></MetricRecommendation>
   </div>
 </div>
 {#if $open && hovered_metric}

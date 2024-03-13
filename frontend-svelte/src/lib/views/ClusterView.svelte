@@ -1,8 +1,8 @@
 <script lang="ts">
   import * as d3 from "d3";
   import { onMount, tick } from "svelte";
-  import { cluster_colors, metrics } from "lib/constants";
-  import type { tStatistics, tNode } from "lib/types";
+  import { cluster_colors } from "lib/constants";
+  import type { tNode } from "lib/types";
   import {
     BSplineShapeGenerator,
     BubbleSet,
@@ -10,25 +10,14 @@
     ShapeSimplifier,
   } from "bubblesets";
 
-  import {
-    example_nodes,
-    // recommended_cluster,
-    recommended_nodes,
-  } from "lib/store";
+  import { example_nodes, recommended_nodes } from "lib/store";
 
-  import {
-    target_ranges,
-    // cluster_mode,
-    selected_metrics,
-    test_set,
-  } from "lib/store";
   export let data: tNode[];
   export let centroids: { [key: string]: tNode[] };
   export let highlight_cluster_label: string | undefined;
   let show_noise: boolean = false;
   let show_test_set: boolean = false;
   let show_recommendations: boolean = false;
-  export let statistics: tStatistics;
 
   recommended_nodes.subscribe((value) => {
     if (!value) return;
@@ -77,7 +66,6 @@
   $: update_nodes(data);
   function update_nodes(data: tNode[]) {
     if (data) {
-      // data = data.filter((d) => d.cluster !== "-1");
       update(
         data.filter((d) => d.cluster !== "-1"),
         centroids
@@ -85,17 +73,6 @@
       update_noise(false, data);
     }
   }
-
-  // $: if ($cluster_mode === "metric") {
-  //   update_by_metric($target_ranges);
-  //   d3.select("g.cluster-mode")
-  //     .attr("pointer-events", "auto")
-  //     .select("text")
-  //     // .text("cluster")
-  //     .attr("fill", "black");
-  // } else {
-  //   update_by_cluster();
-  // }
 
   $: update_highlight_cluster(highlight_cluster_label);
 
@@ -222,38 +199,38 @@
       .attr("transform", `translate(${margin}, ${margin})`);
     const noise_group = content.append("g").attr("class", "noise-group");
     const utility_group = svg.append("g").attr("class", "utility");
-    const show_test_set_button = {
-      parent: utility_group,
-      class_name: "show-test-set",
-      activated_color: "rgb(187 247 208)",
-      deactivated_color: "white",
-      activated_text_color: "black",
-      deactivated_text_color: "#aaaaaa",
-      text: "test set",
-      x: 5,
-      y: 5,
-      width: 60,
-      height: 20,
-      onClick: () => {
-        show_test_set = !show_test_set;
-        const test_case_circles = content
-          .selectAll("circle")
-          .filter((d) => d.test_case);
-        line_group
-          .selectAll("line.test-case-line")
-          .data(test_case_circles)
-          .join("line")
-          .classed("test-case-line", true)
-          .attr("x1", (d) => +d3.select(d).attr("cx") + margin)
-          .attr("y1", (d) => +d3.select(d).attr("cy") + margin)
-          .attr("x2", () => 5 + 60 / 2)
-          .attr("y2", () => 5 + 20 / 2)
-          .attr("opacity", show_test_set ? 0.8 : 0)
-          .attr("stroke", "gray")
-          .attr("stroke-width", 1)
-          .attr("stroke-dasharray", "4,2");
-      },
-    };
+    // const show_test_set_button = {
+    //   parent: utility_group,
+    //   class_name: "show-test-set",
+    //   activated_color: "rgb(187 247 208)",
+    //   deactivated_color: "white",
+    //   activated_text_color: "black",
+    //   deactivated_text_color: "#aaaaaa",
+    //   text: "test set",
+    //   x: 5,
+    //   y: 5,
+    //   width: 60,
+    //   height: 20,
+    //   onClick: () => {
+    //     show_test_set = !show_test_set;
+    //     const test_case_circles = content
+    //       .selectAll("circle")
+    //       .filter((d) => d.test_case);
+    //     line_group
+    //       .selectAll("line.test-case-line")
+    //       .data(test_case_circles)
+    //       .join("line")
+    //       .classed("test-case-line", true)
+    //       .attr("x1", (d) => +d3.select(d).attr("cx") + margin)
+    //       .attr("y1", (d) => +d3.select(d).attr("cy") + margin)
+    //       .attr("x2", () => 5 + 60 / 2)
+    //       .attr("y2", () => 5 + 20 / 2)
+    //       .attr("opacity", show_test_set ? 0.8 : 0)
+    //       .attr("stroke", "gray")
+    //       .attr("stroke-width", 1)
+    //       .attr("stroke-dasharray", "4,2");
+    //   },
+    // };
     // add_utility_button(show_test_set_button);
 
     const show_noise_button = {
@@ -264,7 +241,7 @@
       activated_text_color: "black",
       deactivated_text_color: "#aaaaaa",
       text: "noise",
-      x: 70,
+      x: 5,
       y: 5,
       width: 45,
       height: 20,
@@ -282,7 +259,7 @@
       activated_text_color: "black",
       deactivated_text_color: "#aaaaaa",
       text: "recommendations",
-      x: 120,
+      x: 55,
       y: 5,
       width: 150,
       height: 20,
@@ -298,7 +275,7 @@
       activated_text_color: "black",
       deactivated_text_color: "#aaaaaa",
       text: "add to examples",
-      x: 275,
+      x: 210,
       y: 5,
       width: 135,
       height: 20,
@@ -308,33 +285,6 @@
     add_utility_button(add_to_examples_button);
     d3.select("g.add-to-examples").attr("pointer-events", "none");
 
-    const cluster_mode_button = {
-      parent: utility_group,
-      class_name: "cluster-mode",
-      activated_color: "rgb(187 247 208)",
-      deactivated_color: "white",
-      activated_text_color: "black",
-      deactivated_text_color: "#aaaaaa",
-      text: "switch",
-      x: 415,
-      y: 5,
-      width: 60,
-      height: 20,
-      onClick: toggle_cluster_mode,
-      stateless: true,
-    };
-    // add_utility_button(cluster_mode_button);
-    // d3.select("g.cluster-mode").attr("pointer-events", "none");
-    // const xAxis = d3.axisBottom(xScale);
-    // const yAxis = d3.axisLeft(yScale);
-
-    // content
-    //   .append("g")
-    //   .attr("transform", `translate(0, ${innerHeight})`)
-    //   .call(xAxis);
-
-    // content.append("g").call(yAxis);
-
     content.append("g").attr("class", "node-group");
   }
 
@@ -342,14 +292,8 @@
     show_recommendations = !show_recommendations;
   }
 
-  function toggle_cluster_mode() {
-    // d3.select("g.cluster-mode").select("text").text($cluster_mode);
-    // cluster_mode.set($cluster_mode === "metric" ? "cluster" : "metric");
-  }
-
   $: update_recommendations(show_recommendations);
   function update_recommendations(show_recommendations) {
-    // if ($recommended_cluster === undefined) return;
     if ($recommended_nodes === undefined) return;
     const svg = d3.select("#cluster-svg");
     const line_group = svg.select("g.line-group");
@@ -488,20 +432,6 @@
       .attr("text-anchor", "middle");
   }
 
-  function compute_distance(d) {
-    let total_distance: number | undefined = undefined;
-    $selected_metrics.forEach((metric) => {
-      if ($target_ranges[metric][0] === undefined) return;
-      const value = d.features[metric];
-      const distance = in_range(value, $target_ranges[metric])
-        ? 0
-        : distance_to_range(value, $target_ranges[metric]);
-      if (total_distance === undefined) total_distance = 0;
-      total_distance += distance;
-    });
-    return total_distance;
-  }
-
   function create_bubble_path(points, radius) {
     const pad = 0;
     // bubbles can be reused for subsequent runs or different sets of rectangles
@@ -532,21 +462,8 @@
 
 <div class="container w-full h-full relative">
   <svg id="cluster-svg" class="w-full h-full"> </svg>
-  <!-- <div class="absolute top-0 left-0 flex flex-col">
-    <Switch label="Show Noise" bind:checked={show_noise}></Switch>
-    <Switch label="Show Test set" bind:checked={show_test_set}></Switch>
-  </div> -->
-  <div class="absolute top-0 right-0">
-    <!-- <ClusterModeRadio id="cluster-mode" bind:cluster_mode={$cluster_mode}
-    ></ClusterModeRadio> -->
-    <!-- {#if $cluster_mode === "metric"}
-      <div class="ml-auto right-0 w-fit pr-1 text-sm font-sans">
-        {metrics[$target_range_metric]}: {$target_ranges[
-          $target_range_metric
-        ][0]} - {$target_ranges[$target_range_metric][1]}
-      </div>
-    {/if} -->
-  </div>
+
+  <div class="absolute top-0 right-0"></div>
 </div>
 
 <style lang="postcss">
@@ -555,8 +472,6 @@
   }
   #cluster-svg {
     & .dismissed {
-      /* opacity: 0.2; */
-      /* stroke-width: 1; */
     }
     & .highlight {
       stroke: #676767;

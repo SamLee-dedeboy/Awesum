@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { metric_categories, metric_steps } from "lib/constants";
+  import { metric_steps } from "lib/constants";
   import {
     target_ranges,
     recommended_nodes,

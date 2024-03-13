@@ -175,12 +175,12 @@ export const metric_categories: {[key:string]: tMetricStep[]} = {
     ]
 }
 export const metric_steps: {[key:string]: number} = {
-    "complexity": 1,
-    "formality": 1,
-    "sentiment": 0.1,
-    "faithfulness": 0.1,
-    "naturalness": 0.1,
-    "length": 10
+    "complexity": 0.01,
+    "formality": 0.01,
+    "sentiment": 0.01,
+    "faithfulness": 0.01,
+    "naturalness": 0.01,
+    "length": 1
 }
 export const categorize_metric = ( metric: string, value: number ): string => {
     const ranges = metric_categories[metric]

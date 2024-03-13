@@ -13,7 +13,6 @@
     metrics,
     optimization_colors,
     cluster_colors,
-    optimization_opacities,
     server_address,
   } from "lib/constants";
 
@@ -38,8 +37,6 @@
   let optimization_stat_instances: OptimizationStats[] = [];
   onMount(() => {
     opt_scatterplot.init();
-    // opt_scatterplot.rotate_gradient();
-    // rotate_gradient();
   });
   $: if (optimizations.length > 1) {
     src_index = optimizations.length - 2;
@@ -140,45 +137,6 @@
     optimization_stat_instances[dst_index].dehighlightAll();
   }
 
-  function rotate_gradient() {
-    let l: any = document.getElementById("l");
-    let x1 = parseFloat(l.getAttribute("x1"));
-    let y1 = parseFloat(l.getAttribute("y1"));
-    let x2 = parseFloat(l.getAttribute("x2"));
-    let y2 = parseFloat(l.getAttribute("y2"));
-    let w = parseFloat(l.getAttribute("stroke-width"));
-
-    // step 1
-    let dx = x2 - x1;
-    let dy = y2 - y1;
-
-    // step 2
-    const len = Math.sqrt(dx * dx + dy * dy);
-    dx = dx / len;
-    dy = dy / len;
-
-    // step 3
-    let temp = dx;
-    dx = -dy;
-    dy = temp;
-
-    //step 4
-    dx = w * dx;
-    dy = w * dy;
-
-    //step 5
-    let gradient_x1 = x1 + dx * 0.5;
-    let gradient_y1 = y1 + dy * 0.5;
-    let gradient_x2 = x1 - dx * 0.5;
-    let gradient_y2 = y1 - dy * 0.5;
-
-    let e: any = document.getElementById("e");
-    e.setAttribute("x1", gradient_x1);
-    e.setAttribute("y1", gradient_y1);
-    e.setAttribute("x2", gradient_x2);
-    e.setAttribute("y2", gradient_y2);
-  }
-
   function get_opt_color(
     opt_index: number,
     total_length: number,
@@ -255,12 +213,6 @@
           }}
         >
           <div class="flex flex-col flex-1">
-            <!-- {#if index === tmp_src_index}
-              <span class="comparison-tag"> from </span>
-            {/if}
-            {#if index === tmp_dst_index}
-              <span class="comparison-tag"> to </span>
-            {/if} -->
             <div class="optimization-title flex underline text-semibold">
               Prompt #{index}
             </div>

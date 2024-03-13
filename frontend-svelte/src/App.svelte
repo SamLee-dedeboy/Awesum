@@ -2,16 +2,13 @@
   import PromptView from "lib/views/PromptView.svelte";
   import ClusterView from "lib/views/ClusterView.svelte";
   import StatisticsView from "lib/views/StatisticsView.svelte";
-  import MetricsView from "lib/views/MetricsView.svelte";
   import TrackingView from "lib/views/TrackingView.svelte";
   import SummaryView from "lib/views/SummaryView.svelte";
   import MetricSelectionView from "lib/views/MetricSelectionView.svelte";
   import Select from "lib/components/Select.svelte";
-  import { onMount } from "svelte";
   import {
     // recommended_cluster,
     selected_topic,
-    feature_target_levels,
     test_set,
     example_nodes,
     recommended_nodes,
@@ -33,15 +30,11 @@
     tOptimization,
     tSelectedClusterData,
     tStatBarData,
-    tMessage,
     tPrompt,
     tDataset,
     tMetricMetadata,
-    tExampleData,
-    tMetricRecommendationResponse,
     tStatistics,
   } from "lib/types";
-  let prompt_view;
   let cluster_view;
   let statistics_view;
   let cluster_loading = true;
@@ -53,28 +46,6 @@
   let selected_cluster: tSelectedClusterData | undefined = undefined;
   let hovered_cluster_label: string | undefined = undefined;
   let optimizations: tOptimization[] = [];
-  // let show_noise: boolean = true;
-  let firstSubscribe = true;
-  let cluster_params = {
-    name: "optics",
-    params: {
-      // for optics
-      min_samples: 10,
-      metric: "cosine",
-      // for kmeans
-      n_clusters: 10,
-      random_state: 42,
-    },
-  };
-
-  // selected_metrics.subscribe((value) => {
-  //   if (firstSubscribe) {
-  //     firstSubscribe = false;
-  //     return;
-  //   }
-  //   adjustMetrics(dataset?.dataset, cluster_params, value);
-  // });
-
   $: if ($selected_topic) fetch_data($selected_topic);
   function fetch_data(topic) {
     fetch(server_address + "/data/", {
@@ -114,7 +85,6 @@
     optimizations = [
       ...optimizations,
       {
-        // summaries: cluster_nodes.map((node) => node.summary),
         nodes: results,
         features: results.map((node) => node.features),
         prompt: prompt,
@@ -139,25 +109,6 @@
         statistics: statistics,
       },
     ];
-    // cluster_optimizations = {};
-    // cluster_labels.forEach((cluster_label) => {
-    //   cluster_optimizations[cluster_label] = [
-    //     {
-    //       // summaries: [],
-    //       cluster_nodes: [],
-    //       features: [],
-    //       prompts: initial_prompt,
-    //       statistics: statistics.cluster_statistics[cluster_label],
-    //     },
-    //   ];
-    // });
-    // dataset.forEach((datum) => {
-    //   const cluster_label = datum.cluster;
-    //   // cluster_optimizations[cluster_label][0].summaries.push(datum.summary);
-    //   cluster_optimizations[cluster_label][0].cluster_nodes.push(datum);
-    //   cluster_optimizations[cluster_label][0].features.push(datum.features);
-    // });
-    // cluster_optimizations = cluster_optimizations;
   }
 
   function initTargetRanges(statistics: tStatistics) {
@@ -239,13 +190,6 @@
     distance /= node.length;
     return distance;
   }
-
-  function handleHighlightRecommendation() {
-    // cluster_view.toggle_recommendations();
-    // const cluster_label: string = e.detail;
-    // console.log(cluster_label);
-    // cluster_view.update_highlight_cluster(cluster_label);
-  }
 </script>
 
 <div class="h-screen w-screen p-1 flex gap-x-1 overflow-hidden">
@@ -265,7 +209,6 @@
             stat_data={dataset.global_statistics}
             {metric_metadata}
             data={dataset.dataset}
-            on:highlight_recommendation={handleHighlightRecommendation}
           ></MetricSelectionView>
         </div>
         <div class="flex h-full grow py-1">
@@ -287,7 +230,6 @@
                   bind:this={cluster_view}
                   data={dataset.dataset}
                   centroids={dataset.centroids || {}}
-                  statistics={dataset.global_statistics}
                   highlight_cluster_label={hovered_cluster_label}
                 ></ClusterView>
               </div>
@@ -353,7 +295,6 @@
               <div class="flex gap-x-0.5 items-center flex-wrap">
                 {#each nodes as example}
                   <div class="w-fit">
-                    <!-- <div class="">{example.id}</div> -->
                     <svg class="w-[1rem] h-[1rem]" viewBox="0 0 10 10">
                       <circle
                         fill={cluster_colors(example.cluster)}
@@ -367,9 +308,6 @@
                     >
                   </div>
                 {/each}
-                <!-- <span class="ml-1">
-                  {nodes.length > 0 ? "-" : ""}
-                </span> -->
               </div>
               <span class="text-xs font-mono flex-1 flex-nowrap min-w-[4rem]">
                 {nodes.length} / {$recommended_nodes.length}

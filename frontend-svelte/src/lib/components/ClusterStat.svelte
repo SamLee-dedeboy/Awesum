@@ -4,7 +4,6 @@
 
   export let cluster_stat: tStatBarData[] | undefined;
   export let global_means: number[];
-  // const metric_columns = ["Cluster"].concat(metrics);
 </script>
 
 <div class="w-full grid grid-cols-5 auto-rows-auto text-xs">

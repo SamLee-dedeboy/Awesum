@@ -1,7 +1,7 @@
 import * as d3 from "d3"
 import type { tOptimization, tNode } from "lib/types";
 import { metric_categories, metric_abbrs } from "lib/constants";
-import { get, writable } from "svelte/store";
+import { get } from "svelte/store";
 import { recommended_nodes } from "lib/store";
 export class OptimizationStats {
     svgId: string
@@ -38,8 +38,6 @@ export class OptimizationStats {
         ); 
         this.xScales = []
         metrics.forEach((metric, index) => {
-            // const half_width = Math.max(Math.abs(global_maxes[index] - global_means[index]), Math.abs(global_means[index] - global_mins[index]))
-            // this.xScales.push(d3.scaleLinear().domain([-half_width, half_width]).range([this.tag_width, this.svgSize.width]))
             const ranges = metric_categories[metric]
             const xMax =
             ranges[ranges.length - 1].end === -1
@@ -75,9 +73,7 @@ export class OptimizationStats {
                 .attr("width", 100)
                 .attr("height", self.yScale.bandwidth()/1.5)
                 .attr("fill", "#c7f0a5")
-                // .attr("stroke", "black")
                 .attr("stroke-width", 1)
-                // .attr("rx", "2%")
             group.append("text")
                 .attr("class", "tag-text")
                 .attr("x", 50)
@@ -107,15 +103,6 @@ export class OptimizationStats {
            
             const testset_nodes = optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id)).sort((a, b) => -(a.intra_cluster_distance! - b.intra_cluster_distance!))
 
-            // const test_nodes = metric_group.selectAll("rect.test_case")
-            //     .data(testset_nodes)
-            //     .join("rect")
-            //     .attr("class", "test_case")
-            //     .attr("x", (node: tNode) => this.xScales[i](node.features[metric] - this.global_means[i]))
-            //     .attr("y", this.yScale(i))
-            //     .attr("width", 8)
-            //     .attr("height", this.yScale.bandwidth())
-            //     .attr("fill", "gray")
             const test_nodes = metric_group.selectAll("circle.test_case")
                 .data(testset_nodes)
                 .join("circle")
@@ -140,28 +127,15 @@ export class OptimizationStats {
             const max = target_ranges[metric][1]!
             metric_group.append("rect")
                 .attr("class", "recommendation")
-                // .attr("x", this.xScales[i](min - this.global_means[i]))    
                 .attr("x", this.xScales[i](min))    
                 .attr("y", this.yScale(i) + this.yScale.bandwidth()/4)
-                // .attr("width", this.xScales[i](max) - this.xScales[i](min))
-                // .attr("width", this.xScales[i](max - this.global_means[i]) - this.xScales[i](min - this.global_means[i]))
                 .attr("width", this.xScales[i](max) - this.xScales[i](min))
                 .attr("height", this.yScale.bandwidth()/2)
                 .attr("fill", "#90ee9090") // lightgreen
-                // .attr("stroke", "gray")
                 .attr("stroke-dasharray", "20,20")
                 .attr("stroke-width", 1)
                 .attr("opacity", target_features.includes(metric) ? 1 : 0)
                 .lower()
-        // const ideal_node_elements = metric_group.selectAll("circle.ideal_node")
-        //     .data(ideal_nodes)
-        //     .join("circle")
-        //     .attr("class", "ideal_node")
-        //     .attr("cx", (node: tNode) => this.xScales[i](node.features[metric]))
-        //     .attr("cy", this.yScale(i))
-        //     .attr("r", 10)
-        //     .attr("fill", "red")
-        //     .attr("stroke", "black")
         })
     }
 

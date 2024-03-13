@@ -1,19 +1,8 @@
 <script lang="ts">
-  import type {
-    tNode,
-    tMessage,
-    tExampleMessage,
-    tPrompt,
-    tExampleData,
-  } from "lib/types";
+  import type { tNode, tPrompt } from "lib/types";
   import { createEventDispatcher } from "svelte";
-  import { cluster_colors, metrics } from "lib/constants";
-  import {
-    selected_metrics,
-    test_set,
-    example_nodes,
-    executing_prompt,
-  } from "lib/store";
+  import { cluster_colors } from "lib/constants";
+  import { test_set, example_nodes, executing_prompt } from "lib/store";
   import PromptBlockHeader from "lib/components/PromptBlockHeader.svelte";
 
   const server_address = "http://localhost:5000";
@@ -105,10 +94,8 @@
 <div class="flex flex-col px-1 overflow-y-auto h-full">
   <div class="flex justify-between border-b border-gray-200"></div>
   <div id="prompt-table" class="flex flex-col max-w-full gap-y-1">
-    <!-- <div class="grow flex gap-x-1"> -->
     <div class="prompt-section flex flex-col flex-1">
       <div class="prompt-section-header">
-        <!-- <span class=" rounded !outline-none"> Persona </span> -->
         <PromptBlockHeader
           title="Persona"
           prompt_content={prompt_template.persona}
@@ -162,7 +149,6 @@
         </div>
       </div>
     </div>
-    <!-- </div> -->
     <div class="flex grow gap-x-4">
       <div class="prompt-section flex flex-col flex-1">
         <div class="prompt-section-header relative">
@@ -173,7 +159,6 @@
         >
           {#each prompt_template.examples as example}
             <div class="w-fit">
-              <!-- <div class="">{example.id}</div> -->
               <svg class="w-[1rem] h-[1rem]" viewBox="0 0 10 10">
                 <circle
                   fill={cluster_colors(example.cluster)}
@@ -248,17 +233,4 @@
   .editable:focus {
     outline: none;
   }
-
-  /* :global(.loader) {
-    animation: rotation 2s infinite linear;
-  }
-
-  @keyframes rotation {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  } */
 </style>

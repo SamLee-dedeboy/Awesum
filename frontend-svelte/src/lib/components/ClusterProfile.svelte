@@ -61,7 +61,7 @@
   <div
     use:melt={$content}
     transition:fade={{ duration: 100 }}
-    class="z-10 p-1 rounded-lg bg-amber-50 outline outline-1 outline-gray-400 shadow pointer-events-none text-[0.6rem] font-mono"
+    class="z-40 p-1 rounded-lg bg-amber-50 outline outline-1 outline-gray-400 shadow pointer-events-none text-[0.6rem] font-mono"
   >
     <p class="w-full text-center border-b border-gray-300 text-[0.7rem]">
       Cluster Label:{hovered_cluster_label}

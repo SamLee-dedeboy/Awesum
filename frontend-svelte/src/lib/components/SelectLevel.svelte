@@ -1,5 +1,4 @@
 <script lang="ts">
-  // import { Check, ChevronDown } from '$icons/index.js';
   import { createSelect, melt } from "@melt-ui/svelte";
   import { fade } from "svelte/transition";
   import { writable } from "svelte/store";
@@ -31,7 +30,6 @@
 </script>
 
 <div class="flex flex-col gap-1">
-  <!-- svelte-ignore a11y-label-has-associated-control - $label contains the 'for' attribute -->
   <button
     class="flex h-5 min-w-[5rem] items-center justify-center rounded bg-white px-1 py-2
     text-magnum-700 shadow transition-opacity hover:opacity-90"
@@ -39,7 +37,6 @@
     aria-label="select-trigger"
   >
     {$selected_label_store.label || "Select a level"}
-    <!-- <ChevronDown class="size-5" /> -->
   </button>
   {#if $open}
     <div
@@ -66,10 +63,6 @@
             label: item,
           })}
         >
-          <!-- <div class="check {$isSelected(item) ? 'block' : 'hidden'}">
-                <Check class="size-4" />
-            </div> -->
-
           {item}
         </div>
       {/each}
@@ -87,6 +80,5 @@
     top: 50%;
     z-index: theme(zIndex.20);
     translate: 0 calc(-50% + 1px);
-    /* color: theme(colors.magnum.500); */
   }
 </style>

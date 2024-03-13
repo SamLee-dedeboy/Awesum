@@ -1,15 +1,14 @@
-import type { tOptimization, tNode, tStatistics } from "lib/types";
+import type { tOptimization, tNode } from "lib/types";
 // import { optimization_colors } from "lib/constants/Colors";
 import { cluster_colors, optimization_opacities, optimization_colors } from "lib/constants";
 import {
     BSplineShapeGenerator,
     BubbleSet,
     PointPath,
-    ShapeSimplifier,
   } from 'bubblesets';
   
 import * as d3 from "d3";
-import { selected_metrics, target_ranges, recommended_nodes } from "lib/store";
+import { recommended_nodes } from "lib/store";
 import { get } from "svelte/store";
 const node_radius = 4
 export class OptScatterplot  {  
@@ -108,8 +107,6 @@ export class OptScatterplot  {
         // dst
         const dst_group = node_group.select("g.dst")
         dst_group.selectAll("*").remove()
-        // const dst_nodes = dst_optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id))
-        // const dst_nodes = dst_optimization.nodes
         this.update_optimization_snapshot(dst_nodes, dst_group, bubble_group, nodeRadiusScale, optimization_colors[1], optimization_opacities[1], "dst")
     }
 
@@ -134,12 +131,10 @@ export class OptScatterplot  {
             .attr("cursor", "pointer")
             .on("mouseover", (_, d) => this.handleNodeClicked(d, snapshot_type))
             .on("mouseout", (_, d) => this.handleNodeUnclicked(d, snapshot_type))
-            // .on("click", (_, d) => this.handleNodeClicked(d, snapshot_type))
         const testset_bubble = create_bubble_path(nodes.map(node => [self.xScale(node.coordinates[0]), self.yScale(node.coordinates[1])]), 10)
         bubble_parent.append("path")
             .attr("class", "bubble_contour").attr("d", testset_bubble)
             .attr("fill", color)
-            // .attr("opacity", opacity)
     }
 
     update_movement(src_optimization: tOptimization, dst_optimization: tOptimization, trajectories: any[]) {
@@ -147,7 +142,6 @@ export class OptScatterplot  {
         const self = this
         const svg = d3.select(`#${this.svgId}`);
         const line_group = svg.select("g.lines");
-        // const recommendation_node_ids = get(recommended_nodes)?.map(node => node.id) || []
         const recommendation_nodes = get(recommended_nodes)
         const kept_node_indices = src_optimization.nodes.reduce((acc, node, i) => { if(!too_close(node, recommendation_nodes)) acc.push(i); return acc}, [] as any[])
         // node radius scale
@@ -261,20 +255,6 @@ function compute_centroid(points: number[][]) {
     return [centroid[0]/points.length, centroid[1]/points.length] as [number, number]
 }
 
-function categorize_direction(d: [tNode, tNode], ideal_node_centroid: number[]) {
-    const src = d[0].coordinates
-    const dst = d[1].coordinates
-    const src_to_dst = [dst[0] - src[0], dst[1] - src[1]]
-    const src_to_ideal = [ideal_node_centroid[0] - src[0], ideal_node_centroid[1] - src[1]]
-    const angle = Math.abs(Math.atan2(src_to_dst[1], src_to_dst[0]) - Math.atan2(src_to_ideal[1], src_to_ideal[0]))
-    const right_angle = Math.PI / 4
-    const off_angle = Math.PI / 2
-    console.log(180 * angle / Math.PI, angle < right_angle, angle > off_angle)
-    if(angle < right_angle) return "green"
-    if(angle > off_angle) return "red"
-    return "gray"
-}
-
 function categorize_distance(d: [tNode, tNode], centroid: [number, number]) {
     const src_distance: number = Math.sqrt((d[0].coordinates[0] - centroid[0])**2 + (d[0].coordinates[1] - centroid[1])**2)
     const dst_distance: number = Math.sqrt((d[1].coordinates[0] - centroid[0])**2 + (d[1].coordinates[1] - centroid[1])**2)
@@ -284,76 +264,6 @@ function categorize_distance(d: [tNode, tNode], centroid: [number, number]) {
 }
 
 
-function _categorize_distance(d: [tNode, tNode], selected_metrics: string[], target_ranges: any, global_mins: number[], global_maxes: number[]) {
-    const src_distance: number = compute_distance(d[0], selected_metrics, target_ranges, global_mins, global_maxes)
-    const dst_distance: number = compute_distance(d[1], selected_metrics, target_ranges, global_mins, global_maxes)
-    console.log(src_distance, dst_distance, src_distance - dst_distance, d[0].cluster)
-    if (Math.abs(src_distance - dst_distance) < 0.15) return "#d0d0d0"
-    else if(src_distance > dst_distance) return "#98f955"
-    else return "#ff0000"
-}
-
-
-function rotate_gradient(l, linearGradient) {
-        // let l: any = document.getElementById("l");
-        let x1=parseFloat(l.getAttribute("x1"));
-        let y1=parseFloat(l.getAttribute("y1"));
-        let x2=parseFloat(l.getAttribute("x2"));
-        let y2=parseFloat(l.getAttribute("y2"));
-        let w=parseFloat(l.getAttribute("stroke-width"));
-        console.log({x1, y1, x2, y2, w})
-    
-        // step 1
-        let dx=x2-x1;
-        let dy=y2-y1;
-    
-        // step 2
-        const len=Math.sqrt(dx*dx+dy*dy);
-        dx=dx/len;
-        dy=dy/len;
-    
-        // step 3
-        let temp=dx;
-        dx=-dy;
-        dy=temp;
-        
-        //step 4
-        dx=w*dx;
-        dy=w*dy;
-    
-        //step 5
-        let gradient_x1=x1+dx*0.5;
-        let gradient_y1=y1+dy*0.5;
-        let gradient_x2=x1-dx*0.5;
-        let gradient_y2=y1-dy*0.5;
-    
-        // let e: any  = document.getElementById("e");
-        linearGradient.setAttribute("x1",gradient_x1);
-        linearGradient.setAttribute("y1",gradient_y1);
-        linearGradient.setAttribute("x2",gradient_x2);
-        linearGradient.setAttribute("y2",gradient_y2);
-    }
-
-function compute_distance(d: tNode, selected_metrics: string[], target_ranges: any, global_mins: number[], global_maxes: number[]) {
-    let total_distance: number  = 0
-    let distances: number[] = []
-    selected_metrics.forEach((metric, index) => {
-        if (target_ranges[metric][0] === undefined) return;
-        const value = d.features[metric];
-        const distance = in_range(value, target_ranges[metric])
-        ? 0
-        : distance_to_range(value, target_ranges[metric], global_mins[index], global_maxes[index]);
-        total_distance += distance;
-        distances.push(distance)
-    });
-    return total_distance;
-}
-function in_range(value, range) {
-    return value >= range[0] && value <= range[1];
-}
-function distance_to_range(value, range, min, max) {
-    return (Math.min(Math.abs(value - range[0]), Math.abs(value - range[1])) )/ (max - min);
-}
 
 function kept_indices(arr, indices) {
     return arr.filter((_, i) => indices.includes(i))

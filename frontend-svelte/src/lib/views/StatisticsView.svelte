@@ -12,10 +12,8 @@
   import {
     target_ranges,
     default_ranges,
-    // cluster_mode,
     selected_metrics,
     feature_target_levels,
-    // recommended_cluster,
     recommended_nodes,
     inAllRange,
   } from "lib/store";
@@ -27,7 +25,6 @@
     tSelectedClusterData,
   } from "lib/types";
   import MetricSlider from "lib/components/MetricSlider.svelte";
-  import { Filter } from "lucide-svelte";
   //
   // constants
   //
@@ -114,7 +111,6 @@
     if (stat_data) {
       if (mode === tMode.All_Cluster) {
         update_all_cluster(stat_data);
-        // detail_statbars = initDetailStatbars(stat_data.cluster_statistics);
       } else {
         update_all_metric(stat_data);
       }
@@ -205,14 +201,6 @@
       recommended_nodes.set(
         data?.filter((datum) => datum.cluster === cluster_label)
       );
-      // $recommended_nodes?.forEach((node) => {
-      //   const in_range = inAllRange(
-      //     node.features,
-      //     $target_ranges,
-      //     "cluster clicked"
-      //   );
-      //   if (!in_range) console.log(node.features, $target_ranges);
-      // });
     });
   }
 
@@ -391,88 +379,14 @@
             </div>
           {/each}
         </div>
-        <!-- {:else if mode === tMode.Detail && selected_cluster}
-        <div
-          class="w-full h-full flex flex-col justify-center items-center gap-y-1 border"
-        >
-          <div class="w-full flex p-1">
-            <button
-              class="text-sm h-fit !py-1 hoverable"
-              on:click={() => {
-                mode = tMode.All_Cluster;
-                if (stat_data) update_all_cluster(stat_data);
-              }}>Back</button
-            >
-          </div>
-          <div class="w-full px-1 flex justify-start border-b font-bold">
-            Cluster #{selected_cluster.cluster_label}
-          </div>
-          {#each optimizations[selected_cluster.cluster_label] as optimization_snippet, index}
-            <div
-              role="button"
-              tabindex={index}
-              on:keyup={() => {}}
-              on:click={() => handleOptimizationClicked(index)}
-              class="w-full flex gap-x-1 px-1"
-            >
-              <div class="flex flex-col justify-between">
-                {#each $selected_metrics as metric}
-                  <div class="flex-1 text-xs flex items-center justify-end">
-                    {metric}
-                  </div>
-                {/each}
-              </div>
-              <svg
-                id={`stat-detail-${selected_cluster.cluster_label}-${index}`}
-                class="min-w-[48%] aspect-square pointer-events-none border border-gray-200"
-                viewBox={`0 0 ${svgSize.width} ${svgSize.height}`}
-              >
-                <g
-                  class="inner"
-                  transform={`translate(${svgSize.margin}, ${svgSize.margin})`}
-                ></g>
-              </svg>
-              <div class="grow text-left text-sm">
-                <p class="border-b border-black w-fit">Prompt #{index}</p>
-                <p class="text-sm">{optimization_snippet.prompts[0].content}</p>
-                {#if optimization_snippet.prompts.length >= 4}
-                  <p class="text-sm">
-                    {optimization_snippet.prompts[3].content}
-                  </p>
-                {/if}
-              </div>
-            </div>
-          {/each}
-        </div> -->
       {/if}
     {/if}
   </div>
-  <!-- <div class="flex flex-col p-1 text-left">
-    {#each Object.keys($target_ranges) as metric, index}
-      {#if $target_ranges[metric][0] !== undefined}
-        <div class="underline">{metric}</div>
-        <div class="text-sm">
-          <span
-            >{$target_ranges[metric][0]?.toFixed(2)} - {$target_ranges[
-              metric
-            ][1]?.toFixed(2)}
-          </span>
-         
-        </div>
-      {/if}
-    {/each}
-  </div> -->
 </div>
 
 <style lang="postcss">
   .metric-container:hover .hide-button {
     display: block;
-  }
-  .tab-start {
-    /* @apply rounded-tl; */
-  }
-  .tab-end {
-    /* @apply rounded-tr; */
   }
   .tab {
     @apply px-1 cursor-pointer border-t border-x text-[0.8rem] hover:bg-gray-200;

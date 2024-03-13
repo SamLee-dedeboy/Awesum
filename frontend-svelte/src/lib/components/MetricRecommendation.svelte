@@ -5,17 +5,14 @@
   import { createEventDispatcher } from "svelte";
   import {
     selected_metrics,
-    // recommended_cluster,
     feature_target_levels,
     feature_recommendations,
   } from "lib/store";
-  const dispatch = createEventDispatcher();
   let delayed_user_question_response = "Response will be here...";
   export let data: tNode[];
   export let metric_metadata: any;
   let query_area;
   let loading_response = false;
-  // let recommended_cluster = "";
   function handleQuery() {
     const user_question = query_area.textContent;
     query_metric(user_question);
@@ -36,14 +33,12 @@
       .then((response) => response.json())
       .then((data) => {
         console.log("Success:", data);
-        // make_delay(data.response);
         feature_recommendations.set(data.features);
         $feature_target_levels = {};
         data.features.forEach((feature: tMetricRecommendationResponse) => {
           $feature_target_levels[feature.feature_name] = feature.level;
         });
         make_delay(make_paragraph(data.features, metric_metadata.correlations));
-        // recommended_cluster.set(data.closest_cluster);
         loading_response = false;
       })
       .catch((error) => {
@@ -183,13 +178,6 @@
       </div>
     </div>
   </div>
-
-  <!-- <button
-    class="w-fit sticky ml-auto bottom-1 right-0 text-[0.6rem] p-1 bg-amber-400 border-amber-500"
-    on:click={() => dispatch("highlight_recommendation", recommended_cluster)}
-  >
-    Find cluster
-  </button> -->
 </div>
 
 <style lang="postcss">

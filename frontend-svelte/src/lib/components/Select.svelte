@@ -1,21 +1,16 @@
 <script lang="ts">
-  // import { Check, ChevronDown } from '$icons/index.js';
   import { createSelect, melt } from "@melt-ui/svelte";
   import type { SelectOption } from "@melt-ui/svelte";
   import { fade } from "svelte/transition";
-  import { writable } from "svelte/store";
   export let options: SelectOption[];
   export let selected_value: string | undefined;
   export let placeholder: string = "Select";
   export let tw_font_size: string = "1rem";
   export let tw_font_family: string = "font-serif";
   $: if ($selected) selected_value = $selected.value;
-  // $: selected_label_store.set({ value: selected_label, label: selected_label });
-  // selected_label_store.subscribe((value) => {
-  //   if (value) selected_label = value.value;
-  // });
+
   const {
-    elements: { trigger, menu, option, group, groupLabel, label },
+    elements: { trigger, menu, option },
     states: { open, selected },
     helpers: { isSelected },
   } = createSelect<string>({
@@ -29,7 +24,6 @@
 </script>
 
 <div class="flex flex-col gap-1">
-  <!-- svelte-ignore a11y-label-has-associated-control - $label contains the 'for' attribute -->
   <button
     class="flex h-5 w-[8rem] items-center justify-center rounded bg-white px-1 py-2
       text-magnum-700 shadow transition-opacity hover:opacity-90"
@@ -40,7 +34,6 @@
       {$selected?.label || placeholder}
       <img src="chevrondown.svg" alt="*" class="h-[1rem] w-[1rem]" />
     </div>
-    <!-- <ChevronDown class="size-5" /> -->
   </button>
   {#if $open}
     <div
@@ -70,10 +63,6 @@
             label: item.label,
           })}
         >
-          <!-- <div class="check {$isSelected(item) ? 'block' : 'hidden'}">
-                  <Check class="size-4" />
-              </div> -->
-
           {item.label}
         </div>
       {/each}
@@ -91,6 +80,5 @@
     top: 50%;
     z-index: theme(zIndex.20);
     translate: 0 calc(-50% + 1px);
-    /* color: theme(colors.magnum.500); */
   }
 </style>

@@ -1,7 +1,6 @@
 <script lang="ts">
   import SummaryCard from "lib/components/SummaryCard.svelte";
   import type { tNode } from "lib/types";
-  import { createEventDispatcher } from "svelte";
   import { recommended_nodes, example_nodes } from "lib/store";
   import { cluster_colors, metrics, metric_abbrs } from "lib/constants";
 
