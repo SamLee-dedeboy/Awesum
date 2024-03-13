@@ -1,4 +1,4 @@
-import { writable, get } from "svelte/store";
+import { writable, get, derived } from "svelte/store";
 import type {  Writable } from "svelte/store";
 import {metric_categories, metrics} from "lib/constants/Metrics"
 import type {tNode, tMetricRecommendationResponse} from "lib/types"
@@ -50,8 +50,9 @@ export let goal: Writable<string | undefined> = writable(undefined);
 export function inAllRange(
     features: { [key: string]: number },
     ranges: { [key: string]: [number | undefined, number | undefined] },
-    comes_from: string = "unknown"
+    enabled_features: string[] = metrics
   ) {
+    // console.log(enabled_features, ranges)
     if (
       Object.values(ranges).every(
         ([min, max]) => min === undefined && max === undefined
@@ -61,6 +62,7 @@ export function inAllRange(
     let inRange = true;
     Object.entries(ranges).forEach(([metric, range]) => {
       if (range[0] === undefined || range[1] === undefined) return;
+      if(!enabled_features.includes(metric)) return
       if(!inRange) return
       const value = parseFloat(features[metric].toFixed(2));
       if (value < range[0] || value > range[1]) inRange = false;

@@ -41,8 +41,14 @@
       $target_ranges[metric][1] !== v[1]
     )
       $target_ranges[metric] = [v[0], v[1]];
+    const enabled_features = Object.keys($feature_target_levels).filter(
+      (k) => $feature_target_levels[k] !== null
+    );
     const in_range_nodes = data?.filter(
-      (d) => d.cluster !== "-1" && inAllRange(d.features, $target_ranges)
+      (d) => inAllRange(d.features, $target_ranges, enabled_features),
+      Object.keys($feature_target_levels).filter(
+        (k) => $feature_target_levels[k] !== null
+      )
     );
     recommended_nodes.set(in_range_nodes);
   });

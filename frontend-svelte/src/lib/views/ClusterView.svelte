@@ -77,15 +77,12 @@
   $: update_nodes(data);
   function update_nodes(data: tNode[]) {
     if (data) {
-      data = data.filter((d) => d.cluster !== "-1");
-      // const centroids = generate_centroids(data);
-      // console.log({ centroids });
-      update(data, centroids);
-      // if ($cluster_mode === "metric") {
-      //   update_by_metric($target_ranges);
-      // } else {
-      //   update_by_cluster();
-      // }
+      // data = data.filter((d) => d.cluster !== "-1");
+      update(
+        data.filter((d) => d.cluster !== "-1"),
+        centroids
+      );
+      update_noise(false, data);
     }
   }
 
@@ -103,27 +100,22 @@
   $: update_highlight_cluster(highlight_cluster_label);
 
   $: update_noise(show_noise, data);
-  function update_noise(show_noise, data) {
-    if (show_noise) {
-      d3.select("#cluster-svg")
-        .select("g.noise-group")
-        .selectAll("circle.noise")
-        .data(data.filter((d) => d.cluster === "-1"))
-        .join("circle")
-        .attr("class", "noise")
-        .attr("cx", (d: any) => (d.x = xScale(d.coordinates[0])))
-        .attr("cy", (d: any) => (d.y = yScale(d.coordinates[1])))
-        .attr("r", node_radius / 1.5)
-        .attr("fill", "white")
-        .attr("stroke", "#939393")
-        .attr("stroke-width", 0.5)
-        .attr("opacity", 0.8);
-    } else {
-      d3.select("#cluster-svg")
-        .select("g.noise-group")
-        .selectAll("circle.noise")
-        .attr("opacity", 0);
-    }
+  async function update_noise(show_noise, data) {
+    await tick();
+    console.log("show_noise", show_noise, data);
+    d3.select("#cluster-svg")
+      .select("g.noise-group")
+      .selectAll("circle.noise")
+      .data(data.filter((d) => d.cluster === "-1"))
+      .join("circle")
+      .attr("class", "noise")
+      .attr("cx", (d: any) => (d.x = xScale(d.coordinates[0])))
+      .attr("cy", (d: any) => (d.y = yScale(d.coordinates[1])))
+      .attr("r", node_radius / 1.5)
+      .attr("fill", "white")
+      .attr("stroke", "#939393")
+      .attr("stroke-width", 0.5)
+      .attr("opacity", show_noise ? 0.8 : 0);
   }
 
   $: if (show_test_set) {
@@ -152,82 +144,6 @@
       .attr("fill", (d) => cluster_colors(d.cluster))
       .attr("stroke-width", 0.5);
     force_collision_centroid(data, node_radius + 0.7, centroids);
-  }
-
-  async function update_by_cluster() {
-    await tick();
-    const g = d3.select("#cluster-svg").select("g.node-group");
-    const points = g
-      .selectAll("circle")
-      .attr("fill", (d) => cluster_colors(d.cluster))
-      .attr("stroke", "gray")
-      .attr("opacity", 1)
-      .attr("stroke-width", 0.5);
-    // .attr("opacity", show_recommendations ? 0.8 : 0)
-    // .attr("stroke", "gray")
-    // .attr("stroke-width", 1)
-    // .attr("stroke-dasharray", "4,2");
-    // if (show_noise) {
-    //   points.attr("opacity", 1);
-    // }
-    // force_collision_centroid(data, node_radius + 0.7);
-  }
-
-  async function update_by_metric(target_ranges) {
-    await tick();
-    // const target_metric = metrics[target_metric_index];
-    // const offset = 0.01;
-    // const metric_values = data.map((d) => d.features[target_metric]);
-    // target_range = [
-    //   d3.quantile(metric_values, 0.5 - offset),
-    //   d3.quantile(metric_values, 0.5 + offset),
-    // ];
-    // console.log({ target_range });
-    // target_range = [
-    //   statistics.global_means[target_metric_index] * (1 - offset),
-    //   statistics.global_means[target_metric_index] * (1 + offset),
-    // ];
-    let total_max_distance = 0;
-    $selected_metrics.forEach((metric) => {
-      const target_metric_index = metrics.indexOf(metric);
-      const target_range = target_ranges[metric];
-      if (target_range[0] === undefined) return;
-      const max_distance = Math.max(
-        Math.abs(
-          statistics.global_maxes[target_metric_index] - target_range[1]
-        ),
-        Math.abs(statistics.global_mins[target_metric_index] - target_range[0])
-      );
-      total_max_distance += max_distance;
-    });
-    // const colorScale = d3
-    //   .scalePow()
-    //   .domain([0, total_max_distance])
-    //   .range(["red", "transparent"])
-    //   .exponent(0.2);
-    const opacityScale = d3
-      .scalePow()
-      .domain([0, total_max_distance])
-      .range([1, 0])
-      .exponent(1);
-
-    const g = d3.select("#cluster-svg").select("g.node-group");
-    const points = g
-      .selectAll("circle")
-      .attr("fill", (d) => cluster_colors(d.cluster))
-      .attr("opacity", (d) => {
-        return 1;
-        d.total_distance = compute_distance(d);
-        return opacityScale(d.total_distance);
-      })
-      // .attr("stroke", (d) => (d.total_distance === 0 ? "black" : "white"))
-      .attr("stroke", "gray")
-      .attr("stroke-width", (d) => (d.total_distance === 0 ? 1.5 : 0.5));
-    // .attr("stroke-width", (d) => (d.total_distance === 0 ? 1.5 : 0.5));
-    // if (show_noise) {
-    //   points.attr("opacity", 1);
-    // }
-    // force_collision_centroid(data);
   }
 
   function force_collision_centroid(
@@ -645,6 +561,7 @@
     & .highlight {
       stroke: #676767;
       stroke-width: 1.5;
+      opacity: 1;
     }
 
     & .test-case {

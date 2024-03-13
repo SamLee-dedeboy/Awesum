@@ -2,7 +2,12 @@
   import { onMount, tick } from "svelte";
   import ClusterProfile from "lib/components/ClusterProfile.svelte";
   import { Statbars } from "lib/renderers/statbars";
-  import { cluster_colors, metrics, metric_abbrs } from "lib/constants";
+  import {
+    cluster_colors,
+    metrics,
+    metric_abbrs,
+    categorize_metric,
+  } from "lib/constants";
 
   import {
     target_ranges,
@@ -14,7 +19,6 @@
     recommended_nodes,
     inAllRange,
   } from "lib/store";
-  import { categorize_metric, metric_categories } from "lib/constants/metrics";
   import type {
     tNode,
     tStatBarData,
@@ -23,6 +27,7 @@
     tSelectedClusterData,
   } from "lib/types";
   import MetricSlider from "lib/components/MetricSlider.svelte";
+  import { Filter } from "lucide-svelte";
   //
   // constants
   //
@@ -249,6 +254,30 @@
   function handleMetricRangeMouseout(cluster_label: string) {
     handleClusterMouseout();
   }
+
+  function handleMetricDisabled(
+    metric,
+    target_level: string | null,
+    target_range: [number | undefined, number | undefined],
+    default_range: [number, number]
+  ) {
+    $feature_target_levels[metric] = target_level
+      ? null
+      : categorize_metric(
+          metric,
+          ((target_range[0] || default_range[0]) +
+            (target_range[1] || default_range[1])) /
+            2
+        );
+    const enabled_features = Object.keys($feature_target_levels).filter(
+      (k) => $feature_target_levels[k] !== null
+    );
+    const in_range_nodes = data?.filter((d) =>
+      inAllRange(d.features, $target_ranges, enabled_features)
+    );
+
+    recommended_nodes.set(in_range_nodes);
+  }
 </script>
 
 <div class="flex max-h-full">
@@ -324,16 +353,13 @@
                 role="button"
                 tabindex={index}
                 class="hide-button absolute top-0 right-0 p-0.5 w-7 h-5 hover:bg-gray-300 hidden"
-                on:click={() => {
-                  $feature_target_levels[metric] = target_level
-                    ? null
-                    : categorize_metric(
-                        metric,
-                        ((target_range[0] || default_range[0]) +
-                          (target_range[1] || default_range[1])) /
-                          2
-                      );
-                }}
+                on:click={() =>
+                  handleMetricDisabled(
+                    metric,
+                    target_level,
+                    target_range,
+                    default_range
+                  )}
               >
                 <img src="eye_off.svg" alt="hide" class="w-full h-full" />
               </div>
