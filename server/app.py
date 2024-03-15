@@ -5,10 +5,12 @@ import json
 from sklearn.model_selection import train_test_split
 # from DataUtils import DocumentController
 from AnalysisUtils import dr, clusters, features, helper, gpt
-from metrics.stylistic import StyleEvaluator
 import numpy as np
 import copy
-
+import os
+def relative_path(filename):
+    dirname = os.path.dirname(__file__)
+    return os.path.join(dirname, filename)
 def save_json(data, filepath=r'new_data.json'):
     with open(filepath, 'w', encoding='utf-8') as fp:
         json.dump(data, fp, indent=4)
@@ -17,12 +19,12 @@ CORS(app)
 openai_api_key = open("api_key").read()
 openai_client=OpenAI(api_key=openai_api_key)
 # document_controller = DocumentController(r'../data/result/chunk_embeddings/1103/all_chunks.json', openai_api_key)
-prompt_block_definitions = json.load(open('data/prompt_block_definitions.json'))
-evaluator = features.StyleEvaluator()
+prompt_block_definitions = json.load(open(relative_path('data/prod/prompt_block_definitions.json')))
+evaluator = features.StyleEvaluator(metadata_path=relative_path('data/prod/meta_data.json'))
 metrics = ["complexity", "formality", "sentiment", "faithfulness", "naturalness", "length"]
-correlations = json.load(open('data/tmp/pearson_r.json'))
-feature_descriptions = json.load(open('data/tmp/feature_descriptions.json'))
-dataset = json.load(open('data/tmp/df_summaries_features_w_topics.json'))
+correlations = json.load(open('data/prod/pearson_r.json'))
+feature_descriptions = json.load(open(relative_path('data/prod/feature_descriptions.json')))
+dataset = json.load(open(relative_path('data/prod/df_summaries_features_w_topics.json')))
 topic_nodes = helper.group_by(dataset, lambda d: d['topic'])
 snapshots = {}
 for topic, nodes in topic_nodes.items():
