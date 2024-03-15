@@ -77,13 +77,13 @@
     </div>
     <div class="legend-item group-title mt-2">contours:</div>
     <div class="legend-item flex items-center gap-x-1">
-      <svg class="w-[1rem] h-[0.6rem]" viewBox="0 0 100 60">
+      <svg class="w-[1.2rem] h-[1rem]" viewBox="0 0 100 80">
         <rect
           fill={optimization_colors[0]}
-          x="5"
-          y="5"
+          x="3"
+          y="3"
           width="95"
-          height="50"
+          height="75"
           rx="20%"
           stroke="gray"
         >
@@ -92,13 +92,13 @@
       <span> before </span>
     </div>
     <div class="legend-item flex items-center gap-x-1">
-      <svg class="w-[1rem] h-[0.6rem]" viewBox="0 0 100 60">
+      <svg class="w-[1.2rem] h-[1rem]" viewBox="0 0 100 80">
         <rect
           fill={optimization_colors[1]}
-          x="5"
-          y="5"
+          x="3"
+          y="3"
           width="95"
-          height="50"
+          height="75"
           rx="20%"
           stroke="gray"
         >
@@ -107,8 +107,16 @@
       <span> after </span>
     </div>
     <div class="legend-item flex items-center gap-x-1">
-      <svg class="w-[1rem] h-[0.6rem]" viewBox="0 0 100 60">
-        <rect fill="lightgreen" x="5" y="5" width="95" height="50" rx="20%">
+      <svg class="w-[1.2rem] h-[1rem]" viewBox="0 0 100 80">
+        <rect
+          fill="#daf7d9"
+          x="3"
+          y="3"
+          width="95"
+          height="75"
+          rx="20%"
+          stroke="gray"
+        >
         </rect>
       </svg>
       <span> goal </span>
@@ -148,9 +156,9 @@
 
 <style lang="postcss">
   .legend-item {
-    @apply font-mono text-[0.6rem] select-none;
+    @apply font-mono text-[0.8rem] select-none;
   }
   .group-title {
-    @apply border-b border-gray-300 border-dashed text-[0.7rem] capitalize;
+    @apply border-b border-gray-300 border-dashed text-[0.9rem] capitalize;
   }
 </style>

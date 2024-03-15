@@ -91,7 +91,6 @@ export class OptScatterplot  {
         // const intra_cluster_distances = dst_optimization.nodes.map(Node => node.intra_cluster_distance!)
         const min_intra_cluster_distance = Math.min(...Object.values(cluster_size))
         const max_intra_cluster_distance = Math.max(...Object.values(cluster_size))
-        console.log(cluster_size, min_intra_cluster_distance, max_intra_cluster_distance)
         const nodeRadiusScale = d3.scaleLinear().domain([min_intra_cluster_distance, max_intra_cluster_distance]).range([3, 10])
         let dst_nodes: tNode[] = []
         // src
@@ -251,7 +250,6 @@ function create_bubble_path(points, radius) {
   return outline
 }
 function arrow_animation(parent, arrow_position_data){ // har
-    console.log("arrow_animation", arrow_position_data)
     let arrows = parent.selectAll("use")
         .data(arrow_position_data)
         .join("use")

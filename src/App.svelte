@@ -37,6 +37,8 @@
     tMetricMetadata,
     tStatistics,
   } from "lib/types";
+  import { onMount } from "svelte";
+  import BrowserBlockingPage from "lib/views/BrowserBlockingPage.svelte";
   let cluster_view;
   let statistics_view;
   let cluster_loading = true;
@@ -48,6 +50,17 @@
   let selected_cluster: tSelectedClusterData | undefined = undefined;
   let hovered_cluster_label: string | undefined = undefined;
   let optimizations: tOptimization[] = [];
+  let connected = false;
+  onMount(() => {
+    test_connection();
+  });
+
+  function test_connection() {
+    fetch(server_address + "/test/").then((res) => {
+      console.log(res);
+      connected = true;
+    });
+  }
   $: if ($selected_topic) fetch_data($selected_topic);
   function fetch_data(topic) {
     fetch(server_address + "/data/", {
@@ -198,7 +211,9 @@
 </script>
 
 <div class="h-screen w-screen p-1 flex gap-x-1 overflow-hidden">
-  {#if !$selected_topic}
+  {#if !connected}
+    <BrowserBlockingPage></BrowserBlockingPage>
+  {:else if !$selected_topic}
     <div class="flex w-full items-center justify-center gap-x-2">
       <div>Choose a topic</div>
       <Select bind:selected_value={$selected_topic} options={topic_options}
