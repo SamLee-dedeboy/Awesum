@@ -9,12 +9,15 @@ export let default_ranges: Writable<{[key:string]:[number, number]}> = writable(
 export let cluster_mode: Writable<string> = writable("cluster")
 export let test_set: Writable<tNode[]> = writable([])
 export let data: Writable<tNode[]> = writable([])
+export let whole_test_set: Writable<tNode[]> = writable([])
+export let cluster_size: Writable<{[key:string]:number}> = writable({})
 export let recommended_nodes: Writable<tNode[]|undefined> = writable(undefined)
 export let feature_recommendations: Writable<tMetricRecommendationResponse[] | undefined> = writable(undefined)
 export let feature_target_levels: Writable<{[key:string]:string|null}> = writable({})
 export let example_nodes: Writable<tNode[]> = writable([])
 export let selected_topic: Writable<string | undefined> = writable(undefined);
 export let executing_prompt: Writable<boolean> = writable(false);
+export let executing_test: Writable<boolean> = writable(false);
 export let goal: Writable<string | undefined> = writable(undefined);
 
 export function inAllRange(

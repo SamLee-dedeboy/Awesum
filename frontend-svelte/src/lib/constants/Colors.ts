@@ -9,15 +9,17 @@ const cluster_colors_list = [
     "#80b1d3",
     "#fccde5",
     "#bc80bd",
-    "#1f78b4",
-    "#e31a1c",
+    "#d4916a",
+    "#e0ecf4",
+    "#feb24c",
     "#b15928",
     "#8dd3c7",
-    "#ffffb3",
+    "#ffeda0",
     "#fb8072",
-    "#fdb462",
-    "#5328b1",
+    "#fde0dd",
+    "#f768a1",
     "#4efff7",
+    "#ece2f0"
   ];
 
 export const metric_colors = Array(100).fill("#8dd3c7");

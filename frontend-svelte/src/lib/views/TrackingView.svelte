@@ -1,13 +1,19 @@
 <script lang="ts">
-  import type { tNode, tOptimization, tStatistics } from "lib/types";
+  import type { tPrompt, tNode, tOptimization, tStatistics } from "lib/types";
   import * as d3 from "d3";
   import { onMount, tick } from "svelte";
   import { OptScatterplot } from "lib/renderers/opt_scatterplot";
   import { OptimizationStats } from "lib/renderers/optimization_stats";
+  import Test from "lib/components/Test.svelte";
+  import TrackingLegend from "lib/components/TrackingLegend.svelte";
+
   import {
     recommended_nodes,
     target_ranges,
     executing_prompt,
+    executing_test,
+    whole_test_set,
+    cluster_size,
   } from "lib/store";
   import {
     metrics,
@@ -52,11 +58,16 @@
   async function update(optimizations: tOptimization[]) {
     await tick();
     if (optimizations.length === 1) {
-      opt_scatterplot.update(undefined, optimizations[dst_index]);
+      opt_scatterplot.update(
+        undefined,
+        optimizations[dst_index],
+        $cluster_size
+      );
     } else {
       opt_scatterplot.update(
         optimizations[src_index],
-        optimizations[dst_index]
+        optimizations[dst_index],
+        $cluster_size
       );
       const trajectories = await get_trajectories(
         optimizations[src_index],
@@ -66,7 +77,8 @@
       opt_scatterplot.update_movement(
         optimizations[src_index],
         optimizations[dst_index],
-        trajectories
+        trajectories,
+        $cluster_size
       );
     }
 
@@ -85,7 +97,7 @@
         global_means,
         global_maxes
       );
-      optimization_stat.update(optimization);
+      optimization_stat.update(optimization, $cluster_size);
       optimization_stat_instances.push(optimization_stat);
       if ($recommended_nodes) {
         optimization_stat.update_recommendations($target_ranges);
@@ -96,11 +108,16 @@
   async function update_recommendations(optimizations, recommended_nodes) {
     await tick();
     if (optimizations.length === 1) {
-      opt_scatterplot.update(undefined, optimizations[dst_index]);
+      opt_scatterplot.update(
+        undefined,
+        optimizations[dst_index],
+        $cluster_size
+      );
     } else {
       opt_scatterplot.update(
         optimizations[src_index],
-        optimizations[dst_index]
+        optimizations[dst_index],
+        $cluster_size
       );
     }
     opt_scatterplot.update_recommendations(recommended_nodes);
@@ -125,6 +142,28 @@
     });
     const data = await response.json();
     return data.trajectories;
+  }
+
+  async function handleExecuteTest(prompt: tPrompt) {
+    executing_test.set(true);
+    console.log(prompt);
+    const response = await fetch(server_address + "/executePromptAll/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        instruction:
+          prompt.persona + ". " + prompt.context + ". " + prompt.constraints,
+        examples: prompt.examples,
+        data_template: prompt.data_template,
+        data: $whole_test_set,
+      }),
+    });
+    const data = await response.json();
+    executing_test.set(false);
+    console.log({ data });
+    opt_scatterplot.update_test_results(data.results);
   }
 
   function handleNodeClicked(d: tNode, node_type: string) {
@@ -159,14 +198,20 @@
 
 <div class="flex h-full">
   <div class="flex flex-col">
-    <div class="view-header">
+    <div class="view-header relative">
       <img src="line_chart.svg" alt="*" class="aspect-square" />
       Prompt Comparator
+      <div class="absolute right-1 top-[0.15rem] bottom-[0.15rem]">
+        <Test
+          {optimizations}
+          on:execute_test={(e) => handleExecuteTest(e.detail)}
+        ></Test>
+      </div>
     </div>
     <div
       role="button"
       tabindex="0"
-      class="w-fit px-1 my-1 ml-1 font-mono text-[0.8rem] outline outline-1 outline-gray-400 rounded select-none"
+      class="w-fit px-1 my-1 ml-1 font-mono text-[0.8rem] outline outline-1 outline-gray-400 rounded select-none hover:outline-2"
       style={`background-color: ${select_mode ? "#89d0ff" : "white"}`}
       on:click={() => {
         select_mode = !select_mode;
@@ -205,6 +250,8 @@
                 tmp_src_index = -1;
                 tmp_dst_index = -1;
                 select_mode = false;
+                update(optimizations);
+                update_recommendations(optimizations, $recommended_nodes);
               } else {
                 tmp_src_index = index;
                 tmp_dst_index = -1;
@@ -224,7 +271,6 @@
               <div>
                 <div class="flex">
                   <span> Examples: </span>
-                  <!-- To be replaced with svg -->
                   <div class="flex items-center">
                     {#if optimization.prompt.examples.length === 0}
                       None
@@ -288,7 +334,12 @@
       {/if}
     </div>
   </div>
-  <div class="h-full aspect-square border-t-4 border-[#89d0ff] bg-white p-1">
+  <div
+    class="h-full aspect-square border-t-4 border-[#89d0ff] bg-white p-1 relative"
+  >
+    <div class="absolute top-1 right-0">
+      <TrackingLegend></TrackingLegend>
+    </div>
     <svg
       id={tracking_svgId}
       class="tracking-scatterplot w-full h-full overflow-visible"

@@ -2,6 +2,7 @@ from openai import OpenAI
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
+from sklearn.model_selection import train_test_split
 # from DataUtils import DocumentController
 from AnalysisUtils import dr, clusters, features, helper, gpt
 from metrics.stylistic import StyleEvaluator
@@ -77,12 +78,14 @@ def get_data():
         datum['cluster'] = str(optic_labels[i])
     cluster_labels = list(map(lambda l: str(l), set(optic_labels)))
     global_statistics, metric_data = features.collect_statistics(nodes, metrics)
+    _, X_test = train_test_split(nodes, test_size=0.2, random_state=42)
 
     feature_matrix = np.array(list(map(lambda x: [x['features'][m] for m in metrics], nodes)))
     statistics = [features.collect_local_stats(feature_matrix[:, c]) for c in range(feature_matrix.shape[1])]
     return json.dumps({
         "metric_data": metric_data, 
         "dataset": nodes, 
+        "whole_test_set": X_test,
         "cluster_labels": cluster_labels, 
         "global_statistics": global_statistics,
         "statistics": statistics,
@@ -206,7 +209,7 @@ def execute_prompt_all():
             "text": data[index]['text'],
             "test_case": True,
             "topic": data[index]['topic'],
-            "intra_cluster_distance": data[index]['intra_cluster_distance']
+            # "intra_cluster_distance": data[index]['intra_cluster_distance']
         })
     # # reapply tsne 
     # dr_estimator = snapshots[data[0]['topic']]['dr_estimator']

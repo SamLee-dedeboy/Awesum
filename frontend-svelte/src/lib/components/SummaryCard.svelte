@@ -80,8 +80,8 @@
 </script>
 
 <div
-  class={`card outline outline-2 relative rounded-sm ${in_example ? "bg-stone-50" : "bg-stone-50"}`}
-  style={`outline-color: ${d3.color(color).darker(0.15)}; box-shadow: 0px 2px 1.5px 1px ${color};`}
+  class={`card border-l-4 relative rounded-sm shadow-md ${in_example ? "bg-stone-50" : "bg-stone-50"}`}
+  style={`border-color: ${d3.color(color).darker(0.15)}; `}
 >
   <div class="flex text-xs whitespace-nowrap">
     <div

@@ -15,6 +15,8 @@
     target_ranges,
     default_ranges,
     data,
+    whole_test_set,
+    cluster_size,
   } from "lib/store";
   import {
     cluster_colors,
@@ -62,6 +64,7 @@
           cluster_loading = false;
           console.log(dataset);
           data.set(dataset.dataset);
+          whole_test_set.set(dataset.whole_test_set);
           metric_metadata = dataset.metric_metadata;
           dataset.centroids = generate_centroids(dataset.dataset);
           initOptimizations($test_set, dataset.statistics);
@@ -136,17 +139,19 @@
     });
     let centroids = {};
     let local_testset: tNode[] = [];
+
     Object.keys(cluster_nodes).forEach((cluster_label) => {
       if (cluster_label === "-1") return;
       const nodes = cluster_nodes[cluster_label];
-      const intra_cluster_distance = compute_intra_cluster_distance(nodes);
+      $cluster_size[cluster_label] = nodes.length;
+      // const intra_cluster_distance = compute_intra_cluster_distance(nodes);
       const mean_x = d3.mean(nodes.map((d) => d.coordinates[0]));
       const mean_y = d3.mean(nodes.map((d) => d.coordinates[1]));
       const { x, y, nearest } = find_nearest(mean_x, mean_y, nodes);
 
       centroids[cluster_label] = [x, y];
       nearest.test_case = true;
-      nearest.intra_cluster_distance = intra_cluster_distance;
+      // nearest.intra_cluster_distance = intra_cluster_distance;
       local_testset.push(nearest);
     });
     test_set.set(local_testset);

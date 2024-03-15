@@ -155,7 +155,7 @@
         >
           <div class="grow bg-stone text-xs relative">
             <span
-              class="bot-response absolute left-0 right-0 top-0 bottom-0 overflow-y-auto p-1 font-mono text-[0.75rem] text-left"
+              class="bot-response absolute left-0 right-3 top-0 bottom-0 overflow-y-auto p-1 font-mono text-[0.75rem] text-left"
             >
               {recommendation || "Loading..."}
             </span>

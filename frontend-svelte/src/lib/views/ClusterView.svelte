@@ -91,6 +91,7 @@
       .attr("r", node_radius / 1.5)
       .attr("fill", "white")
       .attr("stroke", "#939393")
+      // .attr("stroke", "lightgray")
       .attr("stroke-width", 0.5)
       .attr("opacity", show_noise ? 0.8 : 0);
   }
@@ -117,7 +118,8 @@
       .attr("cx", (d: any) => (d.x = xScale(d.coordinates[0])))
       .attr("cy", (d: any) => (d.y = yScale(d.coordinates[1])))
       .attr("r", (d: any) => node_radius)
-      .attr("stroke", "gray")
+      // .attr("stroke", "gray")
+      .attr("stroke", "lightgray")
       .attr("fill", (d) => cluster_colors(d.cluster))
       .attr("stroke-width", 0.5);
     force_collision_centroid(data, node_radius + 0.7, centroids);
@@ -311,7 +313,7 @@
       .classed("recommended-case-line", true)
       .attr("x1", (d) => +d3.select(d).attr("cx") + margin)
       .attr("y1", (d) => +d3.select(d).attr("cy") + margin)
-      .attr("x2", () => 135 + 150 / 2)
+      .attr("x2", () => 55 + 150 / 2)
       .attr("y2", () => 5 + 20 / 2)
       .attr("opacity", show_recommendations ? 0.8 : 0)
       .attr("stroke", "gray")

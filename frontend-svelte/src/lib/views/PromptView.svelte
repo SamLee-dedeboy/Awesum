@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { tNode, tPrompt } from "lib/types";
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
   import { cluster_colors } from "lib/constants";
   import { test_set, example_nodes, executing_prompt } from "lib/store";
   import PromptBlockHeader from "lib/components/PromptBlockHeader.svelte";
@@ -11,6 +11,7 @@
   // let prompts_by_metric = initPrompts(metrics);
   let prompt_template: tPrompt = {
     persona: "You are a writing assistant.",
+    // persona: "",
     context: "You will be given a news article to summarize.",
     constraints: "Please make sure the summary",
     examples: [],
@@ -20,7 +21,17 @@
   example_nodes.subscribe((value) => {
     prompt_template.examples = value;
   });
+  onMount(() => {
+    document.querySelectorAll(".editable").forEach((el) => {
+      el.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          document.execCommand("insertHTML", false, "<br>");
 
+          event.preventDefault();
+        }
+      });
+    });
+  });
   function start_all({
     persona,
     context,
@@ -30,7 +41,6 @@
   }: tPrompt) {
     const instruction = persona + ". " + context + ". " + constraints;
     const url = new URL(server_address + "/executePromptAll/");
-    console.log("test set", $test_set);
     $executing_prompt = true;
     fetch(url, {
       method: "POST",
@@ -103,12 +113,15 @@
       </div>
       <div class="prompt-section-content min-h-[3rem] relative">
         <div
+          role="form"
           class="absolute left-0 top-0 bottom-0 right-0 editable overflow-y-auto pr-3"
           contenteditable
           on:paste={handlePaste}
           on:input={(e) => (prompt_template.persona = e.target?.textContent)}
         >
-          {prompt_template.persona}
+          <p>
+            {prompt_template.persona}
+          </p>
         </div>
       </div>
     </div>
@@ -223,6 +236,7 @@
     @apply py-1 grow overflow-y-auto w-full text-sm;
   }
   .editable {
+    display: inline-block;
     max-width: calc(100%);
     max-height: 10rem;
     /* word-break: break-all; */
@@ -232,5 +246,13 @@
   }
   .editable:focus {
     outline: none;
+  }
+  .editable[placeholder]:empty:before {
+    content: attr(placeholder);
+    color: #555;
+  }
+
+  .editable[placeholder]:empty:focus:before {
+    content: "";
   }
 </style>

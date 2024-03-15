@@ -85,15 +85,16 @@ export class OptimizationStats {
         })
     }
 
-    update(optimization: tOptimization) {
+    update(optimization: tOptimization, cluster_size: {[key:string]:number}) {
         const svg = d3.select(`#${this.svgId}`)
         svg.selectAll("g").remove();
         this.update_tags()
         const features = optimization.nodes.map(node => node.features)
         const recommendation_node_ids = get(recommended_nodes)?.map(node => node.id) || []
-        const intra_cluster_distances = optimization.nodes.map(node => node.intra_cluster_distance!)
-        const min_intra_cluster_distance = Math.min(...intra_cluster_distances)
-        const max_intra_cluster_distance = Math.max(...intra_cluster_distances)
+        // const intra_cluster_distances = optimization.nodes.map(node => node.intra_cluster_distance!)
+
+        const min_intra_cluster_distance = Math.min(...Object.values(cluster_size))
+        const max_intra_cluster_distance = Math.max(...Object.values(cluster_size))
         const nodeRadiusScale = d3.scaleLinear().domain([min_intra_cluster_distance, max_intra_cluster_distance]).range([this.yScale.bandwidth()/8, this.yScale.bandwidth()/4])
         this.metrics.forEach((metric, i) => {
             const metric_group = svg.append("g").attr("class", metric)
@@ -101,7 +102,7 @@ export class OptimizationStats {
             const min = Math.min(...metric_values)
             const max = Math.max(...metric_values)
            
-            const testset_nodes = optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id)).sort((a, b) => -(a.intra_cluster_distance! - b.intra_cluster_distance!))
+            const testset_nodes = optimization.nodes.filter(node => !recommendation_node_ids.includes(node.id)).sort((a, b) => -(cluster_size[a.cluster] - cluster_size[b.cluster]))
 
             const test_nodes = metric_group.selectAll("circle.test_case")
                 .data(testset_nodes)
@@ -110,7 +111,7 @@ export class OptimizationStats {
                 // .attr("cx", (node: tNode) => this.xScales[i](node.features[metric] - this.global_means[i]))
                 .attr("cx", (node: tNode) => this.xScales[i](node.features[metric]))
                 .attr("cy", this.yScale(i) + this.yScale.bandwidth() / 2)
-                .attr("r", (node: tNode) => nodeRadiusScale(node.intra_cluster_distance!))
+                .attr("r", (node: tNode) => nodeRadiusScale(cluster_size[node.cluster]))
                 .attr("fill", "#fafafa")
                 .attr("stroke", "black")
                 .attr("stroke-width", 2.5)

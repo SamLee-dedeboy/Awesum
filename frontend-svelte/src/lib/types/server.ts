@@ -2,6 +2,7 @@ import type { tStatBarData, tStatistics } from ".";
 
 export type tDataset = {
     dataset: tNode[];
+    whole_test_set: tNode[];
     metric_data: any;
     cluster_labels: string[];
     global_statistics: tStatistics;
@@ -22,5 +23,5 @@ export type tNode = {
     summary: string
     text: string
     test_case?: boolean
-    intra_cluster_distance?: number
+    // intra_cluster_distance?: number
 }
