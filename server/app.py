@@ -128,7 +128,9 @@ def get_data():
 @app.route("/data/query_closest_cluster/", methods=['GET', 'POST'])
 def query_closest_cluster():
     recommended_features = request.json['recommended_features']
-    dataset = request.json['dataset']
+    # dataset = request.json['dataset']
+    topic = request.json['topic']
+    dataset = snapshots[topic]['nodes']
     closest_cluster = helper.fit_cluster(dataset, recommended_features['features'], recommended_features['feature_pool'], feature_descriptions)
     return {
         "closest_cluster": closest_cluster

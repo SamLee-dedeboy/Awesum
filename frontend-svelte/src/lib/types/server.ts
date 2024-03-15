@@ -23,5 +23,6 @@ export type tNode = {
     summary: string
     text: string
     test_case?: boolean
+    topic: string
     // intra_cluster_distance?: number
 }

@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { tNode, tPrompt } from "lib/types";
   import { createEventDispatcher, onMount } from "svelte";
-  import { cluster_colors } from "lib/constants";
+  import { cluster_colors, server_address } from "lib/constants";
   import { test_set, example_nodes, executing_prompt } from "lib/store";
   import PromptBlockHeader from "lib/components/PromptBlockHeader.svelte";
 
-  const server_address = "http://localhost:5000";
+  // const server_address = "http://localhost:5000";
   const dispatch = createEventDispatcher();
 
   // let prompts_by_metric = initPrompts(metrics);
@@ -45,7 +45,6 @@
     fetch(url, {
       method: "POST",
       headers: {
-        Accept: "application/json",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({

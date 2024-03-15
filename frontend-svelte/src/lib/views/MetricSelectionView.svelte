@@ -84,7 +84,8 @@
       });
     console.log({ feature_recommendations });
     const parameters = {
-      dataset: data,
+      // dataset: data,
+      topic: data[0].topic,
       recommended_features: {
         features: feature_recommendations,
         feature_pool: $selected_metrics,

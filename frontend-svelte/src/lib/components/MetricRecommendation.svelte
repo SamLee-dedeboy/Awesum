@@ -28,7 +28,7 @@
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ question, feature_pool, nodes }),
+      body: JSON.stringify({ question, feature_pool }),
     })
       .then((response) => response.json())
       .then((data) => {
