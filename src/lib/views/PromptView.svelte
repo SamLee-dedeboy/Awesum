@@ -218,7 +218,7 @@
           Apply
         {/if}
       </button>
-      <span class="text-gray-500"> to dev set </span>
+      <span class="text-gray-500"> to validation set </span>
     </div>
   </div>
 </div>

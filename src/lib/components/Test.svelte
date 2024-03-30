@@ -13,7 +13,7 @@
   }));
 
   function executeTest(prompt: tPrompt) {
-    // dispatch("execute_test", prompt);
+    dispatch("execute_test", prompt);
   }
 
   const {

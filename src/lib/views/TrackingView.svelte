@@ -147,6 +147,8 @@
   async function handleExecuteTest(prompt: tPrompt) {
     executing_test.set(true);
     console.log(prompt);
+    opt_scatterplot.hide_bubbles_trajectories();
+    opt_scatterplot.show_test_set($whole_test_set);
     const response = await fetch(server_address + "/executePromptAll/", {
       method: "POST",
       headers: {
@@ -162,7 +164,7 @@
     });
     const data = await response.json();
     executing_test.set(false);
-    console.log({ data });
+    // console.log({ data });
     opt_scatterplot.update_test_results(data.results);
   }
 
@@ -227,6 +229,8 @@
     >
       {#each optimizations as optimization, index}
         <div
+          role="button"
+          tabindex="0"
           class="optimization-container flex text-sm items-center p-1 gap-x-1 relative"
           class:to-be-selected={select_mode}
           class:selected={select_mode &&
@@ -235,6 +239,7 @@
           background-color: ${get_opt_color(index, optimizations.length, src_index, dst_index)};
           opacity: ${src_index === index || dst_index === index ? 1 : 0.5};
           `}
+          on:keyup={() => {}}
           on:click={() => {
             if (select_mode) {
               if (tmp_src_index === index) {
@@ -392,9 +397,9 @@
         right top 15px;
     }
   }
-  .comparison-tag {
+  /* .comparison-tag {
     @apply flex w-fit px-1  outline outline-1 outline-gray-300 rounded bg-amber-200 text-[0.7rem] font-mono;
-  }
+  } */
   .tracking-scatterplot {
     & .node:hover {
       stroke: black;

@@ -139,21 +139,42 @@ export class OptScatterplot  {
             .attr("fill", color)
     }
 
-    update_test_results(test_results: tNode[]) {
+    hide_bubbles_trajectories() {
+        const self = this
+        const svg = d3.select(`#${this.svgId}`);
+        svg.selectAll("path.bubble_contour").attr("opacity", 0)
+        svg.selectAll(".interpolation_point").attr("opacity", 0)
+    }
+
+    show_test_set(test_set: tNode[]) {
         const self = this
         const svg = d3.select(`#${this.svgId}`);
         const test_result_group = svg.select("g.test_results");
-        test_result_group.selectAll("circle.node").data(test_results)
+        test_result_group.selectAll("circle.node")
+            .data(test_set)
             .join("circle")
             .attr("class", "node")
-            .attr("cx", (node: tNode) => self.xScale(node.coordinates[0]))
-            .attr("cy", (node: tNode) => self.yScale(node.coordinates[1]))
             .attr("r", 4)
             .attr("fill", "white")
             .attr("stroke", "black")
             .attr("opacity", 0.8)
             .attr("stroke-width", 1)
             .attr("cursor", "pointer")
+            .attr("cx", (d: tNode) => self.xScale(d.coordinates[0]))
+            .attr("cy", (d: tNode) => self.yScale(d.coordinates[1]))
+    }
+
+    update_test_results(test_results: tNode[]) {
+        const self = this
+        const svg = d3.select(`#${this.svgId}`);
+        // const pairwise_nodes = previous.map((d, i) => [d, test_results[i]])
+        const test_result_group = svg.select("g.test_results");
+        test_result_group.selectAll("circle.node")
+            .data(test_results)
+            .join("circle")
+            .transition().duration(2000)
+            .attr("cx", (d: tNode) => self.xScale(d.coordinates[0]))
+            .attr("cy", (d: tNode) => self.yScale(d.coordinates[1]))
             // .on("mouseover", (_, d) => this.handleNodeClicked(d, snapshot_type))
             // .on("mouseout", (_, d) => this.handleNodeUnclicked(d, snapshot_type))
 
