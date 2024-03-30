@@ -1,0 +1,57 @@
+{
+    "complexity": {
+        "description": "Complexity metrics aim to quantify the readability of a piece of writing by considering various linguistic features, such as sentence length, word length, syllable count or semantic difficulty",
+        "ranges": [
+            [0, 10, "Elementary", "Very easy to read. Easily understood by an 11-year-old student."],
+            [10, 40, "Middle School", "Plain English. Easily understood by 13- to 15-year-old students."],
+            [40, 50, "High School", "Fairly difficult to read. Best understood by high school students"],
+            [50, 90, "College", "Very difficult to read. Best understood by college students."],
+            [90, 100, "Professional", "Extremely difficult to read. Best understood by university graduates."]
+        ]
+    },
+    "formality": {
+        "description": "Formality measures how formal a piece of writing is. It is based on the frequencies of different word classes in the corpus. Nouns, adjectives, articles and prepositions are more frequent in formal styles; pronouns, adverbs, verbs and interjections  are more frequent in informal styles.",
+        "ranges": [
+            [0,30,"Very Informal", "Casual, conversational language."],
+            [30, 60, "Informal", "Everyday language."],
+            [60, 100, "Standard", "Standard, neutral language."],
+            [100, 200, "Formal", "Professional or academic language"],
+            [200, -1, "Very Formal", "Highly technical or legal language"]
+        ]
+    },
+    "sentiment": {
+        "description": "Sentiment aims to determine the attitude of a writer with respect to the overall contextual polarity.",
+        "ranges": [
+            [-1, -0.3, "Negative", "negative sentiment"],
+            [-0.3, 0.3, "Neutral", "neutral sentiment"],
+            [0.3, 1, "Positive", "positive sentiment"]
+        ]
+    },
+    "faithfulness": {
+        "description": "Faithfulness measures how broad and accurate are the generated summary using the name entity overlap between the summary and the article. Common named entities include persons, organizations, locations, or dates.",
+        "ranges": [
+            [0.0, 0.25, "Bad", "All or Almost all of the important entities from the article are missing in the generated summary"],
+            [0.25, 0.4, "Low", "Very few of the important entities from the article are present in the generated summary"],
+            [0.4, 0.6, "Avg", "Few of the important entities from the article are missing in the generated summary"],
+            [0.6, 1.0, "Good", "All or almost all of the important entities from the article are present in the generated summary"]
+        ]
+    },
+    "naturalness": {
+        "description": "Naturalness of text is a measure of how well the text flows and sounds like something a native speaker would produce. It shoulb be easy to understand and should adhere to the rules of the language",
+        "ranges": [
+            [0.0, 0.4352518900573824, "Bad", "Summary is not natural or human-like"],
+            [0.4352518900573824, 0.607625718803343, "Low", "summary is somewhat natural and human-like"],
+            [0.607625718803343, 0.7156745588358897, "Avg", "summary is mostly natural and human-like"],
+            [0.7156745588358897, 1.0, "Good", "summary is natural and human-like"]
+        ]
+    },
+    "length": {
+        "description": "Length measures the number of words in the summary.",
+        "ranges": [
+            [0, 100, "Short", "Under 100 words."], 
+            [100, 300, "Mid", "100 to 300 words."],
+            [300, 500, "Long", "300 to 600 words."],
+            [500, -1, "Very long", "Over 500 words."]
+        ]
+    }
+}

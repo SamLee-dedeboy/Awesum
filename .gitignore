@@ -138,5 +138,7 @@ preprocess/data/benchmark_llm_summarization
 .DS_Store
 *.csv
 *bin
+writing
 writing/pilot_study/*
 writing/expert_review/*
+!server/data/prod/*.json

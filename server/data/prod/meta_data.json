@@ -1,0 +1,28 @@
+{
+    "naturalness": {
+        "description": "Naturalness of text is a measure of how well the text flows and sounds like something a native speaker would produce. It shoulb be easy to understand and should adhere to the rules of the language",
+        "ranges": [
+            [0.0, 0.4352518900573824, "bad", "Summary is not natural or human-like"],
+            [0.4352518900573824, 0.607625718803343, "low", "summary is somewhat natural and human-like"],
+            [0.607625718803343, 0.7156745588358897, "avg", "summary is mostly natural and human-like"],
+            [0.7156745588358897, 1.0, "good", "summary is natural and human-like"]
+        ],
+        "mean_sd":[
+            [3.909472724370619, 0.5866325558455203,"Average Dependency tree heights"],
+            [19.792292710072314, 4.383204361989693, "average_sentence_lengths"],
+            [3.224778530155862, 0.6115396533323255,"avg_left_subtree_height"],
+            [2.868492737029371, 0.6894262704576944, "avg_right_subtree_height"]
+        ],
+        "naturalness_min_max":[-1.815013403616553, 2.4030803895301096]            
+    },
+    "faithfulness":{
+        "description": "It is the degree to which the generated text is consistent with and faithful to the input information or the reference text",
+        "ranges": [
+            [0.0, 0.25, "bad", "All or Almost all of the important entities from the article are missing in the generated summary"],
+            [0.25, 0.4, "low", "Very few of the important entities from the article are present in the generated summary"],
+            [0.4, 0.6, "avg", "Few of the important entities from the article are missing in the generated summary"],
+            [0.6, 1.0, "good", "All or almost all of the important entities from the article are present in the generated summary"]
+        ]
+    }
+}
+

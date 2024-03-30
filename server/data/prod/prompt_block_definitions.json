@@ -1,0 +1,6 @@
+{
+    "persona": "The persona block should specify a fictional or role-based identity for the AI to adopt when responding to prompt. The persona should be tightly related to the intended task and goal. For example, for a more academic summary, one can ask the model to be a research assistant.",
+    "context": "The context block should provide external information or additional context that can steer the model to better responses.",
+    "constraints": "The constraint block should specify any requirements or limitations for the AI to follow. Make sure the requirements are very specific to the intended task and goal.",
+    "data": "The data block should use delimiters like triple quotation marks, XML tags, section titles, etc. to clearly indicate which part of the prompt is data."
+}

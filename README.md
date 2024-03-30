@@ -49,7 +49,15 @@ We introduce a feature-oriented workflow for dataset-scale prompt evaluation.
 `Intelligent Agents`: 
 [**OpenAI**](https://openai.com/)
 
-
-
 ## Source Code paths
+### Frontend
+`src/*`
+
+### Backend
+1. Flask server: `server/app.py`
+2. Feature metrics: `server/metrics/stylistic.py`
+3. Prompts: `server/AnalysisUtils/gpt.py`
+4. Clustering: `server/AnalysisUtils/clusters.py`
+5. Dimensionality Reduction: `server/AnalysisUtils/dr.py`
+6. Data: `server/data/prod/*`
 
