@@ -5,3 +5,11 @@ numpy
 scipy
 pandas
 fuzzywuzzy
+scikit-learn
+umap-learn
+tqdm
+lexical_diversity
+textstat
+nltk
+vaderSentiment
+summac

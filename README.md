@@ -24,7 +24,43 @@ We introduce a feature-oriented workflow for dataset-scale prompt evaluation.
     She goes to the dot plot (g) and finds that complexity and length are not satisfied, as many validation cases are falling out of the green bars. 
     She refines the prompts by adjusting how she expresses complexity and length \inlineTbox{T4}, and the new prompt yields much better performance (h2), as the dark gray bubble overlaps significantly with the green bubble, and most of the curves are yellow.</figcaption> -->
 
-### Dependencies
+## Launching the application locally
+Awesum has a Flask back-end and a vite front-end. They need to be launched separately.
+
+### Backend
+Navigate to `server/` and run:
+```shell
+pip install -r requirements.txt
+```
+These packages need extra care:
+
+OpenAI:
+```shell
+pip install --upgrade openai 
+```
+Spacy:
+```
+pip install spacy
+python -m spacy download en_core_web_sm
+```
+Or if you're using M1:
+```
+pip install 'spacy[apple]' 
+python -m spacy download en_core_web_sm
+```
+Finally, 
+```
+# directory: server/ 
+flask run
+```
+The backend server should then be listening to `localhost:5000` by default.
+### Front-end
+```
+npm i
+npm run dev
+```
+
+### Credits to the developers of these packages/repositories
 `Backend`: 
 [**Flask**](https://flask.palletsprojects.com/en/3.0.x/)
 
