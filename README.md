@@ -1,7 +1,7 @@
 <img style="width: 100%" src="doc/icon.svg" alt="icon"/>
 
 # Awesum
-This is the open-source repository for 2024 VIS submission: **Towards Dataset-scale and Feature-oriented Evaluation of Large Language Model Prompts**. 
+This is the open-source repository for 2024 VIS submission: **Towards Dataset-scale and Feature-oriented Evaluation of Large Language Model Prompts**: [https://doi.org/10.1109/TVCG.2024.3456398](https://doi.org/10.1109/TVCG.2024.3456398). 
 
 ### Feature-oriented Workflow
 We introduce a feature-oriented workflow for dataset-scale prompt evaluation.
